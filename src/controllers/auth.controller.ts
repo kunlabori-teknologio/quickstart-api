@@ -15,9 +15,36 @@ enum SSOType {
   APPLE = 'apple',
 }
 
-// Auth (Login and Signup) schema model
+// Signup schema model
 @model()
-class AuthSchema extends Model {
+class SignupSchema extends Model {
+  @property({
+    required: true,
+  })
+  ssoId: string;
+
+  @property({
+    required: true,
+    jsonSchema: {
+      enum: Object.values(SSOType),
+    }
+  })
+  sso: string;
+
+  @property({
+    required: true,
+  })
+  project: string;
+
+  @property({
+    required: true,
+  })
+  acl: string
+}
+
+// Login schema model
+@model()
+class LoginSchema extends Model {
   @property({
     required: true,
   })
@@ -61,15 +88,13 @@ export class AuthController {
   async signup(
     @requestBody({
       content: {
-        'application/json': {schema: getModelSchemaRef(AuthSchema)}
+        'application/json': {schema: getModelSchemaRef(SignupSchema)}
       }
     })
-    signupeRequest: AuthSchema
+    signupeRequest: SignupSchema
   ): Promise<Response> {
 
-    const token = await this.authService.authenticateUser(signupeRequest.ssoId, signupeRequest.sso, signupeRequest.project);
-
-    // let token = await this.authService.createUser(signupeRequest.email, signupeRequest.password);
+    const token = await this.authService.authenticateUser(signupeRequest.ssoId, signupeRequest.sso, signupeRequest.project, signupeRequest.acl);
 
     return this.response.status(200).send({
       'token': token,
@@ -91,17 +116,16 @@ export class AuthController {
   async login(
     @requestBody({
       content: {
-        'application/json': {schema: getModelSchemaRef(AuthSchema)}
+        'application/json': {schema: getModelSchemaRef(LoginSchema)}
       }
     })
-    loginRequest: AuthSchema
+    loginRequest: LoginSchema
   ): Promise<Response> {
-    // await this.authService.emailExists(loginRequest.email);
 
-    // let token = await this.authService.checkPasswordAndGetToken(loginRequest.email, loginRequest.password);
+    const token = await this.authService.authenticateUser(loginRequest.ssoId, loginRequest.sso, loginRequest.project, '');
 
     return this.response.status(200).send({
-      'token': 'token',
+      'token': token,
     });
   }
 }

@@ -24,10 +24,10 @@ export class User extends Entity {
 
   @property({
     type: 'array',
-    itemType: 'string',
+    itemType: 'object',
     default: [],
   })
-  projects?: string[];
+  projects?: object[];
 
 
   constructor(data?: Partial<User>) {
