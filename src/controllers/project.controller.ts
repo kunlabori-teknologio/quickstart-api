@@ -1,11 +1,14 @@
 import {
+  Count,
+  CountSchema,
   Filter,
   FilterExcludingWhere,
-  repository
+  repository,
+  Where
 } from '@loopback/repository';
 import {
   del, get,
-  getModelSchemaRef, param, post, put, requestBody,
+  getModelSchemaRef, param, patch, post, put, requestBody,
   response
 } from '@loopback/rest';
 import {Project} from '../models';
@@ -38,6 +41,17 @@ export class ProjectController {
     return this.projectRepository.create(project);
   }
 
+  @get('/projects/count')
+  @response(200, {
+    description: 'Project model count',
+    content: {'application/json': {schema: CountSchema}},
+  })
+  async count(
+    @param.where(Project) where?: Where<Project>,
+  ): Promise<Count> {
+    return this.projectRepository.count(where);
+  }
+
   @get('/projects')
   @response(200, {
     description: 'Array of Project model instances',
@@ -56,6 +70,25 @@ export class ProjectController {
     return this.projectRepository.find(filter);
   }
 
+  @patch('/projects')
+  @response(200, {
+    description: 'Project PATCH success count',
+    content: {'application/json': {schema: CountSchema}},
+  })
+  async updateAll(
+    @requestBody({
+      content: {
+        'application/json': {
+          schema: getModelSchemaRef(Project, {partial: true}),
+        },
+      },
+    })
+    project: Project,
+    @param.where(Project) where?: Where<Project>,
+  ): Promise<Count> {
+    return this.projectRepository.updateAll(project, where);
+  }
+
   @get('/projects/{id}')
   @response(200, {
     description: 'Project model instance',
@@ -70,6 +103,24 @@ export class ProjectController {
     @param.filter(Project, {exclude: 'where'}) filter?: FilterExcludingWhere<Project>
   ): Promise<Project> {
     return this.projectRepository.findById(id, filter);
+  }
+
+  @patch('/projects/{id}')
+  @response(204, {
+    description: 'Project PATCH success',
+  })
+  async updateById(
+    @param.path.string('id') id: string,
+    @requestBody({
+      content: {
+        'application/json': {
+          schema: getModelSchemaRef(Project, {partial: true}),
+        },
+      },
+    })
+    project: Project,
+  ): Promise<void> {
+    await this.projectRepository.updateById(id, project);
   }
 
   @put('/projects/{id}')
@@ -90,52 +141,4 @@ export class ProjectController {
   async deleteById(@param.path.string('id') id: string): Promise<void> {
     await this.projectRepository.deleteById(id);
   }
-
-  // @get('/projects/count')
-  // @response(200, {
-  //   description: 'Project model count',
-  //   content: {'application/json': {schema: CountSchema}},
-  // })
-  // async count(
-  //   @param.where(Project) where?: Where<Project>,
-  // ): Promise<Count> {
-  //   return this.projectRepository.count(where);
-  // }
-
-  // @patch('/projects')
-  // @response(200, {
-  //   description: 'Project PATCH success count',
-  //   content: {'application/json': {schema: CountSchema}},
-  // })
-  // async updateAll(
-  //   @requestBody({
-  //     content: {
-  //       'application/json': {
-  //         schema: getModelSchemaRef(Project, {partial: true}),
-  //       },
-  //     },
-  //   })
-  //   project: Project,
-  //   @param.where(Project) where?: Where<Project>,
-  // ): Promise<Count> {
-  //   return this.projectRepository.updateAll(project, where);
-  // }
-
-  // @patch('/projects/{id}')
-  // @response(204, {
-  //   description: 'Project PATCH success',
-  // })
-  // async updateById(
-  //   @param.path.string('id') id: string,
-  //   @requestBody({
-  //     content: {
-  //       'application/json': {
-  //         schema: getModelSchemaRef(Project, {partial: true}),
-  //       },
-  //     },
-  //   })
-  //   project: Project,
-  // ): Promise<void> {
-  //   await this.projectRepository.updateById(id, project);
-  // }
 }
