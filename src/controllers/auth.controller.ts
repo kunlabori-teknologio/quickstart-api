@@ -39,7 +39,19 @@ class SignupSchema extends Model {
   @property({
     required: true,
   })
-  acl: string
+  acl: string;
+
+  @property({
+    required: true,
+    description: 'Person/Company Unique ID such as CPF and CNPJ',
+  })
+  uniqueId: string;
+
+  @property({
+    required: true,
+    description: 'Birthday format: DD/MM/YYYY'
+  })
+  birthday: string;
 }
 
 // Login schema model
@@ -94,7 +106,14 @@ export class AuthController {
     signupeRequest: SignupSchema
   ): Promise<Response> {
 
-    const token = await this.authService.authenticateUser(signupeRequest.ssoId, signupeRequest.sso, signupeRequest.project, signupeRequest.acl);
+    const token = await this.authService.authenticateUser(
+      signupeRequest.ssoId,
+      signupeRequest.sso,
+      signupeRequest.project,
+      signupeRequest.acl,
+      signupeRequest.uniqueId,
+      signupeRequest.birthday
+    );
 
     return this.response.status(200).send({
       'token': token,

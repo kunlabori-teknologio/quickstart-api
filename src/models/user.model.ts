@@ -23,11 +23,27 @@ export class User extends Entity {
   appleId?: string;
 
   @property({
+    type: 'string',
+    mongodb: {
+      dataType: 'ObjectId'
+    },
+  })
+  personId?: string;
+
+  @property({
+    type: 'string',
+    mongodb: {
+      dataType: 'ObjectId'
+    },
+  })
+  companyId?: string;
+
+  @property({
     type: 'array',
-    itemType: 'object',
+    itemType: 'any',
     default: [],
   })
-  projects?: object[];
+  projects?: any[];
 
 
   constructor(data?: Partial<User>) {
