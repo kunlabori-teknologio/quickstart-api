@@ -1,9 +1,7 @@
 import {inject, service} from '@loopback/core';
 import {Model, model, property} from '@loopback/repository';
 import {
-  getModelSchemaRef, post,
-  requestBody,
-  response,
+  get, getModelSchemaRef, param, post, requestBody, response,
   Response,
   RestBindings
 } from '@loopback/rest';
@@ -54,27 +52,27 @@ class SignupSchema extends Model {
   birthday: string;
 }
 
-// Login schema model
-@model()
-class LoginSchema extends Model {
-  @property({
-    required: true,
-  })
-  ssoId: string;
+// // Login schema model
+// @model()
+// class LoginSchema extends Model {
+//   @property({
+//     required: true,
+//   })
+//   ssoId: string;
 
-  @property({
-    required: true,
-    jsonSchema: {
-      enum: Object.values(SSOType),
-    }
-  })
-  sso: string;
+//   @property({
+//     required: true,
+//     jsonSchema: {
+//       enum: Object.values(SSOType),
+//     }
+//   })
+//   sso: string;
 
-  @property({
-    required: true,
-  })
-  project: string;
-}
+//   @property({
+//     required: true,
+//   })
+//   project: string;
+// }
 
 export class AuthController {
   constructor(
@@ -120,31 +118,60 @@ export class AuthController {
     });
   }
 
-  @post('auth/login')
+  @get('auth/google/url')
   @response(200, {
-    description: 'Token to authenticate',
+    description: 'Url to login with google',
     content: {
       'application/json': {
         schema: {
           type: 'object',
-          example: {'token': 'string'}
+          example: {'url': 'string'}
         }
       }
     }
   })
-  async login(
-    @requestBody({
-      content: {
-        'application/json': {schema: getModelSchemaRef(LoginSchema)}
-      }
-    })
-    loginRequest: LoginSchema
-  ): Promise<Response> {
+  async googleLogin(): Promise<Response> {
 
-    const token = await this.authService.authenticateUser(loginRequest.ssoId, loginRequest.sso, loginRequest.project, '');
+    const url = await this.authService.getGoogleAuthURL('auth/google');
 
     return this.response.status(200).send({
-      'token': token,
+      'url': url,
     });
   }
+
+  @get('auth/google')
+  async authenticateUser(@param.query.string('code') code: string): Promise<void> {
+
+    const ui_uri = await this.authService.authenticateGoogleUser('auth/google', code);
+
+    this.response.redirect(ui_uri);
+  }
+
+  // @post('auth/login')
+  // @response(200, {
+  //   description: 'Token to authenticate',
+  //   content: {
+  //     'application/json': {
+  //       schema: {
+  //         type: 'object',
+  //         example: {'token': 'string'}
+  //       }
+  //     }
+  //   }
+  // })
+  // async login(
+  //   @requestBody({
+  //     content: {
+  //       'application/json': {schema: getModelSchemaRef(LoginSchema)}
+  //     }
+  //   })
+  //   loginRequest: LoginSchema
+  // ): Promise<Response> {
+
+  //   const token = await this.authService.authenticateUser(loginRequest.ssoId, loginRequest.sso, loginRequest.project, '');
+
+  //   return this.response.status(200).send({
+  //     'token': token,
+  //   });
+  // }
 }
