@@ -18,12 +18,21 @@ export class AclAction extends Entity {
   })
   name: string;
 
-  @property({
-    type: 'string',
-    required: true,
-  })
-  ownerId: string;
+  // @property({
+  //   type: 'string',
+  //   mongodb: {
+  //     dataType: 'ObjectId'
+  //   },
+  // })
+  // _createdBy?: string;
 
+  // @property({
+  //   type: 'string',
+  //   mongodb: {
+  //     dataType: 'ObjectId'
+  //   },
+  // })
+  // _ownerBy?: string;
 
   constructor(data?: Partial<AclAction>) {
     super(data);

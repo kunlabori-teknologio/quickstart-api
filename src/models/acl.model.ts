@@ -38,36 +38,27 @@ export class Acl extends Entity {
   name: string;
 
   @property({
-    type: 'string',
-    required: true,
-    mongodb: {
-      dataType: 'ObjectId'
-    },
-  })
-  projectId: string;
-
-  @property({
     type: 'array',
     itemType: PermissionSchema,
     default: [],
   })
   permissions?: PermissionSchema[];
 
-  @property({
-    type: 'string',
-    mongodb: {
-      dataType: 'ObjectId'
-    },
-  })
-  _createdBy?: string;
+  // @property({
+  //   type: 'string',
+  //   mongodb: {
+  //     dataType: 'ObjectId'
+  //   },
+  // })
+  // _createdBy?: string;
 
-  @property({
-    type: 'string',
-    mongodb: {
-      dataType: 'ObjectId'
-    },
-  })
-  _ownerBy?: string;
+  // @property({
+  //   type: 'string',
+  //   mongodb: {
+  //     dataType: 'ObjectId'
+  //   },
+  // })
+  // _ownerBy?: string;
 
 
   constructor(data?: Partial<Acl>) {

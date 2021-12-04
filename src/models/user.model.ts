@@ -39,11 +39,12 @@ export class User extends Entity {
   companyId?: string;
 
   @property({
-    type: 'array',
-    itemType: 'any',
-    default: [],
+    type: 'string',
+    ongodb: {
+      dataType: 'ObjectId'
+    },
   })
-  projects?: any[];
+  acl?: string;
 
 
   constructor(data?: Partial<User>) {

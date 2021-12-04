@@ -32,11 +32,6 @@ class SignupSchema extends Model {
   @property({
     required: true,
   })
-  project: string;
-
-  @property({
-    required: true,
-  })
   acl: string;
 
   @property({
@@ -84,17 +79,6 @@ export class AuthController {
   ) { }
 
   @post('auth/signup')
-  @response(200, {
-    description: 'Token to authenticate',
-    content: {
-      'application/json': {
-        schema: {
-          type: 'object',
-          example: {'token': 'string'}
-        }
-      }
-    }
-  })
   async signup(
     @requestBody({
       content: {
@@ -102,20 +86,19 @@ export class AuthController {
       }
     })
     signupeRequest: SignupSchema
-  ): Promise<Response> {
+  ): Promise<void> {
 
-    const token = await this.authService.authenticateUser(
+    const userAuthenticated = await this.authService.authenticateUser(
       signupeRequest.ssoId,
       signupeRequest.sso,
-      signupeRequest.project,
       signupeRequest.acl,
       signupeRequest.uniqueId,
       signupeRequest.birthday
     );
 
-    return this.response.status(200).send({
-      'token': token,
-    });
+    this.response.cookie(`${process.env.PROJECT_NAME}_auth_data`, userAuthenticated);
+
+    return this.response.redirect(process.env.UI_HOME_URI as string);
   }
 
   @get('auth/google/url')
@@ -142,9 +125,13 @@ export class AuthController {
   @get('auth/google')
   async authenticateUser(@param.query.string('code') code: string): Promise<void> {
 
-    const ui_uri = await this.authService.authenticateGoogleUser('auth/google', code);
+    const userAuthenticated = await this.authService.authenticateGoogleUser('auth/google', code);
 
-    this.response.redirect(ui_uri);
+    if (userAuthenticated.signup) return this.response.redirect(userAuthenticated.redirectUri);
+
+    this.response.cookie(`${process.env.PROJECT_NAME}_auth_data`, userAuthenticated.cookieData);
+
+    return this.response.redirect(userAuthenticated.redirectUri);
   }
 
   // @post('auth/login')

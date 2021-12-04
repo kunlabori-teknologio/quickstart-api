@@ -23,65 +23,55 @@ export class AuthService {
   /*
    * Add service methods here
    */
-  public async authenticateUser(ssoId: string, sso: string, project: string, acl: string, uniqueId?: string, birthday?: string): Promise<string> {
+  public async authenticateUser(ssoId: string, sso: string, acl: string, uniqueId?: string, birthday?: string): Promise<string> {
 
     switch (sso) {
       case 'google':
-        return this.googleAuthentication(ssoId, sso, project, acl, uniqueId, birthday);
+        return this.googleAuthentication(ssoId, sso, acl, uniqueId, birthday);
 
       case 'apple':
-        return this.appleAuthentication(ssoId, sso, project, acl, uniqueId, birthday);
+        return this.appleAuthentication(ssoId, sso, acl, uniqueId, birthday);
 
       default:
         throw new HttpErrors[400]('SSO not recognized');
     }
   }
 
-  private async googleAuthentication(ssoId: string, sso: string, project: string, acl: string, uniqueId?: string, birthday?: string): Promise<string> {
+  private async googleAuthentication(ssoId: string, sso: string, acl: string, uniqueId?: string, birthday?: string): Promise<any> {
 
     // Search for user
     var user = await this.userRepository.findOne({where: {googleId: ssoId}});
 
     // If user doesnt exist, create one
-    if (!user) user = await this.createUser(ssoId, sso, uniqueId, birthday);
-
-    // Add project
-    await this.addProject(user, project, acl);
+    if (!user) user = await this.createUser(ssoId, sso, uniqueId, birthday, acl);
 
     // Create token
-    const token = await this.createToken({user: user?._id, project: project});
+    const token = await this.createToken({userId: user?._id});
 
-    return token;
+    return {
+      token,
+      user,
+    };
   }
 
-  private async appleAuthentication(ssoId: string, sso: string, project: string, acl: string, uniqueId?: string, birthday?: string): Promise<string> {
+  private async appleAuthentication(ssoId: string, sso: string, acl: string, uniqueId?: string, birthday?: string): Promise<any> {
 
     // Search for user
-    var user = await this.userRepository.findOne({where: {googleId: ssoId}});
+    var user = await this.userRepository.findOne({where: {appleId: ssoId}});
 
     // If user doesnt exist, create one
-    if (!user) user = await this.createUser(ssoId, sso, uniqueId, birthday);
-
-    // Add project
-    await this.addProject(user, project, acl);
+    if (!user) user = await this.createUser(ssoId, sso, uniqueId, birthday, acl);
 
     // Create token
-    const token = await this.createToken({user: user?._id, project: project});
+    const token = await this.createToken({userId: user?._id});
 
-    return token;
+    return {
+      token,
+      user,
+    };
   }
 
-  private async addProject(user: any, project: string, acl: string): Promise<void> {
-    var userHasAuthorization = user?.projects?.find((el: {project: string;}) => el.project === project) ? true : false;
-
-    // Add project
-    if (!userHasAuthorization) {
-      (user?.projects || []).push({project: project, acl: acl});
-      await this.userRepository.updateById(user._id, {projects: user?.projects});
-    }
-  }
-
-  private async createUser(ssoId: string, sso: string, uniqueId?: string, birthday?: string): Promise<any> {
+  private async createUser(ssoId: string, sso: string, uniqueId?: string, birthday?: string, acl?: string): Promise<any> {
 
     var newUser = {};
 
@@ -117,9 +107,10 @@ export class AuthService {
 
     }
 
-    // Add personId
+    // Add personId and ACL
     newUser = {
       personId: person?._id,
+      acl: acl,
     };
 
     switch (sso) {
@@ -210,7 +201,7 @@ export class AuthService {
   }
 
   // Authenticate user with google
-  public async authenticateGoogleUser(redirectURI: string, code: string): Promise<string> {
+  public async authenticateGoogleUser(redirectURI: string, code: string): Promise<any> {
     const {id_token, access_token} = await this.getTokens({
       code,
       clientId: process.env.GOOGLE_CLIENT_ID || '',
@@ -237,8 +228,20 @@ export class AuthService {
     // Search for user
     var user = await this.userRepository.findOne({where: {googleId: googleUser.id}});
 
-    if (!user) return `${process.env.UI_SIGNUP_URI}?ssoId=${googleUser.id}&&sso=google`;
+    if (!user)
+      return {
+        redirectUri: `${process.env.UI_SIGNUP_URI}?ssoId=${googleUser.id}&&sso=google`,
+        signup: true,
+      }
 
-    return `${process.env.UI_HOME_URI}?id=${user._id}`;
+    var token = this.createToken({userId: user?._id});
+
+    return {
+      redirectUri: `${process.env.UI_HOME_URI}?id=${user._id}`,
+      cookieData: {
+        token,
+        user,
+      }
+    }
   }
 }

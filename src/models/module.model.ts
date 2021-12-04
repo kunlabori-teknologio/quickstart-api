@@ -15,15 +15,6 @@ export class Module extends Entity {
   @property({
     type: 'string',
     required: true,
-    mongodb: {
-      dataType: 'ObjectId'
-    },
-  })
-  projectId: string;
-
-  @property({
-    type: 'string',
-    required: true,
   })
   name: string;
 
@@ -31,6 +22,22 @@ export class Module extends Entity {
     type: 'string',
   })
   description?: string;
+
+  // @property({
+  //   type: 'string',
+  //   mongodb: {
+  //     dataType: 'ObjectId'
+  //   },
+  // })
+  // _createdBy?: string;
+
+  // @property({
+  //   type: 'string',
+  //   mongodb: {
+  //     dataType: 'ObjectId'
+  //   },
+  // })
+  // _ownerBy?: string;
 
 
   constructor(data?: Partial<Module>) {
