@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Cadastro</title>
+
+  <script type="text/javascript">
+    function getCookie(name) {
+      const value = `; ${document.cookie}`;
+      const parts = value.split(`; ${name}=`);
+      if (parts.length === 2) return parts.pop().split(';').shift();
+    }
+  </script>
+</head>
+
+<body onload="javascript:setHiddenInputValues()">
+
+  <script type="text/javascript">
+    function setHiddenInputValues() {
+      document.getElementById('ssoId').value = getCookie('ssoId');
+      document.getElementById('sso').value = getCookie('sso');
+    }
+  </script>
+
+  <div>
+    <div id="formContent">
+
+      <!-- Login Form -->
+      <form action='/auth/signup' method="post" id="form">
+        <input type="text" id="uniqueId" name="uniqueId" placeholder="CPF" />
+        <input type="text" id="birthday" name="birthday" placeholder="Data de nascimento" />
+        <input type="hidden" id="ssoId" name="ssoId" />
+        <input type="hidden" id="sso" name="sso" />
+        <input type="hidden" id="acl" name="acl" value="61abb32afc21491d73c6c7b3" />
+        <input type="submit" value="Log In">
+      </form>
+
+    </div>
+  </div>
+
+  <script type="text/javascript">
+    function handleSubmit(event) {
+      event.preventDefault();
+
+      const data = new FormData(event.target);
+
+      const value = Object.fromEntries(data.entries());
+
+      fetch("/auth/signup", {
+        method: "POST",
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify(value)
+      })
+        .then(res => res.text())
+        .then(apiResponse => {
+          apiResponse = JSON.parse(apiResponse);
+
+          if (!apiResponse.error) {
+            window.location.replace(apiResponse.redirectUri);
+          } else {
+            window.alert(apiResponse.error.message);
+          }
+        })
+    }
+
+    const form = document.querySelector('form');
+    form.addEventListener('submit', handleSubmit);
+  </script>
+</body>
+
+</html>

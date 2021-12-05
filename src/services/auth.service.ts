@@ -37,7 +37,7 @@ export class AuthService {
     }
   }
 
-  private async googleAuthentication(ssoId: string, sso: string, acl: string, uniqueId?: string, birthday?: string): Promise<any> {
+  private async googleAuthentication(ssoId: string, sso: string, acl: string, uniqueId?: string, birthday?: string): Promise<string> {
 
     // Search for user
     var user = await this.userRepository.findOne({where: {googleId: ssoId}});
@@ -46,15 +46,12 @@ export class AuthService {
     if (!user) user = await this.createUser(ssoId, sso, uniqueId, birthday, acl);
 
     // Create token
-    const token = await this.createToken({userId: user?._id});
+    const token = await this.createToken({userId: user?._id}, 30);
 
-    return {
-      token,
-      user,
-    };
+    return token;
   }
 
-  private async appleAuthentication(ssoId: string, sso: string, acl: string, uniqueId?: string, birthday?: string): Promise<any> {
+  private async appleAuthentication(ssoId: string, sso: string, acl: string, uniqueId?: string, birthday?: string): Promise<string> {
 
     // Search for user
     var user = await this.userRepository.findOne({where: {appleId: ssoId}});
@@ -63,27 +60,24 @@ export class AuthService {
     if (!user) user = await this.createUser(ssoId, sso, uniqueId, birthday, acl);
 
     // Create token
-    const token = await this.createToken({userId: user?._id});
+    const token = await this.createToken({userId: user?._id}, 30);
 
-    return {
-      token,
-      user,
-    };
+    return token;
   }
 
   private async createUser(ssoId: string, sso: string, uniqueId?: string, birthday?: string, acl?: string): Promise<any> {
 
-    var newUser = {};
+    try {
 
-    // Search person
-    var person = await this.personRepository.findOne({where: {uniqueId: uniqueId}});
+      var newUser = {};
 
-    // Create person if doesnt exists
-    if (!person) {
+      // Search person
+      var person = await this.personRepository.findOne({where: {uniqueId: uniqueId}});
 
-      // Get person info in CPF/CNPJ API
-      try {
+      // Create person if doesnt exists
+      if (!person) {
 
+        // Get person info in CPF/CNPJ API
         const response = await fetch(`${process.env.API_CPF_CNPJ}/${uniqueId}`);
         const personFromAPI = await response.json();
 
@@ -94,46 +88,49 @@ export class AuthService {
         // Create person
         person = await this.personRepository.create({
           name: personFromAPI.nome,
-          uniqueId: personFromAPI.cpf,
+          uniqueId: personFromAPI.cpf.replace(/\D/g, ""),
           birthday: personFromAPI.nascimento,
           gender: personFromAPI.genero,
           mother: personFromAPI.mae,
           country: 'br'
         });
 
-      } catch (e) {
-        throw new HttpErrors[400](e.message);
+      } else {
+        // Check birthday
+        if (person.birthday !== birthday)
+          throw new HttpErrors[400]('Birthday incorrect');
       }
 
+      // Add personId and ACL
+      newUser = {
+        personId: person?._id,
+        acl: acl,
+      };
+
+      switch (sso) {
+        case 'google':
+          newUser = {...newUser, googleId: ssoId};
+          break;
+
+        case 'apple':
+          newUser = {...newUser, appleId: ssoId};
+          break;
+
+        default:
+          break;
+      }
+
+      const userCreated = this.userRepository.create(newUser);
+
+      return userCreated;
+    } catch (e) {
+      throw new HttpErrors[400](e.message);
     }
-
-    // Add personId and ACL
-    newUser = {
-      personId: person?._id,
-      acl: acl,
-    };
-
-    switch (sso) {
-      case 'google':
-        newUser = {...newUser, googleId: ssoId};
-        break;
-
-      case 'apple':
-        newUser = {...newUser, appleId: ssoId};
-        break;
-
-      default:
-        break;
-    }
-
-    const userCreated = this.userRepository.create(newUser);
-
-    return userCreated;
   }
 
-  private async createToken(payload: object): Promise<string> {
+  private async createToken(payload: object, expiresIn?: any): Promise<string> {
 
-    let token = await jwt.sign(payload, process.env.JWT_SECRET as string);
+    let token = await jwt.sign(payload, process.env.JWT_SECRET as string, {expiresIn: expiresIn});
 
     return token;
   }
@@ -230,18 +227,17 @@ export class AuthService {
 
     if (!user)
       return {
-        redirectUri: `${process.env.UI_SIGNUP_URI}?ssoId=${googleUser.id}&&sso=google`,
+        // redirectUri: `${process.env.UI_SIGNUP_URI}?ssoId=${googleUser.id}&&sso=google`,
+        ssoId: googleUser.id,
         signup: true,
       }
 
-    var token = this.createToken({userId: user?._id});
+    // Create token
+    const token = await this.createToken({userId: user?._id}, 30);
 
     return {
-      redirectUri: `${process.env.UI_HOME_URI}?id=${user._id}`,
-      cookieData: {
-        token,
-        user,
-      }
+      redirectUri: `${process.env.UI_SPLASH_URI}?token=${token}`,
+      signup: false,
     }
   }
 }

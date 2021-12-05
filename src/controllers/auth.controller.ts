@@ -1,8 +1,7 @@
 import {inject, service} from '@loopback/core';
 import {Model, model, property} from '@loopback/repository';
 import {
-  get, getModelSchemaRef, param, post, requestBody, response,
-  Response,
+  get, getModelSchemaRef, param, post, requestBody, Response,
   RestBindings
 } from '@loopback/rest';
 import {AuthService} from '../services';
@@ -86,9 +85,9 @@ export class AuthController {
       }
     })
     signupeRequest: SignupSchema
-  ): Promise<void> {
+  ): Promise<any> {
 
-    const userAuthenticated = await this.authService.authenticateUser(
+    const token = await this.authService.authenticateUser(
       signupeRequest.ssoId,
       signupeRequest.sso,
       signupeRequest.acl,
@@ -96,30 +95,19 @@ export class AuthController {
       signupeRequest.birthday
     );
 
-    this.response.cookie(`${process.env.PROJECT_NAME}_auth_data`, userAuthenticated);
+    return {redirectUri: `${process.env.UI_SPLASH_URI}?token=${token}`};
 
-    return this.response.redirect(process.env.UI_HOME_URI as string);
+    // this.response.cookie(`${process.env.PROJECT_NAME}_auth_data`, userAuthenticated);
+
+    // return this.response.redirect(process.env.UI_SPLASH_URI as string);
   }
 
-  @get('auth/google/url')
-  @response(200, {
-    description: 'Url to login with google',
-    content: {
-      'application/json': {
-        schema: {
-          type: 'object',
-          example: {'url': 'string'}
-        }
-      }
-    }
-  })
-  async googleLogin(): Promise<Response> {
+  @get('auth/google-signin')
+  async googleLogin(): Promise<any> {
 
     const url = await this.authService.getGoogleAuthURL('auth/google');
 
-    return this.response.status(200).send({
-      'url': url,
-    });
+    return this.response.redirect(url);
   }
 
   @get('auth/google')
@@ -127,9 +115,11 @@ export class AuthController {
 
     const userAuthenticated = await this.authService.authenticateGoogleUser('auth/google', code);
 
-    if (userAuthenticated.signup) return this.response.redirect(userAuthenticated.redirectUri);
-
-    this.response.cookie(`${process.env.PROJECT_NAME}_auth_data`, userAuthenticated.cookieData);
+    if (userAuthenticated.signup) {
+      await this.response.cookie('sso', 'google');
+      await this.response.cookie('ssoId', userAuthenticated.ssoId);
+      return this.response.redirect(`/signup.html`);
+    }
 
     return this.response.redirect(userAuthenticated.redirectUri);
   }
