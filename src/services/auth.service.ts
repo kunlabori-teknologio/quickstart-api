@@ -46,7 +46,7 @@ export class AuthService {
     if (!user) user = await this.createUser(ssoId, sso, uniqueId, birthday, acl);
 
     // Create token
-    const token = await this.createToken({userId: user?._id}, 30);
+    const token = await this.createToken({userId: user?._id, sso: 'google'}, 30);
 
     return token;
   }
@@ -60,7 +60,7 @@ export class AuthService {
     if (!user) user = await this.createUser(ssoId, sso, uniqueId, birthday, acl);
 
     // Create token
-    const token = await this.createToken({userId: user?._id}, 30);
+    const token = await this.createToken({userId: user?._id, sso: 'apple'}, 30);
 
     return token;
   }
@@ -136,7 +136,7 @@ export class AuthService {
   }
 
   // Get google login url
-  public async getGoogleAuthURL(redirectURI: string): Promise<string> {
+  public async getGoogleAuthURL(redirectURI: string, acl: string): Promise<string> {
     const rootUrl = "https://accounts.google.com/o/oauth2/v2/auth";
     const options = {
       redirect_uri: `${process.env.SERVER_ROOT_URI}:${process.env.PORT}/${redirectURI}`,
@@ -144,6 +144,7 @@ export class AuthService {
       access_type: "offline",
       response_type: "code",
       prompt: "consent",
+      state: acl,
       scope: [
         "https://www.googleapis.com/auth/userinfo.profile",
         "https://www.googleapis.com/auth/userinfo.email",
@@ -153,7 +154,7 @@ export class AuthService {
     return `${rootUrl}?${querystring.stringify(options)}`;
   }
 
-  // Get google token
+  // Get google tokens
   private async getTokens({
     code,
     clientId,
@@ -190,7 +191,9 @@ export class AuthService {
           "Content-Type": "application/x-www-form-urlencoded",
         },
       })
-      .then((res) => res.data)
+      .then((res) => {
+        return res.data
+      })
       .catch((error) => {
         console.error(`Failed to fetch auth tokens`);
         throw new Error(error.message);
@@ -198,7 +201,7 @@ export class AuthService {
   }
 
   // Authenticate user with google
-  public async authenticateGoogleUser(redirectURI: string, code: string): Promise<any> {
+  public async authenticateGoogleUser(redirectURI: string, code: string, acl: string): Promise<any> {
     const {id_token, access_token} = await this.getTokens({
       code,
       clientId: process.env.GOOGLE_CLIENT_ID || '',
@@ -227,9 +230,9 @@ export class AuthService {
 
     if (!user)
       return {
-        // redirectUri: `${process.env.UI_SIGNUP_URI}?ssoId=${googleUser.id}&&sso=google`,
         ssoId: googleUser.id,
         signup: true,
+        acl,
       }
 
     // Create token

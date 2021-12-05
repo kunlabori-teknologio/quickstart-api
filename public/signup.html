@@ -19,6 +19,7 @@
     function setHiddenInputValues() {
       document.getElementById('ssoId').value = getCookie('ssoId');
       document.getElementById('sso').value = getCookie('sso');
+      document.getElementById('acl').value = getCookie('acl');
     }
   </script>
 
@@ -31,7 +32,7 @@
         <input type="text" id="birthday" name="birthday" placeholder="Data de nascimento" />
         <input type="hidden" id="ssoId" name="ssoId" />
         <input type="hidden" id="sso" name="sso" />
-        <input type="hidden" id="acl" name="acl" value="61abb32afc21491d73c6c7b3" />
+        <input type="hidden" id="acl" name="acl" />
         <input type="submit" value="Log In">
       </form>
 

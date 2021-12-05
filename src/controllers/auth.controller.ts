@@ -102,22 +102,27 @@ export class AuthController {
     // return this.response.redirect(process.env.UI_SPLASH_URI as string);
   }
 
-  @get('auth/google-signin')
-  async googleLogin(): Promise<any> {
+  @get('auth/google-signin/{acl}')
+  async googleLogin(
+    @param.path.string('acl') acl: string,
+  ): Promise<any> {
 
-    const url = await this.authService.getGoogleAuthURL('auth/google');
+    const url = await this.authService.getGoogleAuthURL('auth/google', acl);
 
     return this.response.redirect(url);
   }
 
   @get('auth/google')
-  async authenticateUser(@param.query.string('code') code: string): Promise<void> {
-
-    const userAuthenticated = await this.authService.authenticateGoogleUser('auth/google', code);
+  async authenticateUser(
+    @param.query.string('code') code: string,
+    @param.query.string('state') acl: string,
+  ): Promise<void> {
+    const userAuthenticated = await this.authService.authenticateGoogleUser('auth/google', code, acl);
 
     if (userAuthenticated.signup) {
       await this.response.cookie('sso', 'google');
       await this.response.cookie('ssoId', userAuthenticated.ssoId);
+      await this.response.cookie('acl', userAuthenticated.acl);
       return this.response.redirect(`/signup.html`);
     }
 
