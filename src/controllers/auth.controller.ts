@@ -1,8 +1,9 @@
 import {inject, service} from '@loopback/core';
 import {Model, model, property} from '@loopback/repository';
 import {
-  get, getModelSchemaRef, param, post, requestBody, Response,
-  RestBindings
+  get, getModelSchemaRef, OperationVisibility, param, post, requestBody, Response,
+  RestBindings,
+  visibility
 } from '@loopback/rest';
 import {AuthService} from '../services';
 
@@ -30,11 +31,6 @@ class SignupSchema extends Model {
 
   @property({
     required: true,
-  })
-  acl: string;
-
-  @property({
-    required: true,
     description: 'Person/Company Unique ID such as CPF and CNPJ',
   })
   uniqueId: string;
@@ -46,28 +42,6 @@ class SignupSchema extends Model {
   birthday: string;
 }
 
-// // Login schema model
-// @model()
-// class LoginSchema extends Model {
-//   @property({
-//     required: true,
-//   })
-//   ssoId: string;
-
-//   @property({
-//     required: true,
-//     jsonSchema: {
-//       enum: Object.values(SSOType),
-//     }
-//   })
-//   sso: string;
-
-//   @property({
-//     required: true,
-//   })
-//   project: string;
-// }
-
 export class AuthController {
   constructor(
     @inject(RestBindings.Http.RESPONSE)
@@ -77,6 +51,7 @@ export class AuthController {
     private authService: AuthService,
   ) { }
 
+  @visibility(OperationVisibility.UNDOCUMENTED)
   @post('auth/signup')
   async signup(
     @requestBody({
@@ -90,70 +65,47 @@ export class AuthController {
     const token = await this.authService.authenticateUser(
       signupeRequest.ssoId,
       signupeRequest.sso,
-      signupeRequest.acl,
       signupeRequest.uniqueId,
       signupeRequest.birthday
     );
 
-    return {redirectUri: `${process.env.UI_SPLASH_URI}?token=${token}`};
-
-    // this.response.cookie(`${process.env.PROJECT_NAME}_auth_data`, userAuthenticated);
-
-    // return this.response.redirect(process.env.UI_SPLASH_URI as string);
+    return {redirectUri: `${process.env.UI_SPLASH_URI}?code=${token}`};
   }
 
-  @get('auth/google-signin/{acl}')
-  async googleLogin(
-    @param.path.string('acl') acl: string,
-  ): Promise<any> {
+  @get('auth/google-signin')
+  async googleLogin(): Promise<any> {
 
-    const url = await this.authService.getGoogleAuthURL('auth/google', acl);
+    const url = await this.authService.getGoogleAuthURL('auth/google');
 
     return this.response.redirect(url);
   }
 
+  @visibility(OperationVisibility.UNDOCUMENTED)
   @get('auth/google')
   async authenticateUser(
     @param.query.string('code') code: string,
-    @param.query.string('state') acl: string,
   ): Promise<void> {
-    const userAuthenticated = await this.authService.authenticateGoogleUser('auth/google', code, acl);
+    const userAuthenticated = await this.authService.authenticateGoogleUser('auth/google', code);
 
     if (userAuthenticated.signup) {
       await this.response.cookie('sso', 'google');
       await this.response.cookie('ssoId', userAuthenticated.ssoId);
-      await this.response.cookie('acl', userAuthenticated.acl);
       return this.response.redirect(`/signup.html`);
     }
 
     return this.response.redirect(userAuthenticated.redirectUri);
   }
 
-  // @post('auth/login')
-  // @response(200, {
-  //   description: 'Token to authenticate',
-  //   content: {
-  //     'application/json': {
-  //       schema: {
-  //         type: 'object',
-  //         example: {'token': 'string'}
-  //       }
-  //     }
-  //   }
-  // })
-  // async login(
-  //   @requestBody({
-  //     content: {
-  //       'application/json': {schema: getModelSchemaRef(LoginSchema)}
-  //     }
-  //   })
-  //   loginRequest: LoginSchema
-  // ): Promise<Response> {
+  @get('auth/token')
+  async getToken(
+    @param.query.string('code') code: string,
+    @param.query.string('secret') secret: string,
+  ): Promise<string> {
 
-  //   const token = await this.authService.authenticateUser(loginRequest.ssoId, loginRequest.sso, loginRequest.project, '');
+    const decodedToken = await this.authService.verifyToken(code, secret);
 
-  //   return this.response.status(200).send({
-  //     'token': token,
-  //   });
-  // }
+    const authToken = await this.authService.createToken({userId: decodedToken.userId}, process.env.JWT_SECRET as string, '7d');
+
+    return authToken;
+  }
 }

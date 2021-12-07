@@ -36,7 +36,7 @@ export class UserService {
       const personInfo = await this.personRepository.findById(user.personId);
 
       // Get ACL
-      const acl = await this.aclRepository.findById(user.acl);
+      // const acl = await this.aclRepository.findById(user.acl);
 
       // Get oauth token
 
