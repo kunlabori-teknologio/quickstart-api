@@ -4,7 +4,7 @@ import {HttpErrors} from '@loopback/rest';
 import axios from 'axios';
 import jwt from 'jsonwebtoken';
 import querystring from 'query-string';
-import {PersonRepository, UserRepository} from '../repositories';
+import {PersonRepository, ProjectRepository, UserRepository} from '../repositories';
 
 const fetch = require('node-fetch');
 
@@ -18,6 +18,9 @@ export class AuthService {
 
     @repository(PersonRepository)
     private personRepository: PersonRepository,
+
+    @repository(ProjectRepository)
+    private projectRepository: ProjectRepository,
   ) { }
 
   /*
@@ -45,8 +48,11 @@ export class AuthService {
     // If user doesnt exist, create one
     if (!user) user = await this.createUser(ssoId, sso, project, uniqueId, birthday);
 
+    // Get project secret
+    const projectInfo = await this.projectRepository.findById(project);
+
     // Create token
-    const token = await this.createToken({userId: user?._id, projectId: project, sso: 'google'}, process.env.TOKEN_SECRET as string, 30);
+    const token = await this.createToken({userId: user?._id, projectId: project, sso: 'google'}, projectInfo?.secret, 30);
 
     return token;
   }
@@ -59,8 +65,11 @@ export class AuthService {
     // If user doesnt exist, create one
     if (!user) user = await this.createUser(ssoId, sso, project, uniqueId, birthday);
 
+    // Get project secret
+    const projectInfo = await this.projectRepository.findById(project);
+
     // Create token
-    const token = await this.createToken({userId: user?._id, projectId: project, sso: 'apple'}, process.env.TOKEN_SECRET as string, 30);
+    const token = await this.createToken({userId: user?._id, projectId: project, sso: 'apple'}, projectInfo?.secret, 30);
 
     return token;
   }
@@ -259,8 +268,11 @@ export class AuthService {
 
     // TODO: verify if user authorized project
 
+    // Get project secret
+    const projectInfo = await this.projectRepository.findById(projectId);
+
     // Create token
-    const token = await this.createToken({userId: user?._id}, process.env.TOKEN_SECRET as string, 30);
+    const token = await this.createToken({userId: user?._id, projectId: projectId}, projectInfo?.secret, 30);
 
     return {
       redirectUri: `${process.env.UI_SPLASH_URI}?code=${token}`,

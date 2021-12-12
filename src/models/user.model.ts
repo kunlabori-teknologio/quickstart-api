@@ -40,10 +40,10 @@ export class User extends Entity {
 
   @property({
     type: 'array',
-    itemType: 'string',
+    itemType: 'object',
     default: [],
   })
-  projects: string[];
+  projects: object[];
 
   @property({
     type: 'string',

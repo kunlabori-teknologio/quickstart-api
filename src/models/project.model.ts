@@ -20,6 +20,12 @@ export class Project extends Entity {
   })
   description?: string;
 
+  @property({
+    type: 'string',
+    required: true,
+  })
+  secret: string;
+
 
   constructor(data?: Partial<Project>) {
     super(data);
