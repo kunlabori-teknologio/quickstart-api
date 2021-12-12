@@ -39,6 +39,13 @@ export class User extends Entity {
   companyId?: string;
 
   @property({
+    type: 'array',
+    itemType: 'string',
+    default: [],
+  })
+  projects: string[];
+
+  @property({
     type: 'string',
     ongodb: {
       dataType: 'ObjectId'

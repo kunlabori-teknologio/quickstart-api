@@ -31,6 +31,11 @@ class SignupSchema extends Model {
 
   @property({
     required: true,
+  })
+  project: string;
+
+  @property({
+    required: true,
     description: 'Person/Company Unique ID such as CPF and CNPJ',
   })
   uniqueId: string;
@@ -65,6 +70,7 @@ export class AuthController {
     const token = await this.authService.authenticateUser(
       signupeRequest.ssoId,
       signupeRequest.sso,
+      signupeRequest.project,
       signupeRequest.uniqueId,
       signupeRequest.birthday
     );
@@ -73,9 +79,11 @@ export class AuthController {
   }
 
   @get('auth/google-signin')
-  async googleLogin(): Promise<any> {
+  async googleLogin(
+    @param.query.string('projectId') project: string,
+  ): Promise<any> {
 
-    const url = await this.authService.getGoogleAuthURL('auth/google');
+    const url = await this.authService.getGoogleAuthURL('auth/google', project);
 
     return this.response.redirect(url);
   }
@@ -84,12 +92,14 @@ export class AuthController {
   @get('auth/google')
   async authenticateUser(
     @param.query.string('code') code: string,
+    @param.query.string('state') state: string,
   ): Promise<void> {
-    const userAuthenticated = await this.authService.authenticateGoogleUser('auth/google', code);
+    const userAuthenticated = await this.authService.authenticateGoogleUser('auth/google', code, state);
 
     if (userAuthenticated.signup) {
       await this.response.cookie('sso', 'google');
       await this.response.cookie('ssoId', userAuthenticated.ssoId);
+      await this.response.cookie('project', userAuthenticated.project);
       return this.response.redirect(`/signup.html`);
     }
 
