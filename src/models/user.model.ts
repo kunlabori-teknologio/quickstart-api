@@ -43,7 +43,7 @@ export class User extends Entity {
     itemType: 'object',
     default: [],
   })
-  projects: object[];
+  projects: any[];
 
   @property({
     type: 'string',

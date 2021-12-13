@@ -1,9 +1,7 @@
 import { /* inject, */ BindingScope, injectable} from '@loopback/core';
 import {repository} from '@loopback/repository';
 import {HttpErrors} from '@loopback/rest';
-import axios from 'axios';
 import jwt, {JwtPayload} from 'jsonwebtoken';
-import querystring from 'query-string';
 import {AclRepository, PersonRepository, UserRepository} from '../repositories';
 
 @injectable({scope: BindingScope.TRANSIENT})
@@ -32,14 +30,18 @@ export class UserService {
       // Get user
       const user = await this.userRepository.findById(decoded.userId);
 
+      // Check if user has authorization
+      const hasAuthorization = user.projects.filter(el => el.id === decoded.projectId);
+      if (!hasAuthorization.length) throw new Error('User does not have authorization for this project');
+
       // Get person info
       const personInfo = await this.personRepository.findById(user.personId);
 
-      // Get ACL
+      // TODO: Get ACL
       // const acl = await this.aclRepository.findById(user.acl);
 
-      // Get oauth token
-
+      delete personInfo._id;
+      return personInfo;
 
     } catch (e) {
 
@@ -47,42 +49,5 @@ export class UserService {
 
     }
 
-  }
-
-  private async getAuthToken(sso: string, id: string): Promise<string | undefined> {
-
-    if (sso === 'google') return this.getGoogleAuthToken(id);
-
-  }
-
-  private async getGoogleAuthToken(id: string): Promise<string> {
-
-    /*
-      * Uses the code to get tokens
-      * that can be used to fetch the user's profile
-      */
-    const url = "https://oauth2.googleapis.com/token";
-    const values = {
-      client_id: process.env.GOOGLE_CLIENT_ID,
-      client_secret: process.env.GOOGLE_CLIENT_SECRET,
-      redirect_uri: 'auth/google',
-      grant_type: "authorization_code",
-    };
-
-    return axios
-      .post(url, querystring.stringify(values), {
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-      })
-      .then((res) => {
-        return res.data
-      })
-      .catch((error) => {
-        console.error(`Failed to fetch auth tokens`);
-        throw new Error(error.message);
-      });
-
-    return '';
   }
 }

@@ -1,11 +1,11 @@
 import {inject, service} from '@loopback/core';
 import {Model, model, property} from '@loopback/repository';
 import {
-  get, getModelSchemaRef, OperationVisibility, param, post, requestBody, Response,
+  get, getModelSchemaRef, OperationVisibility, param, post, Request, requestBody, Response,
   RestBindings,
   visibility
 } from '@loopback/rest';
-import {AuthService} from '../services';
+import {AuthService, UserService} from '../services';
 
 // SSO types enum
 enum SSOType {
@@ -52,8 +52,14 @@ export class AuthController {
     @inject(RestBindings.Http.RESPONSE)
     private response: Response,
 
+    @inject(RestBindings.Http.REQUEST)
+    private request: Request,
+
     @service(AuthService)
     private authService: AuthService,
+
+    @service(UserService)
+    private userService: UserService,
   ) { }
 
   @visibility(OperationVisibility.UNDOCUMENTED)
@@ -110,12 +116,31 @@ export class AuthController {
   async getToken(
     @param.query.string('code') code: string,
     @param.query.string('secret') secret: string,
-  ): Promise<string> {
+  ): Promise<any> {
 
     const decodedToken = await this.authService.verifyToken(code, secret);
 
-    const authToken = await this.authService.createToken({userId: decodedToken.userId}, process.env.JWT_SECRET as string, '7d');
+    const authToken = await this.authService.createToken({
+      userId: decodedToken.userId,
+      projectId: decodedToken.projectId
+    }, process.env.JWT_SECRET as string, '7d');
 
-    return authToken;
+    const refreshToken = await this.authService.createToken({
+      userId: decodedToken.userId,
+      projectId: decodedToken.projectId
+    }, process.env.JWT_REFRESH_SECRET as string, '14d');
+
+    return {
+      token: authToken,
+      refreshToken: refreshToken,
+    };
+  }
+
+  @get('auth/get-user')
+  async getUser(): Promise<any> {
+
+    const user = await this.userService.getUserInfo(this.request.headers.authorization as string);
+
+    return user;
   }
 }
