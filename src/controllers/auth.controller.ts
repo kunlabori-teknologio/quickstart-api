@@ -139,7 +139,7 @@ export class AuthController {
   @get('auth/get-user')
   async getUser(): Promise<any> {
 
-    let authorization = this.request.headers.Authorization as string;
+    let authorization = this.request.headers.authorization as string;
     authorization = authorization.split(' ')[1];
 
     const user = await this.userService.getUserInfo(authorization);
