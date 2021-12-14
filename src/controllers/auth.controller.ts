@@ -81,7 +81,7 @@ export class AuthController {
       signupeRequest.birthday
     );
 
-    return {redirectUri: `${process.env.UI_SPLASH_URI}?code=${token}`};
+    return {redirectUri: `${process.env.UI_SPLASH_URI}/${token}`};
   }
 
   @get('auth/google-signin')

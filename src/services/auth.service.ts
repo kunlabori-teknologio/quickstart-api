@@ -275,7 +275,7 @@ export class AuthService {
     const token = await this.createToken({userId: user?._id, projectId: projectId}, projectInfo?.secret, 30);
 
     return {
-      redirectUri: `${process.env.UI_SPLASH_URI}?code=${token}`,
+      redirectUri: `${process.env.UI_SPLASH_URI}/${token}`,
       signup: false,
     }
   }
