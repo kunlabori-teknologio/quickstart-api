@@ -1,7 +1,7 @@
 import {inject, service} from '@loopback/core';
 import {Model, model, property} from '@loopback/repository';
 import {
-  get, getModelSchemaRef, OperationVisibility, param, post, Request, requestBody, Response,
+  get, getModelSchemaRef, HttpErrors, OperationVisibility, param, post, Request, requestBody, Response,
   RestBindings,
   visibility
 } from '@loopback/rest';
@@ -127,7 +127,8 @@ export class AuthController {
 
     const refreshToken = await this.authService.createToken({
       userId: decodedToken.userId,
-      projectId: decodedToken.projectId
+      projectId: decodedToken.projectId,
+      token: authToken,
     }, process.env.JWT_REFRESH_SECRET as string, '14d');
 
     return {
@@ -145,5 +146,33 @@ export class AuthController {
     const user = await this.userService.getUserInfo(authorization);
 
     return user;
+  }
+
+  @get('auth/refresh-token/{refreshToken}')
+  async refreshToken(
+    @param.path.string('refreshToken') refreshToken: string,
+  ): Promise<any> {
+    let authorization = this.request.headers.authorization as string;
+    authorization = authorization.split(' ')[1];
+
+    const decodedToken = await this.authService.verifyToken(refreshToken, process.env.JWT_REFRESH_SECRET as string);
+
+    if (decodedToken.token !== authorization) throw new HttpErrors[400]('Invalid refresh token!');
+
+    const authToken = await this.authService.createToken({
+      userId: decodedToken.userId,
+      projectId: decodedToken.projectId
+    }, process.env.JWT_SECRET as string, '7d');
+
+    const newRefreshToken = await this.authService.createToken({
+      userId: decodedToken.userId,
+      projectId: decodedToken.projectId,
+      token: authToken,
+    }, process.env.JWT_REFRESH_SECRET as string, '14d');
+
+    return {
+      token: authToken,
+      refreshToken: newRefreshToken,
+    };
   }
 }
