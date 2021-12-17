@@ -26,7 +26,7 @@ export class AuthService {
   /*
    * Add service methods here
    */
-  public async authenticateUser(ssoId: string, sso: string, project: string, uniqueId?: string, birthday?: string): Promise<string> {
+  public async authenticateUser(ssoId: string, sso: string, project: string, uniqueId?: string, birthday?: Date): Promise<string> {
 
     switch (sso) {
       case 'google':
@@ -40,7 +40,7 @@ export class AuthService {
     }
   }
 
-  private async googleAuthentication(ssoId: string, sso: string, project: string, uniqueId?: string, birthday?: string): Promise<string> {
+  private async googleAuthentication(ssoId: string, sso: string, project: string, uniqueId?: string, birthday?: Date): Promise<string> {
 
     // Search for user
     var user = await this.userRepository.findOne({where: {googleId: ssoId}});
@@ -57,7 +57,7 @@ export class AuthService {
     return token;
   }
 
-  private async appleAuthentication(ssoId: string, sso: string, project: string, uniqueId?: string, birthday?: string): Promise<string> {
+  private async appleAuthentication(ssoId: string, sso: string, project: string, uniqueId?: string, birthday?: Date): Promise<string> {
 
     // Search for user
     var user = await this.userRepository.findOne({where: {appleId: ssoId}});
@@ -74,7 +74,7 @@ export class AuthService {
     return token;
   }
 
-  private async createUser(ssoId: string, sso: string, project: string, uniqueId?: string, birthday?: string): Promise<any> {
+  private async createUser(ssoId: string, sso: string, project: string, uniqueId?: string, birthday?: Date): Promise<any> {
 
     try {
 
@@ -90,23 +90,27 @@ export class AuthService {
         const response = await fetch(`${process.env.API_CPF_CNPJ}/${uniqueId}`);
         const personFromAPI = await response.json();
 
-        // Check birthday
-        if (personFromAPI.nascimento !== birthday)
-          throw new HttpErrors[400]('Birthday incorrect');
+        const birthdayAPI = await this.convertBirthdayStringToDate(personFromAPI.nascimento);
 
         // Create person
         person = await this.personRepository.create({
           name: personFromAPI.nome,
           uniqueId: personFromAPI.cpf.replace(/\D/g, ""),
-          birthday: personFromAPI.nascimento,
+          birthday: birthdayAPI,
           gender: personFromAPI.genero,
           mother: personFromAPI.mae,
           country: 'br'
         });
 
-      } else {
         // Check birthday
-        if (person.birthday !== birthday)
+        const datesCompare = await this.compareDates(birthdayAPI, birthday as Date);
+        if (!datesCompare)
+          throw new HttpErrors[400]('Birthday incorrect');
+
+      } else {
+        const datesCompare = await this.compareDates(person.birthday, birthday as Date);
+        // Check birthday
+        if (!datesCompare)
           throw new HttpErrors[400]('Birthday incorrect');
       }
 
@@ -278,5 +282,19 @@ export class AuthService {
       redirectUri: `${process.env.UI_SPLASH_URI}/${token}`,
       signup: false,
     }
+  }
+
+  private async convertBirthdayStringToDate(birthday: string): Promise<Date> {
+    const dateSplited = birthday.split('/');
+    const dateString = `${dateSplited[1]}/${dateSplited[0]}/${dateSplited[2]}`;
+    const date = new Date(dateString);
+    return date;
+  }
+
+  private async compareDates(date1: Date, date2: Date): Promise<boolean> {
+    const date1WithoutTime = new Date(date1).setHours(0, 0, 0, 0);
+    const date2WithoutTime = new Date(date2).setHours(0, 0, 0, 0);
+
+    return date1WithoutTime === date2WithoutTime;
   }
 }

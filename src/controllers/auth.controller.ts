@@ -42,9 +42,8 @@ class SignupSchema extends Model {
 
   @property({
     required: true,
-    description: 'Birthday format: DD/MM/YYYY'
   })
-  birthday: string;
+  birthday: Date;
 }
 
 export class AuthController {

@@ -29,7 +29,7 @@
       <!-- Login Form -->
       <form action='/auth/signup' method="post" id="form">
         <input type="text" id="uniqueId" name="uniqueId" placeholder="CPF" />
-        <input type="text" id="birthday" name="birthday" placeholder="Data de nascimento" />
+        <input type="date" id="birthday" name="birthday" placeholder="Data de nascimento" />
         <input type="hidden" id="ssoId" name="ssoId" />
         <input type="hidden" id="sso" name="sso" />
         <input type="hidden" id="project" name="project" />
@@ -45,7 +45,9 @@
 
       const data = new FormData(event.target);
 
-      const value = Object.fromEntries(data.entries());
+      let value = Object.fromEntries(data.entries());
+      value['birthday'] = new Date(value['birthday'].replace(/-/g, '\/'));
+
       fetch("/auth/signup", {
         method: "POST",
         headers: {

@@ -25,10 +25,10 @@ export class Person extends Entity {
   uniqueId: string;
 
   @property({
-    type: 'string',
+    type: 'Date',
     required: true,
   })
-  birthday: string;
+  birthday: Date;
 
   @property({
     type: 'string',
