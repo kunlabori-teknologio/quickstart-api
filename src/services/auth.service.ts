@@ -163,7 +163,20 @@ export class AuthService {
 
   }
 
+  public async getTokenPayload(token: string): Promise<any> {
+    try {
+      const decoded = await jwt.decode(token);
+      return decoded;
+    } catch (e) {
+      throw new HttpErrors[400](e.message);
+    }
+  }
 
+  public async checkProjectAndSecret(projectId: string, projectSecret: string): Promise<boolean> {
+    const project = await this.projectRepository.findOne({where: {_id: projectId}});
+    if (project && project.secret === projectSecret) return true;
+    return false;
+  }
 
   // Google functions
   // Get google login url

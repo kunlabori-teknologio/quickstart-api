@@ -119,20 +119,15 @@ export class AuthController {
 
     const decodedToken = await this.authService.verifyToken(code, secret);
 
-    const authToken = await this.authService.createToken({
+    const token = await this.authService.createToken({
       userId: decodedToken.userId,
       projectId: decodedToken.projectId
-    }, process.env.JWT_SECRET as string, '7d');
-
-    const refreshToken = await this.authService.createToken({
-      userId: decodedToken.userId,
-      projectId: decodedToken.projectId,
-      token: authToken,
-    }, process.env.JWT_REFRESH_SECRET as string, '14d');
+    }, process.env.JWT_SECRET as string, '10m');
+    const user = await this.userService.getUserInfo(token);
 
     return {
-      token: authToken,
-      refreshToken: refreshToken,
+      token,
+      user,
     };
   }
 
@@ -147,31 +142,29 @@ export class AuthController {
     return user;
   }
 
-  @get('auth/refresh-token/{refreshToken}')
+  @get('auth/refresh-token/{projectSecret}')
   async refreshToken(
-    @param.path.string('refreshToken') refreshToken: string,
+    @param.path.string('projectSecret') projectSecret: string,
   ): Promise<any> {
     let authorization = this.request.headers.authorization as string;
     authorization = authorization.split(' ')[1];
 
-    const decodedToken = await this.authService.verifyToken(refreshToken, process.env.JWT_REFRESH_SECRET as string);
+    const decodedToken = await this.authService.getTokenPayload(authorization);
 
-    if (decodedToken.token !== authorization) throw new HttpErrors[400]('Invalid refresh token!');
+    // Check project
+    const credentialsAreValid = await this.authService.checkProjectAndSecret(decodedToken.projectId, projectSecret);
 
-    const authToken = await this.authService.createToken({
+    if (!credentialsAreValid) throw new HttpErrors['400']('Invalid credentials');
+
+    const token = await this.authService.createToken({
       userId: decodedToken.userId,
       projectId: decodedToken.projectId
-    }, process.env.JWT_SECRET as string, '7d');
-
-    const newRefreshToken = await this.authService.createToken({
-      userId: decodedToken.userId,
-      projectId: decodedToken.projectId,
-      token: authToken,
-    }, process.env.JWT_REFRESH_SECRET as string, '14d');
+    }, process.env.JWT_SECRET as string, '10m');
+    const user = await this.userService.getUserInfo(token);
 
     return {
-      token: authToken,
-      refreshToken: newRefreshToken,
+      token,
+      user,
     };
   }
 }
