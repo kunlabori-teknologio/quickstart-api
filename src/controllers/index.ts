@@ -7,3 +7,4 @@ export * from './project.controller';
 
 
 export * from './permission.controller';
+export * from './invite.controller';

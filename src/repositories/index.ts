@@ -5,3 +5,4 @@ export * from './acl-action.repository';
 export * from './acl.repository';
 export * from './person.repository';
 export * from './permission.repository';
+export * from './invite.repository';
