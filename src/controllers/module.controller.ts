@@ -1,3 +1,4 @@
+import {authenticate} from '@loopback/authentication';
 import {
   Count,
   CountSchema,
@@ -10,6 +11,7 @@ import {del, get, getModelSchemaRef, param, patch, post, put, requestBody, respo
 import {Module} from '../models';
 import {ModuleRepository} from '../repositories';
 
+@authenticate('autentikigo')
 export class ModuleController {
   constructor(
     @repository(ModuleRepository)
