@@ -317,4 +317,14 @@ export class AuthService {
     const tokenPayload = await this.getTokenPayload(token);
     return tokenPayload.userId;
   }
+
+  public async verifyAuthorization(module: string, aclAction: string, authToken: string): Promise<void> {
+    try {
+      const tokenArray = authToken.split(' ');
+      const token = tokenArray[1];
+      const tokenPayload = await this.getTokenPayload(token);
+    } catch (e) {
+      throw new HttpErrors[401](`Unauthorized: ${e.message}`)
+    }
+  }
 }

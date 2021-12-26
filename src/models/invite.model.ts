@@ -61,7 +61,7 @@ export class Invite extends Entity {
       dataType: 'ObjectId'
     },
   })
-  _ownerBy?: string;
+  _ownerId?: string;
 
   @property({
     type: 'Date',

@@ -58,16 +58,6 @@ export class Permission extends Entity {
 
   @property({
     type: 'string',
-  })
-  ownerId?: string;
-
-  @property({
-    type: 'string',
-  })
-  createdBy?: string;
-
-  @property({
-    type: 'string',
     mongodb: {
       dataType: 'ObjectId'
     },
@@ -80,7 +70,7 @@ export class Permission extends Entity {
       dataType: 'ObjectId'
     },
   })
-  _ownerBy?: string;
+  _ownerId?: string;
 
   @property({
     type: 'Date',
