@@ -66,6 +66,27 @@ export class Permission extends Entity {
   })
   createdBy?: string;
 
+  @property({
+    type: 'string',
+    mongodb: {
+      dataType: 'ObjectId'
+    },
+  })
+  _createdBy?: string;
+
+  @property({
+    type: 'string',
+    mongodb: {
+      dataType: 'ObjectId'
+    },
+  })
+  _ownerBy?: string;
+
+  @property({
+    type: 'Date',
+    default: new Date(),
+  })
+  _createdAt?: Date;
 
   constructor(data?: Partial<Permission>) {
     super(data);

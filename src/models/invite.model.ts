@@ -42,6 +42,32 @@ export class Invite extends Entity {
   })
   permissions?: any[];
 
+  @property({
+    type: 'string',
+  })
+  token?: string;
+
+  @property({
+    type: 'string',
+    mongodb: {
+      dataType: 'ObjectId'
+    },
+  })
+  _createdBy?: string;
+
+  @property({
+    type: 'string',
+    mongodb: {
+      dataType: 'ObjectId'
+    },
+  })
+  _ownerBy?: string;
+
+  @property({
+    type: 'Date',
+    default: new Date(),
+  })
+  _createdAt?: Date;
 
   constructor(data?: Partial<Invite>) {
     super(data);

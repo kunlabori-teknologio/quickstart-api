@@ -1,4 +1,5 @@
 import {authenticate} from '@loopback/authentication';
+import {inject, service} from '@loopback/core';
 import {
   Count,
   CountSchema,
@@ -9,17 +10,25 @@ import {
 } from '@loopback/repository';
 import {
   del, get,
-  getModelSchemaRef, param, patch, post, put, requestBody,
-  response
+  getModelSchemaRef, param, patch, post, put, Request, requestBody,
+  response, RestBindings
 } from '@loopback/rest';
+import {sign} from 'jsonwebtoken';
 import {Invite} from '../models';
 import {InviteRepository} from '../repositories';
+import {AuthService} from './../services/auth.service';
 
 @authenticate('autentikigo')
 export class InviteController {
   constructor(
     @repository(InviteRepository)
     public inviteRepository: InviteRepository,
+
+    @inject(RestBindings.Http.REQUEST)
+    private request: Request,
+
+    @service(AuthService)
+    private authService: AuthService,
   ) { }
 
   @post('/invites')
@@ -40,6 +49,11 @@ export class InviteController {
     })
     invite: Omit<Invite, '_id'>,
   ): Promise<Invite> {
+    invite._createdBy = await this.authService.getCreatedBy(this.request.headers.authorization as string);
+
+    // Create token
+    invite.token = await sign({invitedBy: invite._createdBy, permissions: invite.permissions}, process.env.JWT_SECRET as string);
+
     return this.inviteRepository.create(invite);
   }
 

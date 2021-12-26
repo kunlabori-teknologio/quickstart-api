@@ -310,4 +310,11 @@ export class AuthService {
 
     return date1WithoutTime === date2WithoutTime;
   }
+
+  public async getCreatedBy(authToken: string): Promise<string> {
+    const tokenArray = authToken.split(' ');
+    const token = tokenArray[1];
+    const tokenPayload = await this.getTokenPayload(token);
+    return tokenPayload.userId;
+  }
 }
