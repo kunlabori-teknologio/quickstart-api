@@ -5,6 +5,7 @@ import axios from 'axios';
 import jwt from 'jsonwebtoken';
 import querystring from 'query-string';
 import {PersonRepository, ProjectRepository, UserRepository} from '../repositories';
+import {PermissionRepository} from './../repositories/permission.repository';
 
 const fetch = require('node-fetch');
 
@@ -21,6 +22,9 @@ export class AuthService {
 
     @repository(ProjectRepository)
     private projectRepository: ProjectRepository,
+
+    @repository(PermissionRepository)
+    private permissionRepository: PermissionRepository,
   ) { }
 
   /*
@@ -323,6 +327,19 @@ export class AuthService {
       const tokenArray = authToken.split(' ');
       const token = tokenArray[1];
       const tokenPayload = await this.getTokenPayload(token);
+
+      const permissions = await this.permissionRepository.find();
+      const userPermissions = permissions.filter(el => el.users?.includes(tokenPayload.userId));
+
+      for (let permissionIndex = 0; permissionIndex < userPermissions.length; permissionIndex++) {
+        const permission = userPermissions[permissionIndex];
+        for (let aclIndex = 0; aclIndex < permission.acl.length; aclIndex++) {
+          const acl = permission.acl[aclIndex];
+          if (acl.module === module && acl.aclActions.includes(aclAction)) return;
+        }
+      }
+
+      throw new Error('user has not authorization to access this module');
     } catch (e) {
       throw new HttpErrors[401](`Unauthorized: ${e.message}`)
     }
