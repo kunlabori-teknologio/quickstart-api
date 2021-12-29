@@ -44,6 +44,12 @@ class SignupSchema extends Model {
     required: true,
   })
   birthday: Date;
+
+  @property({
+    required: false,
+    default: {},
+  })
+  invite?: any;
 }
 
 export class AuthController {
@@ -77,7 +83,8 @@ export class AuthController {
       signupeRequest.sso,
       signupeRequest.project,
       signupeRequest.uniqueId,
-      signupeRequest.birthday
+      signupeRequest.birthday,
+      signupeRequest.invite,
     );
 
     return {redirectUri: `${process.env.UI_SPLASH_URI}/${token}`};
@@ -86,9 +93,10 @@ export class AuthController {
   @get('auth/google-signin')
   async googleLogin(
     @param.query.string('projectId') project: string,
+    @param.query.string('inviteToken') inviteToken: string,
   ): Promise<any> {
 
-    const url = await this.authService.getGoogleAuthURL('auth/google', project);
+    const url = await this.authService.getGoogleAuthURL('auth/google', project, inviteToken);
 
     return this.response.redirect(url);
   }
@@ -105,6 +113,7 @@ export class AuthController {
       await this.response.cookie('sso', 'google');
       await this.response.cookie('ssoId', userAuthenticated.ssoId);
       await this.response.cookie('project', userAuthenticated.project);
+      await this.response.cookie('inviteInfo', userAuthenticated.inviteInfo);
       return this.response.redirect(`/signup.html`);
     }
 

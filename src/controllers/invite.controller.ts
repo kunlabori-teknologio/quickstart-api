@@ -52,7 +52,7 @@ export class InviteController {
     invite._createdBy = await this.authService.getCreatedBy(this.request.headers.authorization as string);
 
     // Create token
-    invite.token = await sign({invitedBy: invite._createdBy, permissions: invite.permissions}, process.env.JWT_SECRET as string);
+    invite.token = await sign({inviterId: invite._createdBy, permissions: invite.permissions, invitedAt: new Date()}, process.env.JWT_SECRET as string, {expiresIn: '1d'});
 
     return this.inviteRepository.create(invite);
   }

@@ -1,4 +1,31 @@
-import {Entity, model, property} from '@loopback/repository';
+import {Entity, Model, model, property} from '@loopback/repository';
+
+// ACL schema model
+@model()
+class InviteSchema extends Model {
+  @property({
+    required: true,
+    mongodb: {
+      dataType: 'ObjectId'
+    },
+  })
+  inviterId: string;
+
+  @property({
+    required: true,
+    mongodb: {
+      dataType: 'ObjectId'
+    },
+  })
+  projectId: string;
+
+  @property({
+    required: true,
+    type: 'Date'
+  })
+  invitedAt: Date;
+
+}
 
 @model()
 export class User extends Entity {
@@ -46,8 +73,15 @@ export class User extends Entity {
   projects: any[];
 
   @property({
+    type: 'array',
+    itemType: 'any',
+    default: [],
+  })
+  inviters?: InviteSchema[];
+
+  @property({
     type: 'string',
-    ongodb: {
+    mongodb: {
       dataType: 'ObjectId'
     },
   })

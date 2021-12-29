@@ -30,27 +30,27 @@ export class AuthService {
   /*
    * Add service methods here
    */
-  public async authenticateUser(ssoId: string, sso: string, project: string, uniqueId?: string, birthday?: Date): Promise<string> {
+  public async authenticateUser(ssoId: string, sso: string, project: string, uniqueId?: string, birthday?: Date, invite?: any): Promise<string> {
 
     switch (sso) {
       case 'google':
-        return this.googleAuthentication(ssoId, sso, project, uniqueId, birthday);
+        return this.googleAuthentication(ssoId, sso, project, uniqueId, birthday, invite);
 
       case 'apple':
-        return this.appleAuthentication(ssoId, sso, project, uniqueId, birthday);
+        return this.appleAuthentication(ssoId, sso, project, uniqueId, birthday, invite);
 
       default:
         throw new HttpErrors[400]('SSO not recognized');
     }
   }
 
-  private async googleAuthentication(ssoId: string, sso: string, project: string, uniqueId?: string, birthday?: Date): Promise<string> {
+  private async googleAuthentication(ssoId: string, sso: string, project: string, uniqueId?: string, birthday?: Date, invite?: any): Promise<string> {
 
     // Search for user
     var user = await this.userRepository.findOne({where: {googleId: ssoId}});
 
     // If user doesnt exist, create one
-    if (!user) user = await this.createUser(ssoId, sso, project, uniqueId, birthday);
+    if (!user) user = await this.createUser(ssoId, sso, project, uniqueId, birthday, invite);
 
     // Get project secret
     const projectInfo = await this.projectRepository.findById(project);
@@ -61,13 +61,13 @@ export class AuthService {
     return token;
   }
 
-  private async appleAuthentication(ssoId: string, sso: string, project: string, uniqueId?: string, birthday?: Date): Promise<string> {
+  private async appleAuthentication(ssoId: string, sso: string, project: string, uniqueId?: string, birthday?: Date, invite?: any): Promise<string> {
 
     // Search for user
     var user = await this.userRepository.findOne({where: {appleId: ssoId}});
 
     // If user doesnt exist, create one
-    if (!user) user = await this.createUser(ssoId, sso, project, uniqueId, birthday);
+    if (!user) user = await this.createUser(ssoId, sso, project, uniqueId, birthday, invite);
 
     // Get project secret
     const projectInfo = await this.projectRepository.findById(project);
@@ -78,7 +78,7 @@ export class AuthService {
     return token;
   }
 
-  private async createUser(ssoId: string, sso: string, project: string, uniqueId?: string, birthday?: Date): Promise<any> {
+  private async createUser(ssoId: string, sso: string, project: string, uniqueId?: string, birthday?: Date, invite?: any): Promise<any> {
 
     try {
 
@@ -125,8 +125,22 @@ export class AuthService {
           {
             'id': project
           }
-        ]
+        ],
       };
+
+      // Add invite info
+      if (Object.keys(invite).length) {
+        newUser = {
+          ...newUser,
+          inviters: [
+            {
+              inviterId: invite.inviterId,
+              projectId: invite.projectId,
+              invitedAt: invite.invitedAt,
+            }
+          ]
+        }
+      }
 
       switch (sso) {
         case 'google':
@@ -184,7 +198,7 @@ export class AuthService {
 
   // Google functions
   // Get google login url
-  public async getGoogleAuthURL(redirectURI: string, project: string): Promise<string> {
+  public async getGoogleAuthURL(redirectURI: string, project: string, inviteToken?: string): Promise<string> {
     const rootUrl = "https://accounts.google.com/o/oauth2/v2/auth";
     const options = {
       redirect_uri: `${process.env.SERVER_ROOT_URI}:${process.env.PORT}/${redirectURI}`,
@@ -192,7 +206,7 @@ export class AuthService {
       access_type: "offline",
       response_type: "code",
       prompt: "consent",
-      state: `project=${project}`,
+      state: `project=${project}&inviteToken=${inviteToken}`,
       scope: [
         "https://www.googleapis.com/auth/userinfo.profile",
         "https://www.googleapis.com/auth/userinfo.email",
@@ -259,7 +273,8 @@ export class AuthService {
     });
 
     // Get projectId
-    const projectId = state.substring(8);
+    const projectId = state.split('&')[0].substring(8);
+    const inviteToken = state.split('&')[1].substring(12);
 
     // Fetch the user's profile with the access token and bearer
     const googleUser = await axios
@@ -280,12 +295,28 @@ export class AuthService {
     // Search for user
     var user = await this.userRepository.findOne({where: {googleId: googleUser.id}});
 
-    if (!user)
+    if (!user) {
+      // Get invite permissions
+      let inviteInfo = {};
+      if (inviteToken && inviteToken !== 'undefined') {
+        let invite = await this.verifyToken(inviteToken, process.env.JWT_SECRET as string);
+        inviteInfo = {
+          inviterId: invite.inviterId,
+          permissions: invite.permissions,
+          invitedAt: invite.invitedAt,
+          projectId: projectId,
+        }
+      }
+
       return {
         ssoId: googleUser.id,
         signup: true,
         project: projectId,
+        inviteInfo: JSON.stringify(inviteInfo),
       }
+    } else if (inviteToken && inviteToken !== 'undefined') {
+
+    }
 
     // TODO: verify if user authorized project
 
