@@ -2,7 +2,7 @@
 <html>
 
 <head>
-  <title>Cadastro</title>
+  <title>Registro</title>
 
   <script type="text/javascript">
     function getCookie(name) {
@@ -11,9 +11,14 @@
       if (parts.length === 2) return parts.pop().split(';').shift();
     }
   </script>
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet"
+    integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
+
+  <link href="./style/signup-style.css" rel="stylesheet" />
 </head>
 
-<body onload="javascript:setHiddenInputValues()">
+<body onload="javascript:setHiddenInputValues()" style="background: rgb(16, 13, 46);">
 
   <script type="text/javascript">
     function setHiddenInputValues() {
@@ -25,18 +30,34 @@
   </script>
 
   <div>
-    <div id="formContent">
+    <div id="formContent" class="signup-center">
 
-      <!-- Login Form -->
-      <form action='/auth/signup' method="post" id="form">
-        <input type="text" id="uniqueId" name="uniqueId" placeholder="CPF" />
-        <input type="date" id="birthday" name="birthday" placeholder="Data de nascimento" />
-        <input type="hidden" id="ssoId" name="ssoId" />
-        <input type="hidden" id="sso" name="sso" />
-        <input type="hidden" id="project" name="project" />
-        <input type="hidden" id="invite" name="invite" />
-        <input type="submit" value="Cadastrar">
-      </form>
+      <div class="card">
+        <div class="card-body">
+          <h1>Registro</h1><br>
+          <!-- Login Form -->
+          <form action='/auth/signup' method="post" id="form">
+
+            <div class="form-group">
+              <label for="uniqueId">CPF</label>
+              <input type="text" class="form-control" id="uniqueId" name="uniqueId" placeholder="CPF"
+                data-mask="000.000.000-00" data-mask-selectonfocus="true" />
+            </div><br>
+
+            <div class="form-group">
+              <label for="birthday">Data de nascimento</label>
+              <input type="date" id="birthday" name="birthday" placeholder="Data de nascimento"
+                class="date-picker" /><br>
+            </div><br>
+
+            <input type="hidden" id="ssoId" name="ssoId" />
+            <input type="hidden" id="sso" name="sso" />
+            <input type="hidden" id="project" name="project" />
+            <input type="hidden" id="invite" name="invite" />
+            <button type="submit" style="width: 100%;" class="btn btn-secondary">Cadastrar</button>
+          </form>
+        </div>
+      </div>
 
     </div>
   </div>
