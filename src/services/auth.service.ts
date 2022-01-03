@@ -116,6 +116,10 @@ export class AuthService {
         // Check birthday
         if (!datesCompare)
           throw new HttpErrors[400]('Birthday incorrect');
+
+        // Checks if person has already been added to a user
+        const userFound = await this.userRepository.findOne({where: {personId: person._id}});
+        if (userFound) throw new HttpErrors[400]('Person has already been added to a user');
       }
 
       // Add personId and ACL

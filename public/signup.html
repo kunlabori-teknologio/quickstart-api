@@ -64,14 +64,19 @@
             <input type="hidden" id="sso" name="sso" />
             <input type="hidden" id="project" name="project" />
             <input type="hidden" id="invite" name="invite" />
-            <button type="submit" style="width: 100%;" class="btn btn-secondary">Cadastrar</button>
+            <button type="submit" style="width: 100%;" class="btn btn-primary">Cadastrar</button>
           </form>
         </div>
-      </div>
 
+        <div style="text-align: center; margin: 10px;font-size: smaller;">
+          <a href="#" onclick="window.location.replace(decodeURIComponent(getCookie('returnToLoginUrl')));">
+            Retornar para o login
+          </a>
+        </div>
+      </div>
     </div>
 
-    <div id="alert-div" style="width: 500px; margin: auto; margin-top: 10px; display: none;">
+    <div id="alert-div" style="width: 500px; margin: auto; margin-top: 10px; display: none; text-align: center;">
       <div class="alert alert-danger" role="alert" id="alert"></div>
     </div>
   </div>
@@ -104,8 +109,10 @@
 
             if (!apiResponse.error) {
               window.location.replace(apiResponse.redirectUri);
+            } else if (apiResponse.error.message === 'Person has already been added to a user') {
+              showNotification('Esse CPF já foi utilizado em outra conta.');
             } else {
-              showNotification(apiResponse.error.message);
+              showNotification('Alguma coisa deu errado. Verifique os dados e tente novamente.');
             }
           })
       }

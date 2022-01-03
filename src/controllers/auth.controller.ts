@@ -109,11 +109,15 @@ export class AuthController {
   ): Promise<void> {
     const userAuthenticated = await this.authService.authenticateGoogleUser('auth/google', code, state);
 
+    let returnToLoginUrl = `auth/google-signin?projectId=${userAuthenticated.project}`;
+    if (state.split('&')[1].substring(12) !== 'undefined') returnToLoginUrl += `&inviteToken=${state.split('&')[1].substring(12)}`;
+
     if (userAuthenticated.signup) {
       await this.response.cookie('sso', 'google');
       await this.response.cookie('ssoId', userAuthenticated.ssoId);
       await this.response.cookie('project', userAuthenticated.project);
       await this.response.cookie('inviteInfo', userAuthenticated.inviteInfo);
+      await this.response.cookie('returnToLoginUrl', returnToLoginUrl);
       return this.response.redirect(`/signup.html`);
     }
 
