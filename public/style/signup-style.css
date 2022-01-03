@@ -20,3 +20,17 @@
   appearance: none;
   border-radius: 0.25rem;
 }
+
+#alert-div {
+  animation: topToBottom ease 0.5s;
+  -webkit-animation: topToBottom ease 0.5s;
+}
+
+@keyframes topToBottom {
+  0% {
+    margin-top: -23%;
+  }
+  100% {
+    margin-top: 0%;
+  }
+}
