@@ -30,27 +30,27 @@ export class AuthService {
   /*
    * Add service methods here
    */
-  public async authenticateUser(ssoId: string, sso: string, project: string, uniqueId?: string, birthday?: Date, invite?: any): Promise<string> {
+  public async authenticateUser(ssoId: string, sso: string, email: string, project: string, uniqueId?: string, birthday?: Date, invite?: any): Promise<string> {
 
     switch (sso) {
       case 'google':
-        return this.googleAuthentication(ssoId, sso, project, uniqueId, birthday, invite);
+        return this.googleAuthentication(ssoId, sso, email, project, uniqueId, birthday, invite);
 
       case 'apple':
-        return this.appleAuthentication(ssoId, sso, project, uniqueId, birthday, invite);
+        return this.appleAuthentication(ssoId, sso, email, project, uniqueId, birthday, invite);
 
       default:
         throw new HttpErrors[400]('SSO not recognized');
     }
   }
 
-  private async googleAuthentication(ssoId: string, sso: string, project: string, uniqueId?: string, birthday?: Date, invite?: any): Promise<string> {
+  private async googleAuthentication(ssoId: string, sso: string, email: string, project: string, uniqueId?: string, birthday?: Date, invite?: any): Promise<string> {
 
     // Search for user
     var user = await this.userRepository.findOne({where: {googleId: ssoId}});
 
     // If user doesnt exist, create one
-    if (!user) user = await this.createUser(ssoId, sso, project, uniqueId, birthday, invite);
+    if (!user) user = await this.createUser(ssoId, sso, email, project, uniqueId, birthday, invite);
 
     // Get project secret
     const projectInfo = await this.projectRepository.findById(project);
@@ -61,13 +61,13 @@ export class AuthService {
     return token;
   }
 
-  private async appleAuthentication(ssoId: string, sso: string, project: string, uniqueId?: string, birthday?: Date, invite?: any): Promise<string> {
+  private async appleAuthentication(ssoId: string, sso: string, email: string, project: string, uniqueId?: string, birthday?: Date, invite?: any): Promise<string> {
 
     // Search for user
     var user = await this.userRepository.findOne({where: {appleId: ssoId}});
 
     // If user doesnt exist, create one
-    if (!user) user = await this.createUser(ssoId, sso, project, uniqueId, birthday, invite);
+    if (!user) user = await this.createUser(ssoId, sso, email, project, uniqueId, birthday, invite);
 
     // Get project secret
     const projectInfo = await this.projectRepository.findById(project);
@@ -78,7 +78,7 @@ export class AuthService {
     return token;
   }
 
-  private async createUser(ssoId: string, sso: string, project: string, uniqueId?: string, birthday?: Date, invite?: any): Promise<any> {
+  private async createUser(ssoId: string, sso: string, email: string, project: string, uniqueId?: string, birthday?: Date, invite?: any): Promise<any> {
 
     try {
 
@@ -119,11 +119,12 @@ export class AuthService {
 
         // Checks if person has already been added to a user
         const userFound = await this.userRepository.findOne({where: {personId: person._id}});
-        if (userFound) throw new HttpErrors[400]('Person has already been added to a user');
+        if (userFound) throw new HttpErrors[400](`Person has already been added to a user - ${userFound.email}`);
       }
 
       // Add personId and ACL
       newUser = {
+        email: email,
         personId: person?._id,
         projects: [
           {
@@ -314,12 +315,11 @@ export class AuthService {
 
       return {
         ssoId: googleUser.id,
+        email: googleUser.email,
         signup: true,
         project: projectId,
         inviteInfo: JSON.stringify(inviteInfo),
       }
-    } else if (inviteToken && inviteToken !== 'undefined') {
-
     }
 
     // TODO: verify if user authorized project

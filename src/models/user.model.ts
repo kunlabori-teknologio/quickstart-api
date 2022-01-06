@@ -42,6 +42,11 @@ export class User extends Entity {
   @property({
     type: 'string',
   })
+  email?: string;
+
+  @property({
+    type: 'string',
+  })
   googleId?: string;
 
   @property({

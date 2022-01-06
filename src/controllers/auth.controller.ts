@@ -22,6 +22,11 @@ class SignupSchema extends Model {
   ssoId: string;
 
   @property({
+    required: false,
+  })
+  email: string;
+
+  @property({
     required: true,
     jsonSchema: {
       enum: Object.values(SSOType),
@@ -81,6 +86,7 @@ export class AuthController {
     const token = await this.authService.authenticateUser(
       signupeRequest.ssoId,
       signupeRequest.sso,
+      signupeRequest.email,
       signupeRequest.project,
       signupeRequest.uniqueId,
       signupeRequest.birthday,
@@ -115,6 +121,7 @@ export class AuthController {
     if (userAuthenticated.signup) {
       await this.response.cookie('sso', 'google');
       await this.response.cookie('ssoId', userAuthenticated.ssoId);
+      await this.response.cookie('email', userAuthenticated.email);
       await this.response.cookie('project', userAuthenticated.project);
       await this.response.cookie('inviteInfo', userAuthenticated.inviteInfo);
       await this.response.cookie('returnToLoginUrl', returnToLoginUrl);

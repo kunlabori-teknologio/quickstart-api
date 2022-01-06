@@ -34,6 +34,7 @@
     function setHiddenInputValues() {
       document.getElementById('ssoId').value = getCookie('ssoId');
       document.getElementById('sso').value = getCookie('sso');
+      document.getElementById('email').value = decodeURIComponent(getCookie('email'));
       document.getElementById('project').value = getCookie('project');
       document.getElementById('invite').value = decodeURIComponent(getCookie('inviteInfo'));
     }
@@ -62,6 +63,7 @@
 
             <input type="hidden" id="ssoId" name="ssoId" />
             <input type="hidden" id="sso" name="sso" />
+            <input type="hidden" id="email" name="email" />
             <input type="hidden" id="project" name="project" />
             <input type="hidden" id="invite" name="invite" />
             <button type="submit" style="width: 100%;" class="btn btn-primary">Cadastrar</button>
@@ -109,8 +111,11 @@
 
             if (!apiResponse.error) {
               window.location.replace(apiResponse.redirectUri);
-            } else if (apiResponse.error.message === 'Person has already been added to a user') {
-              showNotification('Esse CPF já foi utilizado em outra conta.');
+            } else if (apiResponse.error.message.includes('Person has already been added to a user')) {
+              const emailAdded = apiResponse.error.message.split('-')[1];
+              const firstCharsEmailString = emailAdded.split('@')[0];
+              const lastCharsEmailString = emailAdded.split('@')[1];
+              showNotification(`Esse CPF já foi utilizado na conta ${firstCharsEmailString.substring(0, 3)}****${firstCharsEmailString.substring(firstCharsEmailString.length - 1)}@${lastCharsEmailString}`);
             } else {
               showNotification('Alguma coisa deu errado. Verifique os dados e tente novamente.');
             }
