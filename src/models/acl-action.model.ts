@@ -1,7 +1,8 @@
-import {Entity, model, property} from '@loopback/repository';
+import {model, property} from '@loopback/repository';
+import {Default} from './default.model';
 
 @model({name: 'AclAction'})
-export class AclAction extends Entity {
+export class AclAction extends Default {
   @property({
     type: 'string',
     id: true,
@@ -17,28 +18,6 @@ export class AclAction extends Entity {
     required: true,
   })
   name: string;
-
-  @property({
-    type: 'string',
-    mongodb: {
-      dataType: 'ObjectId'
-    },
-  })
-  _createdBy?: string;
-
-  @property({
-    type: 'string',
-    mongodb: {
-      dataType: 'ObjectId'
-    },
-  })
-  _ownerId?: string;
-
-  @property({
-    type: 'Date',
-    default: new Date(),
-  })
-  _createdAt?: Date;
 
   constructor(data?: Partial<AclAction>) {
     super(data);

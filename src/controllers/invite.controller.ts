@@ -13,7 +13,6 @@ import {
   getModelSchemaRef, param, patch, post, put, Request, requestBody,
   response, RestBindings
 } from '@loopback/rest';
-import {sign} from 'jsonwebtoken';
 import {Invite} from '../models';
 import {InviteRepository} from '../repositories';
 import {AuthService} from './../services/auth.service';
@@ -52,7 +51,7 @@ export class InviteController {
     invite._createdBy = await this.authService.getCreatedBy(this.request.headers.authorization as string);
 
     // Create token
-    invite.token = await sign({inviterId: invite._createdBy, permissions: invite.permissions, invitedAt: new Date()}, process.env.JWT_SECRET as string, {expiresIn: '1d'});
+    // invite.token = await sign({inviterId: invite._createdBy, permissions: invite.permissions, invitedAt: new Date()}, process.env.JWT_SECRET as string, {expiresIn: '1d'});
 
     return this.inviteRepository.create(invite);
   }

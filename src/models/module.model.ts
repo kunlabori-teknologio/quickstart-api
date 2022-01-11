@@ -1,7 +1,8 @@
-import {Entity, model, property} from '@loopback/repository';
+import {model, property} from '@loopback/repository';
+import {Default} from './default.model';
 
 @model()
-export class Module extends Entity {
+export class Module extends Default {
   @property({
     type: 'string',
     id: true,
@@ -22,28 +23,6 @@ export class Module extends Entity {
     type: 'string',
   })
   description?: string;
-
-  @property({
-    type: 'string',
-    mongodb: {
-      dataType: 'ObjectId'
-    },
-  })
-  _createdBy?: string;
-
-  @property({
-    type: 'string',
-    mongodb: {
-      dataType: 'ObjectId'
-    },
-  })
-  _ownerId?: string;
-
-  @property({
-    type: 'Date',
-    default: new Date(),
-  })
-  _createdAt?: Date;
 
 
   constructor(data?: Partial<Module>) {

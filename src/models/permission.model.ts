@@ -1,4 +1,5 @@
-import {Entity, Model, model, property} from '@loopback/repository';
+import {Model, model, property} from '@loopback/repository';
+import {Default} from './default.model';
 
 // ACL schema model
 @model()
@@ -20,7 +21,7 @@ class ACLSchema extends Model {
 }
 
 @model()
-export class Permission extends Entity {
+export class Permission extends Default {
   @property({
     type: 'string',
     id: true,
@@ -55,28 +56,6 @@ export class Permission extends Entity {
     required: true,
   })
   acl: ACLSchema[];
-
-  @property({
-    type: 'string',
-    mongodb: {
-      dataType: 'ObjectId'
-    },
-  })
-  _createdBy?: string;
-
-  @property({
-    type: 'string',
-    mongodb: {
-      dataType: 'ObjectId'
-    },
-  })
-  _ownerId?: string;
-
-  @property({
-    type: 'Date',
-    default: new Date(),
-  })
-  _createdAt?: Date;
 
   constructor(data?: Partial<Permission>) {
     super(data);

@@ -1,40 +1,32 @@
-import {Entity, model, property} from '@loopback/repository';
-
-// SSO types enum
-enum type {
-  GOOGLE = 'person',
-  APPLE = 'company',
-}
+import {model, property} from '@loopback/repository';
+import {Default} from '.';
 
 @model()
-export class Invite extends Entity {
+export class Invite extends Default {
   @property({
     type: 'string',
     id: true,
     generated: true,
+    mongodb: {
+      dataType: 'ObjectId'
+    },
   })
   _id?: string;
 
   @property({
     type: 'string',
-    required: true,
-    jsonSchema: {
-      enum: Object.values(type),
-    }
   })
-  type: string;
+  type?: string;
 
   @property({
     type: 'string',
-    required: true,
   })
-  email: string;
+  email?: string;
 
   @property({
     type: 'string',
-    required: true,
   })
-  name: string;
+  name?: string;
 
   @property({
     type: 'array',
@@ -42,32 +34,6 @@ export class Invite extends Entity {
   })
   permissions?: any[];
 
-  @property({
-    type: 'string',
-  })
-  token?: string;
-
-  @property({
-    type: 'string',
-    mongodb: {
-      dataType: 'ObjectId'
-    },
-  })
-  _createdBy?: string;
-
-  @property({
-    type: 'string',
-    mongodb: {
-      dataType: 'ObjectId'
-    },
-  })
-  _ownerId?: string;
-
-  @property({
-    type: 'Date',
-    default: new Date(),
-  })
-  _createdAt?: Date;
 
   constructor(data?: Partial<Invite>) {
     super(data);
