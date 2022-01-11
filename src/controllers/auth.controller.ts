@@ -72,6 +72,41 @@ export class AuthController {
     private userService: UserService,
   ) { }
 
+  @get('auth/google-signin')
+  async googleLogin(
+    @param.query.string('projectId') project: string,
+    @param.query.string('inviteToken') inviteToken: string,
+  ): Promise<any> {
+
+    const url = await this.authService.getGoogleAuthURL(project, inviteToken);
+
+    return this.response.redirect(url);
+  }
+
+  @visibility(OperationVisibility.UNDOCUMENTED)
+  @get('auth/google')
+  async authenticateUser(
+    @param.query.string('code') code: string,
+    @param.query.string('state') state: string,
+  ): Promise<void> {
+    const userAuthenticated = await this.authService.getGoogleAuthenticatedUser(code, state);
+
+    let returnToLoginUrl = `auth/google-signin?projectId=${userAuthenticated.project}`;
+    if (state.split('&')[1].substring(12) !== 'undefined') returnToLoginUrl += `&inviteToken=${state.split('&')[1].substring(12)}`;
+
+    if (userAuthenticated.signup) {
+      await this.response.cookie('sso', 'google');
+      await this.response.cookie('ssoId', userAuthenticated.ssoId);
+      await this.response.cookie('email', userAuthenticated.email);
+      await this.response.cookie('project', userAuthenticated.project);
+      await this.response.cookie('inviteInfo', userAuthenticated.inviteInfo);
+      await this.response.cookie('returnToLoginUrl', returnToLoginUrl);
+      return this.response.redirect(`/signup.html`);
+    }
+
+    return this.response.redirect(userAuthenticated.redirectUri);
+  }
+
   @visibility(OperationVisibility.UNDOCUMENTED)
   @post('auth/signup')
   async signup(
@@ -94,41 +129,6 @@ export class AuthController {
     );
 
     return {redirectUri: `${process.env.UI_SPLASH_URI}/${token}`};
-  }
-
-  @get('auth/google-signin')
-  async googleLogin(
-    @param.query.string('projectId') project: string,
-    @param.query.string('inviteToken') inviteToken: string,
-  ): Promise<any> {
-
-    const url = await this.authService.getGoogleAuthURL('auth/google', project, inviteToken);
-
-    return this.response.redirect(url);
-  }
-
-  @visibility(OperationVisibility.UNDOCUMENTED)
-  @get('auth/google')
-  async authenticateUser(
-    @param.query.string('code') code: string,
-    @param.query.string('state') state: string,
-  ): Promise<void> {
-    const userAuthenticated = await this.authService.authenticateGoogleUser('auth/google', code, state);
-
-    let returnToLoginUrl = `auth/google-signin?projectId=${userAuthenticated.project}`;
-    if (state.split('&')[1].substring(12) !== 'undefined') returnToLoginUrl += `&inviteToken=${state.split('&')[1].substring(12)}`;
-
-    if (userAuthenticated.signup) {
-      await this.response.cookie('sso', 'google');
-      await this.response.cookie('ssoId', userAuthenticated.ssoId);
-      await this.response.cookie('email', userAuthenticated.email);
-      await this.response.cookie('project', userAuthenticated.project);
-      await this.response.cookie('inviteInfo', userAuthenticated.inviteInfo);
-      await this.response.cookie('returnToLoginUrl', returnToLoginUrl);
-      return this.response.redirect(`/signup.html`);
-    }
-
-    return this.response.redirect(userAuthenticated.redirectUri);
   }
 
   @get('auth/token')
