@@ -1,5 +1,5 @@
 import {authenticate} from '@loopback/authentication';
-import {inject, service} from '@loopback/core';
+import {inject} from '@loopback/core';
 import {
   Count,
   CountSchema,
@@ -10,13 +10,12 @@ import {
 } from '@loopback/repository';
 import {
   del, get,
-  getModelSchemaRef, param, patch, post, put, Request, requestBody,
-  response,
-  RestBindings
+  getModelSchemaRef, param, patch, post, put, requestBody,
+  response
 } from '@loopback/rest';
+import {SecurityBindings, securityId, UserProfile} from '@loopback/security';
 import {Permission} from '../models';
 import {PermissionRepository} from '../repositories';
-import {AuthService} from './../services/auth.service';
 
 @authenticate('autentikigo')
 export class PermissionController {
@@ -24,11 +23,8 @@ export class PermissionController {
     @repository(PermissionRepository)
     public permissionRepository: PermissionRepository,
 
-    @inject(RestBindings.Http.REQUEST)
-    private request: Request,
-
-    @service(AuthService)
-    private authService: AuthService,
+    @inject(SecurityBindings.USER, {optional: true})
+    private currentUser?: UserProfile,
   ) { }
 
   @post('/permissions')
@@ -49,7 +45,7 @@ export class PermissionController {
     })
     permission: Omit<Permission, '_id'>,
   ): Promise<Permission> {
-    // permission._createdBy = await this.authService.getCreatedBy(this.request.headers.authorization as string);
+    permission._createdBy = this.currentUser?.[securityId] as string;
     return this.permissionRepository.create(permission);
   }
 

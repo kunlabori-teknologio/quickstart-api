@@ -1,5 +1,5 @@
 import {authenticate} from '@loopback/authentication';
-import {inject, service} from '@loopback/core';
+import {inject} from '@loopback/core';
 import {
   Count,
   CountSchema,
@@ -10,12 +10,12 @@ import {
 } from '@loopback/repository';
 import {
   del, get,
-  getModelSchemaRef, param, patch, post, put, Request, requestBody,
-  response, RestBindings
+  getModelSchemaRef, param, patch, post, put, requestBody,
+  response
 } from '@loopback/rest';
+import {SecurityBindings, securityId, UserProfile} from '@loopback/security';
 import {Invite} from '../models';
 import {InviteRepository} from '../repositories';
-import {AuthService} from './../services/auth.service';
 
 @authenticate('autentikigo')
 export class InviteController {
@@ -23,11 +23,8 @@ export class InviteController {
     @repository(InviteRepository)
     public inviteRepository: InviteRepository,
 
-    @inject(RestBindings.Http.REQUEST)
-    private request: Request,
-
-    @service(AuthService)
-    private authService: AuthService,
+    @inject(SecurityBindings.USER, {optional: true})
+    private currentUser?: UserProfile,
   ) { }
 
   @post('/invites')
@@ -48,7 +45,7 @@ export class InviteController {
     })
     invite: Omit<Invite, '_id'>,
   ): Promise<Invite> {
-    // invite._createdBy = await this.authService.getCreatedBy(this.request.headers.authorization as string);
+    invite._createdBy = this.currentUser?.[securityId] as string;
 
     // Create token
     // invite.token = await sign({inviterId: invite._createdBy, permissions: invite.permissions, invitedAt: new Date()}, process.env.JWT_SECRET as string, {expiresIn: '1d'});

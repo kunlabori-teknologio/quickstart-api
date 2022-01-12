@@ -63,29 +63,13 @@ export class AuthController {
     return this.authService.createUser(authorization, signupeRequest.uniqueId, signupeRequest.birthday);
   }
 
-  // @get('auth/refresh-token/{projectSecret}')
-  // async refreshToken(
-  //   @param.path.string('projectSecret') projectSecret: string,
-  // ): Promise<any> {
-  //   let authorization = this.request.headers.authorization as string;
-  //   authorization = authorization.split(' ')[1];
-
-  //   const decodedToken = await this.authService.getTokenPayload(authorization);
-
-  //   // Check project
-  //   const credentialsAreValid = await this.authService.checkProjectAndSecret(decodedToken.projectId, projectSecret);
-
-  //   if (!credentialsAreValid) throw new HttpErrors['400']('Invalid credentials');
-
-  //   const token = await this.authService.createToken({
-  //     userId: decodedToken.userId,
-  //     projectId: decodedToken.projectId
-  //   }, process.env.JWT_SECRET as string, '10m');
-  //   const user = await this.userService.getUserInfo(token);
-
-  //   return {
-  //     token,
-  //     user,
-  //   };
-  // }
+  @get('auth/refresh-token/{projectSecret}')
+  async refreshToken(
+    @param.path.string('projectSecret') projectSecret: string,
+  ): Promise<string> {
+    let authorization = this.request.headers.authorization as string;
+    authorization = authorization.split(' ')[1];
+    const token = await this.authService.refreshToken(authorization, projectSecret);
+    return token;
+  }
 }

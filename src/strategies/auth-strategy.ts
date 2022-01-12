@@ -2,7 +2,7 @@ import {AuthenticationStrategy} from '@loopback/authentication';
 import {model} from '@loopback/repository';
 import {HttpErrors, Request} from '@loopback/rest';
 import {securityId, UserProfile} from '@loopback/security';
-import {verify} from 'jsonwebtoken';
+import {JwtPayload, verify} from 'jsonwebtoken';
 
 @model()
 export class User implements UserProfile {
@@ -27,9 +27,9 @@ export class AutentikigoStrategy implements AuthenticationStrategy {
       const secret = process.env.JWT_SECRET;
 
       // Get user id
-      const decoded = await verify(token as string, secret as string);
-      // const decoded = await decode(token as string);
-      const userProfile = this.convertIdToUserProfile((decoded as any).userId);
+      const decoded = verify(token!, secret!) as JwtPayload;
+      // const decoded = decode(token as string);
+      const userProfile = this.convertIdToUserProfile(decoded.id);
       return userProfile;
 
     } catch (e) {

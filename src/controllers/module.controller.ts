@@ -1,5 +1,5 @@
 import {authenticate} from '@loopback/authentication';
-import {inject, service} from '@loopback/core';
+import {inject} from '@loopback/core';
 import {
   Count,
   CountSchema,
@@ -8,10 +8,10 @@ import {
   repository,
   Where
 } from '@loopback/repository';
-import {del, get, getModelSchemaRef, param, patch, post, put, Request, requestBody, response, RestBindings} from '@loopback/rest';
+import {del, get, getModelSchemaRef, param, patch, post, put, requestBody, response} from '@loopback/rest';
+import {SecurityBindings, securityId, UserProfile} from '@loopback/security';
 import {Module} from '../models';
 import {ModuleRepository} from '../repositories';
-import {AuthService} from './../services/auth.service';
 
 @authenticate('autentikigo')
 export class ModuleController {
@@ -19,11 +19,8 @@ export class ModuleController {
     @repository(ModuleRepository)
     public moduleRepository: ModuleRepository,
 
-    @inject(RestBindings.Http.REQUEST)
-    private request: Request,
-
-    @service(AuthService)
-    private authService: AuthService,
+    @inject(SecurityBindings.USER, {optional: true})
+    private currentUser?: UserProfile,
   ) { }
 
   @post('/modules')
@@ -44,7 +41,7 @@ export class ModuleController {
     })
     module: Module,
   ): Promise<Module> {
-    // module._createdBy = await this.authService.getCreatedBy(this.request.headers.authorization as string);
+    module._createdBy = this.currentUser?.[securityId] as string;
     return this.moduleRepository.create(module);
   }
 

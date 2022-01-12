@@ -5,9 +5,8 @@ export class Default extends Entity {
 
   @property({
     type: 'string',
-    required: true,
   })
-  _createdBy: string;
+  _createdBy?: string;
 
   @property({
     type: 'date',

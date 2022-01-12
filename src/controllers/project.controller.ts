@@ -1,5 +1,5 @@
 import {authenticate} from '@loopback/authentication';
-import {inject, service} from '@loopback/core';
+import {inject} from '@loopback/core';
 import {
   Count,
   CountSchema,
@@ -8,10 +8,10 @@ import {
   repository,
   Where
 } from '@loopback/repository';
-import {del, get, getModelSchemaRef, param, patch, post, put, Request, requestBody, response, RestBindings} from '@loopback/rest';
+import {del, get, getModelSchemaRef, param, patch, post, put, requestBody, response} from '@loopback/rest';
+import {SecurityBindings, securityId, UserProfile} from '@loopback/security';
 import {Project} from '../models';
 import {ProjectRepository} from '../repositories';
-import {AuthService} from './../services/auth.service';
 
 @authenticate('autentikigo')
 export class ProjectController {
@@ -19,11 +19,8 @@ export class ProjectController {
     @repository(ProjectRepository)
     public projectRepository: ProjectRepository,
 
-    @inject(RestBindings.Http.REQUEST)
-    private request: Request,
-
-    @service(AuthService)
-    private authService: AuthService,
+    @inject(SecurityBindings.USER, {optional: true})
+    private currentUser?: UserProfile,
   ) { }
 
   @post('/projects')
@@ -44,7 +41,7 @@ export class ProjectController {
     })
     project: Project,
   ): Promise<Project> {
-    // project._createdBy = await this.authService.getCreatedBy(this.request.headers.authorization as string);
+    project._createdBy = this.currentUser?.[securityId] as string;
     return this.projectRepository.create(project);
   }
 
