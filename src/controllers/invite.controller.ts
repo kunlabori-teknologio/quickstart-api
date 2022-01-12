@@ -48,7 +48,7 @@ export class InviteController {
     })
     invite: Omit<Invite, '_id'>,
   ): Promise<Invite> {
-    invite._createdBy = await this.authService.getCreatedBy(this.request.headers.authorization as string);
+    // invite._createdBy = await this.authService.getCreatedBy(this.request.headers.authorization as string);
 
     // Create token
     // invite.token = await sign({inviterId: invite._createdBy, permissions: invite.permissions, invitedAt: new Date()}, process.env.JWT_SECRET as string, {expiresIn: '1d'});

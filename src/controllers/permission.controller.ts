@@ -49,7 +49,7 @@ export class PermissionController {
     })
     permission: Omit<Permission, '_id'>,
   ): Promise<Permission> {
-    permission._createdBy = await this.authService.getCreatedBy(this.request.headers.authorization as string);
+    // permission._createdBy = await this.authService.getCreatedBy(this.request.headers.authorization as string);
     return this.permissionRepository.create(permission);
   }
 

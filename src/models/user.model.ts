@@ -56,6 +56,11 @@ export class User extends Entity {
 
   @property({
     type: 'string',
+  })
+  authToken?: string;
+
+  @property({
+    type: 'string',
     mongodb: {
       dataType: 'ObjectId'
     },

@@ -44,7 +44,7 @@ export class ProjectController {
     })
     project: Project,
   ): Promise<Project> {
-    project._createdBy = await this.authService.getCreatedBy(this.request.headers.authorization as string);
+    // project._createdBy = await this.authService.getCreatedBy(this.request.headers.authorization as string);
     return this.projectRepository.create(project);
   }
 

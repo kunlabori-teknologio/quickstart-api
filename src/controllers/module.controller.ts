@@ -44,7 +44,7 @@ export class ModuleController {
     })
     module: Module,
   ): Promise<Module> {
-    module._createdBy = await this.authService.getCreatedBy(this.request.headers.authorization as string);
+    // module._createdBy = await this.authService.getCreatedBy(this.request.headers.authorization as string);
     return this.moduleRepository.create(module);
   }
 

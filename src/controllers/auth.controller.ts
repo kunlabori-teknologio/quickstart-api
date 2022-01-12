@@ -1,61 +1,12 @@
 import {inject, service} from '@loopback/core';
-import {Model, model, property} from '@loopback/repository';
 import {
-  get, getModelSchemaRef, HttpErrors, OperationVisibility, param, post, Request, requestBody, Response,
+  get, getModelSchemaRef, OperationVisibility, param, post, Request, requestBody, Response,
   RestBindings,
   visibility
 } from '@loopback/rest';
-import {AuthService, UserService} from '../services';
-
-// SSO types enum
-enum SSOType {
-  GOOGLE = 'google',
-  APPLE = 'apple',
-}
-
-// Signup schema model
-@model()
-class SignupSchema extends Model {
-  @property({
-    required: true,
-  })
-  ssoId: string;
-
-  @property({
-    required: false,
-  })
-  email: string;
-
-  @property({
-    required: true,
-    jsonSchema: {
-      enum: Object.values(SSOType),
-    }
-  })
-  sso: string;
-
-  @property({
-    required: true,
-  })
-  project: string;
-
-  @property({
-    required: true,
-    description: 'Person/Company Unique ID such as CPF and CNPJ',
-  })
-  uniqueId: string;
-
-  @property({
-    required: true,
-  })
-  birthday: Date;
-
-  @property({
-    required: false,
-    default: {},
-  })
-  invite?: any;
-}
+import {URLSearchParams} from 'url';
+import {Signup} from '../models/signup.model';
+import {AuthService} from '../services';
 
 export class AuthController {
   constructor(
@@ -67,124 +18,74 @@ export class AuthController {
 
     @service(AuthService)
     private authService: AuthService,
-
-    @service(UserService)
-    private userService: UserService,
   ) { }
 
   @get('auth/google-signin')
   async googleLogin(
     @param.query.string('projectId') project: string,
     @param.query.string('inviteToken') inviteToken: string,
-  ): Promise<any> {
-
+  ): Promise<void> {
     const url = await this.authService.getGoogleAuthURL(project, inviteToken);
-
     return this.response.redirect(url);
   }
 
   @visibility(OperationVisibility.UNDOCUMENTED)
   @get('auth/google')
-  async authenticateUser(
+  async getUserDataFromGoogle(
     @param.query.string('code') code: string,
     @param.query.string('state') state: string,
   ): Promise<void> {
-    const userAuthenticated = await this.authService.getGoogleAuthenticatedUser(code, state);
-
-    let returnToLoginUrl = `auth/google-signin?projectId=${userAuthenticated.project}`;
-    if (state.split('&')[1].substring(12) !== 'undefined') returnToLoginUrl += `&inviteToken=${state.split('&')[1].substring(12)}`;
-
-    if (userAuthenticated.signup) {
-      await this.response.cookie('sso', 'google');
-      await this.response.cookie('ssoId', userAuthenticated.ssoId);
-      await this.response.cookie('email', userAuthenticated.email);
-      await this.response.cookie('project', userAuthenticated.project);
-      await this.response.cookie('inviteInfo', userAuthenticated.inviteInfo);
-      await this.response.cookie('returnToLoginUrl', returnToLoginUrl);
-      return this.response.redirect(`/signup.html`);
-    }
-
-    return this.response.redirect(userAuthenticated.redirectUri);
+    const googleUser: SsoUser = await this.authService.getGoogleAuthenticatedUser(code);
+    const stateParams = new URLSearchParams(state);
+    const token: string = await this.authService.getTokenToAuthenticateUser(googleUser, stateParams.get('project')!, stateParams.get('invite')!);
+    return this.response.redirect(`${process.env.UI_SPLASH_URI}?token=${token}`);
   }
 
-  @visibility(OperationVisibility.UNDOCUMENTED)
+  @get('auth/get-user')
+  async getSumaryUserInfo(): Promise<SumaryUser> {
+    let authorization = this.request.headers.authorization!;
+    authorization = authorization.split(' ')[1];
+    const user = await this.authService.getUser(authorization);
+    return user;
+  }
+
   @post('auth/signup')
   async signup(
     @requestBody({
       content: {
-        'application/json': {schema: getModelSchemaRef(SignupSchema)}
+        'application/json': {schema: getModelSchemaRef(Signup)}
       }
     })
-    signupeRequest: SignupSchema
-  ): Promise<any> {
-
-    const token = await this.authService.authenticateUser(
-      signupeRequest.ssoId,
-      signupeRequest.sso,
-      signupeRequest.email,
-      signupeRequest.project,
-      signupeRequest.uniqueId,
-      signupeRequest.birthday,
-      signupeRequest.invite,
-    );
-
-    return {redirectUri: `${process.env.UI_SPLASH_URI}/${token}`};
-  }
-
-  @get('auth/token')
-  async getToken(
-    @param.query.string('code') code: string,
-    @param.query.string('secret') secret: string,
-  ): Promise<any> {
-
-    const decodedToken = await this.authService.verifyToken(code, secret);
-
-    const token = await this.authService.createToken({
-      userId: decodedToken.userId,
-      projectId: decodedToken.projectId
-    }, process.env.JWT_SECRET as string, '10m');
-    const user = await this.userService.getUserInfo(token);
-
-    return {
-      token,
-      user,
-    };
-  }
-
-  @get('auth/get-user')
-  async getUser(): Promise<any> {
-
-    let authorization = this.request.headers.authorization as string;
+    signupeRequest: Signup
+  ): Promise<SumaryUser> {
+    let authorization = this.request.headers.authorization!;
     authorization = authorization.split(' ')[1];
-
-    const user = await this.userService.getUserInfo(authorization);
-
-    return user;
+    return this.authService.createUser(authorization, signupeRequest.uniqueId, signupeRequest.birthday);
   }
 
-  @get('auth/refresh-token/{projectSecret}')
-  async refreshToken(
-    @param.path.string('projectSecret') projectSecret: string,
-  ): Promise<any> {
-    let authorization = this.request.headers.authorization as string;
-    authorization = authorization.split(' ')[1];
+  // @get('auth/refresh-token/{projectSecret}')
+  // async refreshToken(
+  //   @param.path.string('projectSecret') projectSecret: string,
+  // ): Promise<any> {
+  //   let authorization = this.request.headers.authorization as string;
+  //   authorization = authorization.split(' ')[1];
 
-    const decodedToken = await this.authService.getTokenPayload(authorization);
+  //   const decodedToken = await this.authService.getTokenPayload(authorization);
 
-    // Check project
-    const credentialsAreValid = await this.authService.checkProjectAndSecret(decodedToken.projectId, projectSecret);
+  //   // Check project
+  //   const credentialsAreValid = await this.authService.checkProjectAndSecret(decodedToken.projectId, projectSecret);
 
-    if (!credentialsAreValid) throw new HttpErrors['400']('Invalid credentials');
+  //   if (!credentialsAreValid) throw new HttpErrors['400']('Invalid credentials');
 
-    const token = await this.authService.createToken({
-      userId: decodedToken.userId,
-      projectId: decodedToken.projectId
-    }, process.env.JWT_SECRET as string, '10m');
-    const user = await this.userService.getUserInfo(token);
+  //   const token = await this.authService.createToken({
+  //     userId: decodedToken.userId,
+  //     projectId: decodedToken.projectId
+  //   }, process.env.JWT_SECRET as string, '10m');
+  //   const user = await this.userService.getUserInfo(token);
 
-    return {
-      token,
-      user,
-    };
-  }
+  //   return {
+  //     token,
+  //     user,
+  //   };
+  // }
 }

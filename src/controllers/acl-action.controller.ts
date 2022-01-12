@@ -44,7 +44,7 @@ export class AclActionController {
     })
     aclAction: AclAction,
   ): Promise<AclAction> {
-    aclAction._createdBy = await this.authService.getCreatedBy(this.request.headers.authorization as string);
+    // aclAction._createdBy = await this.authService.getCreatedBy(this.request.headers.authorization as string);
     return this.aclActionRepository.create(aclAction);
   }
 
