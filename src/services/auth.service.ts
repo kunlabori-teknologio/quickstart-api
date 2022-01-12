@@ -80,8 +80,8 @@ export class AuthService {
         userId: user._id!,
         personInfo: personInfo as SumaryPerson,
       };
-    } catch (err) {
-      throw new HttpErrors[400](err);
+    } catch (e) {
+      throw new HttpErrors[400](e.message);
     }
   }
 
@@ -130,8 +130,8 @@ export class AuthService {
         userId: tokenDecoded.id,
         personInfo: person as SumaryPerson,
       }
-    } catch (err) {
-      throw new HttpErrors[400](err);
+    } catch (e) {
+      throw new HttpErrors[400](e.message);
     }
   }
 
@@ -147,8 +147,8 @@ export class AuthService {
         inviteId: decoded.inviteId,
       }, process.env.JWT_SECRET!, {expiresIn: '5m'});
       return token;
-    } catch (err) {
-      throw new HttpErrors[400](err)
+    } catch (e) {
+      throw new HttpErrors[400](e.message)
     }
   }
 }

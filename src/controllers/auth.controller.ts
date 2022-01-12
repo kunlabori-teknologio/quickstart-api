@@ -1,6 +1,6 @@
 import {inject, service} from '@loopback/core';
 import {
-  get, getModelSchemaRef, OperationVisibility, param, post, Request, requestBody, Response,
+  get, getModelSchemaRef, HttpErrors, OperationVisibility, param, post, Request, requestBody, Response,
   RestBindings,
   visibility
 } from '@loopback/rest';
@@ -44,6 +44,7 @@ export class AuthController {
   @get('auth/get-user')
   async getSumaryUserInfo(): Promise<SumaryUser> {
     let authorization = this.request.headers.authorization!;
+    if (!authorization) throw new HttpErrors[401]('Unauthorized')
     authorization = authorization.split(' ')[1];
     const user = await this.authService.getUser(authorization);
     return user;
@@ -59,6 +60,7 @@ export class AuthController {
     signupeRequest: Signup
   ): Promise<SumaryUser> {
     let authorization = this.request.headers.authorization!;
+    if (!authorization) throw new HttpErrors[401]('Unauthorized')
     authorization = authorization.split(' ')[1];
     return this.authService.createUser(authorization, signupeRequest.uniqueId, signupeRequest.birthday);
   }
@@ -68,6 +70,7 @@ export class AuthController {
     @param.path.string('projectSecret') projectSecret: string,
   ): Promise<string> {
     let authorization = this.request.headers.authorization as string;
+    if (!authorization) throw new HttpErrors[401]('Unauthorized')
     authorization = authorization.split(' ')[1];
     const token = await this.authService.refreshToken(authorization, projectSecret);
     return token;
