@@ -4,8 +4,11 @@ import {HttpErrors} from '@loopback/rest';
 import {google} from 'googleapis';
 import jwt, {JwtPayload} from 'jsonwebtoken';
 import {InviteRepository, PersonRepository, ProjectRepository, UserRepository} from '../repositories';
-import {compareDates, convertBirthdayStringToDate} from '../utils/date-manipulation-functions';
+import {compareDates} from '../utils/date-manipulation-functions';
+import {checkIfPersonOrCompanyUniqueId} from '../utils/general-functions';
 import {hideEmailString} from '../utils/string-manipulation-functions';
+import {PersonDTO} from './../dto/person.dto';
+import {CompanyRepository} from './../repositories/company.repository';
 
 const fetch = require('node-fetch');
 
@@ -13,16 +16,14 @@ const fetch = require('node-fetch');
 export class AuthService {
   constructor(
     /* Add @inject to inject parameters */
-
     @repository(UserRepository)
     private userRepository: UserRepository,
-
     @repository(PersonRepository)
     private personRepository: PersonRepository,
-
+    @repository(CompanyRepository)
+    private companyRepository: CompanyRepository,
     @repository(InviteRepository)
     private inviteRepository: InviteRepository,
-
     @repository(ProjectRepository)
     private projectRepository: ProjectRepository,
   ) { }
@@ -39,10 +40,11 @@ export class AuthService {
   public async getGoogleAuthURL(project: string, inviteToken?: string): Promise<string> {
     const url = this.googleOAuth2Client.generateAuthUrl({
       access_type: "offline",
-      scope: [
-        "https://www.googleapis.com/auth/userinfo.profile",
-        "https://www.googleapis.com/auth/userinfo.email",
-      ],
+      scope:
+        [
+          "https://www.googleapis.com/auth/userinfo.profile",
+          "https://www.googleapis.com/auth/userinfo.email",
+        ],
       state: `project=${project}&inviteToken=${inviteToken}`,
     });
     return url;
@@ -88,30 +90,26 @@ export class AuthService {
   public async createUser(authToken: string, uniqueId: string, birthday: Date): Promise<SumaryUser> {
     try {
       const tokenDecoded = jwt.verify(authToken, process.env.JWT_SECRET!) as JwtPayload;
-      let person = await this.personRepository.findOne({where: {uniqueId: uniqueId}});
-      if (!person) {
-        // Get person info in CPF/CNPJ API
-        const response = await fetch(`${process.env.API_CPF_CNPJ}/${uniqueId}`);
-        const personFromAPI = await response.json();
-        const birthdayAPI = await convertBirthdayStringToDate(personFromAPI.nascimento);
+      const userType = checkIfPersonOrCompanyUniqueId(uniqueId, 'br');
+      let profile = userType === 'person' ?
+        await this.personRepository.findOne({where: {uniqueId: uniqueId}}) :
+        await this.companyRepository.findOne({where: {uniqueId: uniqueId}});
+      if (!profile) {
+        // Get person/company info in CPF/CNPJ API
+        const response = await fetch(`${process.env.API_CPF_CNPJ}/${userType === 'person' ? 2 : 6}/${uniqueId}`);
+        const personCompanyFromAPI: IPersonFromAPI = await response.json();
         // Create person
-        person = await this.personRepository.create({
-          name: personFromAPI.nome,
-          uniqueId: personFromAPI.cpf.replace(/\D/g, ""),
-          birthday: birthdayAPI,
-          gender: personFromAPI.genero,
-          mother: personFromAPI.mae,
-          country: 'br'
-        });
+        const profileDTO: PersonDTO = new PersonDTO(personCompanyFromAPI);
+        profile = await this.personRepository.create(profileDTO);
         // Check birthday
-        const datesCompare = await compareDates(birthdayAPI, birthday as Date);
+        const datesCompare: boolean = compareDates(profileDTO.birthday, birthday as Date);
         if (!datesCompare) throw new HttpErrors[400]('Birthday incorrect');
       } else {
         // Check birthday
-        const datesCompare = await compareDates(person.birthday, birthday as Date);
+        const datesCompare = await compareDates(profile.birthday, birthday as Date);
         if (!datesCompare) throw new HttpErrors[400]('Birthday incorrect');
         // Checks if person has already been added to a user
-        const userFound = await this.userRepository.findOne({where: {personId: person._id}});
+        const userFound = await this.userRepository.findOne({where: {personId: profile._id}});
         if (userFound) throw new HttpErrors[400](`The unique id has already been used in ${hideEmailString(userFound.email!)} account!`);
       }
       // Create user
@@ -125,10 +123,10 @@ export class AuthService {
           invitedAt: invite._createdAt,
         });
       }
-      await this.userRepository.updateById(tokenDecoded.id, {personId: person._id, projects, inviters});
+      await this.userRepository.updateById(tokenDecoded.id, {personId: profile._id, projects, inviters});
       return {
         userId: tokenDecoded.id,
-        personInfo: person as SumaryPerson,
+        personInfo: profile as SumaryPerson,
       }
     } catch (e) {
       throw new HttpErrors[400](e.message);

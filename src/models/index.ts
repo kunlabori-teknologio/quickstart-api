@@ -8,3 +8,4 @@ export * from './project.model';
 export * from './user.model';
 
 export * from './invite.model';
+export * from './company.model';
