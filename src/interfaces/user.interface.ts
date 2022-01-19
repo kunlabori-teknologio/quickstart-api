@@ -2,7 +2,7 @@ interface IProject {
   id: string,
 }
 
-interface IInvite {
+interface IInvitation {
   id: string;
   projectId: string;
   invitedAt: Date;

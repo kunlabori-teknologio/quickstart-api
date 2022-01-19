@@ -1,7 +1,7 @@
 import { /* inject, */ BindingScope, injectable} from '@loopback/core';
 import {repository} from '@loopback/repository';
-import {Invite, Project, User} from '../models';
-import {InviteRepository, ProjectRepository, UserRepository} from '../repositories';
+import {Invitation, Project, User} from '../models';
+import {InvitationRepository, ProjectRepository, UserRepository} from '../repositories';
 import {userTypes} from '../utils/general-functions';
 
 class UserProjectsDTO implements IProject {
@@ -10,12 +10,12 @@ class UserProjectsDTO implements IProject {
     this.id = project._id as string;
   }
 }
-class UserInvitesDTO implements IInvite {
+class UserInvitationDTO implements IInvitation {
   id: string;
   projectId: string;
   invitedAt: Date;
   constructor(
-    {invite, projectId}: {invite: Invite, projectId: string}
+    {invite, projectId}: {invite: Invitation, projectId: string}
   ) {
     this.id = invite._id as string;
     this.projectId = projectId;
@@ -31,8 +31,8 @@ export class UserService {
     private userRepository: UserRepository,
     @repository(ProjectRepository)
     private projectRepository: ProjectRepository,
-    @repository(InviteRepository)
-    private inviteRepository: InviteRepository,
+    @repository(InvitationRepository)
+    private invitationRepository: InvitationRepository,
   ) { }
 
   /*
@@ -44,7 +44,7 @@ export class UserService {
     // Get user
     let user = await this.userRepository.findById(id),
       projects = user.projects,
-      invites = user.invites;
+      invitations = user.invitations;
     // Update projects
     if (projectIds.length) {
       const userProjects = await this.projectRepository.find({where: {or: projectIds.map(projectId => {return {'_id': projectId}})}});
@@ -53,16 +53,16 @@ export class UserService {
         ...userProjects.map(project => new UserProjectsDTO(project)),
       ];
     }
-    // Update invites
+    // Update invitations
     if (inviteIds.length) {
-      const userInvites = await this.inviteRepository.find({where: {or: inviteIds.map(inviteId => {return {'_id': inviteId}})}});
-      invites = [
-        ...(invites || []),
-        ...userInvites.map((invite, i) => new UserInvitesDTO({invite, projectId: projectIds[i]})),
+      const userInvitations = await this.invitationRepository.find({where: {or: inviteIds.map(inviteId => {return {'_id': inviteId}})}});
+      invitations = [
+        ...(invitations || []),
+        ...userInvitations.map((invite, i) => new UserInvitationDTO({invite, projectId: projectIds[i]})),
       ];
     }
     // Update user
-    await this.userRepository.updateById(id, {projects, invites, [`${userType}Id`]: profileId});
+    await this.userRepository.updateById(id, {projects, invitations, [`${userType}Id`]: profileId});
     const userUpdated = await this.userRepository.findById(id);
     return userUpdated;
   }

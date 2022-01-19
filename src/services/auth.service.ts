@@ -8,6 +8,7 @@ import {Company, Person} from '../models';
 import {PersonRepository, ProjectRepository, UserRepository} from '../repositories';
 import {compareDates} from '../utils/date-manipulation-functions';
 import {getUserType, userTypes} from '../utils/general-functions';
+import {hideEmailString} from '../utils/string-manipulation-functions';
 import {PersonDTO} from './../dto/person.dto';
 import {CompanyRepository} from './../repositories/company.repository';
 import {UserService} from './user.service';
@@ -103,6 +104,9 @@ export class AuthService {
       // Check birthday
       const datesCompare: boolean = compareDates(profile.birthday, birthday);
       if (!datesCompare) throw new HttpErrors[400]('Birthday incorrect');
+      // Check if profile has already added in some user
+      const userWithSameProfile = await this.userRepository.findOne({where: {[`${userType}Id`]: profile._id}});
+      if (userWithSameProfile) throw new HttpErrors[400](`The unique id is already been used in the ${hideEmailString(userWithSameProfile.email as string)} account`);
       // Put profile, project and invite in user
       const user = await this.useService.updateUser({
         userType,

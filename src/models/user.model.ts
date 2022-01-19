@@ -58,7 +58,7 @@ export class User extends Entity {
     type: 'array',
     itemType: 'any',
   })
-  invites?: IInvite[];
+  invitations?: IInvitation[];
 
   @property({
     type: 'string',

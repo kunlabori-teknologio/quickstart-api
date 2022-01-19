@@ -2,7 +2,7 @@ import {model, property} from '@loopback/repository';
 import {Default} from '.';
 
 @model()
-export class Invite extends Default {
+export class Invitation extends Default {
   @property({
     type: 'string',
     id: true,
@@ -35,13 +35,13 @@ export class Invite extends Default {
   permissions?: any[];
 
 
-  constructor(data?: Partial<Invite>) {
+  constructor(data?: Partial<Invitation>) {
     super(data);
   }
 }
 
-export interface InviteRelations {
+export interface InvitationRelations {
   // describe navigational properties here
 }
 
-export type InviteWithRelations = Invite & InviteRelations;
+export type InvitationWithRelations = Invitation & InvitationRelations;
