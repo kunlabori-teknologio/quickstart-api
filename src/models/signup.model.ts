@@ -13,4 +13,9 @@ export class Signup extends Model {
     required: true,
   })
   birthday: Date;
+
+  @property({
+    required: true,
+  })
+  country: string;
 }

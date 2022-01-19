@@ -1,3 +1,8 @@
+// Usertypes
+export enum userTypes {
+  person = 'person',
+  company = 'company',
+}
 // Unique id type and length interface
 interface UniqueIdTypeLength {
   type: string,
@@ -5,10 +10,7 @@ interface UniqueIdTypeLength {
 }
 // Length of unique id by county
 const uniqueIdLength: Map<String, UniqueIdTypeLength[]> = new Map([
-  ['br', [
-    {type: 'person', length: 11},
-    {type: 'company', length: 14},
-  ]]
+  ['br', [{type: userTypes.person, length: 11}, {type: userTypes.company, length: 14},]]
 ]);
 /**
  * Check if unique belongs a person or a company
@@ -16,9 +18,12 @@ const uniqueIdLength: Map<String, UniqueIdTypeLength[]> = new Map([
  * @param country ex.: 'br'
  * @returns 'person' or 'company'
  */
-export function checkIfPersonOrCompanyUniqueId(uniqueId: string, country: string): any {
+export function getUserType(
+  {uniqueId, country}: {uniqueId: string, country: string}
+): userTypes {
   const uniqueIdOnlyNumber: string = uniqueId.replace(/[^a-zA-Z0-9]/g, '');
   const uniqueIdNumberCount: number = uniqueIdOnlyNumber.length;
-  const type = uniqueIdLength.get(country)?.find(el => el.length === uniqueIdNumberCount);
-  return (type && type.type) || '';
+  const type = uniqueIdLength.get(country)?.find(el => el.length === uniqueIdNumberCount)?.type as userTypes;
+  // TODO: erro when not found userType
+  return type || 'person';
 }

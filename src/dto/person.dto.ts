@@ -12,6 +12,16 @@ export class PersonDTO implements Person {
   country: string;
   username?: string | undefined;
 
+  constructor(personFromAPI: IPersonFromAPI) {
+    const birthday = convertBirthdayStringToDate(personFromAPI.nascimento);
+    this.name = personFromAPI.nome;
+    this.uniqueId = personFromAPI.cpf.replace(/\D/g, "");
+    this.birthday = birthday;
+    this.gender = personFromAPI.genero;
+    this.mother = personFromAPI.mae;
+    this.country = 'br';
+  }
+
   getId() {
     throw new Error('Method not implemented.');
   }
@@ -23,16 +33,6 @@ export class PersonDTO implements Person {
   }
   toObject(options?: AnyObject): Object {
     throw new Error('Method not implemented.');
-  }
-
-  constructor(dto: IPersonFromAPI) {
-    const birthday = convertBirthdayStringToDate(dto.nascimento);
-    this.name = dto.nome;
-    this.uniqueId = dto.cpf.replace(/\D/g, "");
-    this.birthday = birthday;
-    this.gender = dto.genero;
-    this.mother = dto.mae;
-    this.country = 'br';
   }
 
 }

@@ -1,14 +1,16 @@
-import {BindingScope, injectable} from '@loopback/core';
+import {BindingScope, injectable, service} from '@loopback/core';
 import {repository} from '@loopback/repository';
 import {HttpErrors} from '@loopback/rest';
 import {google} from 'googleapis';
 import jwt, {JwtPayload} from 'jsonwebtoken';
-import {InviteRepository, PersonRepository, ProjectRepository, UserRepository} from '../repositories';
+import {CompanyDTO} from '../dto/company.dto';
+import {Company, Person} from '../models';
+import {PersonRepository, ProjectRepository, UserRepository} from '../repositories';
 import {compareDates} from '../utils/date-manipulation-functions';
-import {checkIfPersonOrCompanyUniqueId} from '../utils/general-functions';
-import {hideEmailString} from '../utils/string-manipulation-functions';
+import {getUserType, userTypes} from '../utils/general-functions';
 import {PersonDTO} from './../dto/person.dto';
 import {CompanyRepository} from './../repositories/company.repository';
+import {UserService} from './user.service';
 
 const fetch = require('node-fetch');
 
@@ -16,16 +18,18 @@ const fetch = require('node-fetch');
 export class AuthService {
   constructor(
     /* Add @inject to inject parameters */
+    // Repositories
     @repository(UserRepository)
     private userRepository: UserRepository,
     @repository(PersonRepository)
     private personRepository: PersonRepository,
     @repository(CompanyRepository)
     private companyRepository: CompanyRepository,
-    @repository(InviteRepository)
-    private inviteRepository: InviteRepository,
     @repository(ProjectRepository)
     private projectRepository: ProjectRepository,
+    // Services
+    @service(UserService)
+    private useService: UserService,
   ) { }
 
   googleOAuth2Client = new google.auth.OAuth2(
@@ -50,7 +54,7 @@ export class AuthService {
     return url;
   }
 
-  public async getGoogleAuthenticatedUser(code: string): Promise<SsoUser> {
+  public async getGoogleAuthenticatedUser(code: string): Promise<ISsoUser> {
     const {tokens} = await this.googleOAuth2Client.getToken(code);
     this.googleOAuth2Client.setCredentials(tokens);
     let oauth2 = google.oauth2({version: 'v2', auth: this.googleOAuth2Client});
@@ -61,7 +65,7 @@ export class AuthService {
     };
   }
 
-  public async getTokenToAuthenticateUser(ssoUser: SsoUser, projectId: string, inviteId?: string): Promise<string> {
+  public async getTokenToAuthenticateUser(ssoUser: ISsoUser, projectId: string, inviteId?: string): Promise<string> {
     let registeredUser = await this.userRepository.findOne({where: {email: ssoUser.email}});
     if (!registeredUser) registeredUser = await this.userRepository.create(ssoUser);
     const token = jwt.sign({
@@ -72,7 +76,7 @@ export class AuthService {
     return token;
   }
 
-  public async getUser(authToken: string): Promise<SumaryUser> {
+  public async getUser(authToken: string): Promise<ISumaryUser> {
     try {
       const tokenDecoded = jwt.verify(authToken, process.env.JWT_SECRET!) as JwtPayload;
       const user = await this.userRepository.findById(tokenDecoded.id);
@@ -80,57 +84,51 @@ export class AuthService {
       const personInfo = await this.personRepository.findById(user.personId);
       return {
         userId: user._id!,
-        personInfo: personInfo as SumaryPerson,
+        personInfo: personInfo as ISumaryPerson,
       };
     } catch (e) {
       throw new HttpErrors[400](e.message);
     }
   }
 
-  public async createUser(authToken: string, uniqueId: string, birthday: Date): Promise<SumaryUser> {
+  public async createUser(authToken: string, uniqueId: string, birthday: Date, country: string): Promise<ISumaryUser> {
     try {
       const tokenDecoded = jwt.verify(authToken, process.env.JWT_SECRET!) as JwtPayload;
-      const userType = checkIfPersonOrCompanyUniqueId(uniqueId, 'br');
-      let profile = userType === 'person' ?
-        await this.personRepository.findOne({where: {uniqueId: uniqueId}}) :
-        await this.companyRepository.findOne({where: {uniqueId: uniqueId}});
-      if (!profile) {
-        // Get person/company info in CPF/CNPJ API
-        const response = await fetch(`${process.env.API_CPF_CNPJ}/${userType === 'person' ? 2 : 6}/${uniqueId}`);
-        const personCompanyFromAPI: IPersonFromAPI = await response.json();
-        // Create person
-        const profileDTO: PersonDTO = new PersonDTO(personCompanyFromAPI);
-        profile = await this.personRepository.create(profileDTO);
-        // Check birthday
-        const datesCompare: boolean = compareDates(profileDTO.birthday, birthday as Date);
-        if (!datesCompare) throw new HttpErrors[400]('Birthday incorrect');
-      } else {
-        // Check birthday
-        const datesCompare = await compareDates(profile.birthday, birthday as Date);
-        if (!datesCompare) throw new HttpErrors[400]('Birthday incorrect');
-        // Checks if person has already been added to a user
-        const userFound = await this.userRepository.findOne({where: {personId: profile._id}});
-        if (userFound) throw new HttpErrors[400](`The unique id has already been used in ${hideEmailString(userFound.email!)} account!`);
-      }
-      // Create user
-      const projects = [{'id': tokenDecoded.projectId}];
-      let inviters = [];
-      if (tokenDecoded.inviteId) {
-        const invite = await this.inviteRepository.findById(tokenDecoded.inviteId);
-        inviters.push({
-          inviterId: invite._id,
-          projectId: tokenDecoded.projectId,
-          invitedAt: invite._createdAt,
-        });
-      }
-      await this.userRepository.updateById(tokenDecoded.id, {personId: profile._id, projects, inviters});
+      // Get user type and profile (person or company)
+      const userType = getUserType({uniqueId, country});
+      // Get or create a profile
+      const profile =
+        await this[`${userType}Repository`].findOne({where: {uniqueId: uniqueId}}) ??
+        await this.createProfile({userType, uniqueId});
+      // Check birthday
+      const datesCompare: boolean = compareDates(profile.birthday, birthday);
+      if (!datesCompare) throw new HttpErrors[400]('Birthday incorrect');
+      // Put profile, project and invite in user
+      const user = await this.useService.updateUser({
+        userType,
+        profileId: profile._id as string,
+        id: tokenDecoded.id,
+        projectIds: [tokenDecoded.projectId],
+        inviteIds: [tokenDecoded.inviteId],
+      });
       return {
-        userId: tokenDecoded.id,
-        personInfo: profile as SumaryPerson,
+        userId: user._id as string,
+        [`${userType}Info`]: profile,
       }
     } catch (e) {
       throw new HttpErrors[400](e.message);
     }
+  }
+
+  private async createProfile({userType, uniqueId}: {userType: userTypes, uniqueId: string}): Promise<Person | Company> {
+    const apiResponse = await fetch(`${process.env.API_CPF_CNPJ}/${userType === 'person' ? 2 : 6}/${uniqueId}`);
+    const personCompanyFromAPI: IPersonFromAPI | ICompanyFromAPI = await apiResponse.json();
+    const profileDTO: PersonDTO | CompanyDTO =
+      userType === 'person' ?
+        new PersonDTO(personCompanyFromAPI as IPersonFromAPI) :
+        new CompanyDTO(personCompanyFromAPI as ICompanyFromAPI);
+    const profileCreated = await this[`${userType}Repository`].create(profileDTO);
+    return profileCreated;
   }
 
   public async refreshToken(authToken: string, projectSecret: string): Promise<string> {

@@ -12,7 +12,7 @@ export class Default extends Entity {
     type: 'date',
     default: new Date(),
   })
-  _createdAt?: string;
+  _createdAt?: Date;
 
   @property({
     type: 'string',

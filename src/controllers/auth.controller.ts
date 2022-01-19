@@ -35,14 +35,14 @@ export class AuthController {
     @param.query.string('code') code: string,
     @param.query.string('state') state: string,
   ): Promise<void> {
-    const googleUser: SsoUser = await this.authService.getGoogleAuthenticatedUser(code);
+    const googleUser: ISsoUser = await this.authService.getGoogleAuthenticatedUser(code);
     const stateParams = new URLSearchParams(state);
     const token: string = await this.authService.getTokenToAuthenticateUser(googleUser, stateParams.get('project')!, stateParams.get('invite')!);
     return this.response.redirect(`${process.env.UI_SPLASH_URI}?token=${token}`);
   }
 
   @get('auth/get-user')
-  async getSumaryUserInfo(): Promise<SumaryUser> {
+  async getSumaryUserInfo(): Promise<ISumaryUser> {
     let authorization = this.request.headers.authorization!;
     if (!authorization) throw new HttpErrors[401]('Unauthorized')
     authorization = authorization.split(' ')[1];
@@ -58,11 +58,11 @@ export class AuthController {
       }
     })
     signupeRequest: Signup
-  ): Promise<SumaryUser> {
+  ): Promise<ISumaryUser> {
     let authorization = this.request.headers.authorization!;
     if (!authorization) throw new HttpErrors[401]('Unauthorized')
     authorization = authorization.split(' ')[1];
-    return this.authService.createUser(authorization, signupeRequest.uniqueId, signupeRequest.birthday);
+    return this.authService.createUser(authorization, signupeRequest.uniqueId.replace(/\D/g, ""), signupeRequest.birthday, signupeRequest.country);
   }
 
   @get('auth/refresh-token/{projectSecret}')

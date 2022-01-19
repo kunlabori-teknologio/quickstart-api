@@ -1,15 +1,16 @@
-interface SsoUser {
+interface ISsoUser {
   googleId?: string,
   appleId?: string,
   email: string,
 }
 
-interface SumaryUser {
+interface ISumaryUser {
   userId: string,
-  personInfo?: SumaryPerson,
+  personInfo?: ISumaryPerson,
+  companyInfo?: ISumaryCompany,
 }
 
-interface SumaryPerson {
+interface ISumaryPerson {
   name: string,
   uniqueId: string,
   birthday: Date,
@@ -17,4 +18,14 @@ interface SumaryPerson {
   mother: string,
   country: string,
   username: string,
+}
+
+interface ISumaryCompany {
+  corporateName: string,
+  tradeName: string,
+  uniqueId: string,
+  birthday: Date,
+  email: string,
+  responsable: string,
+  cnae: ICnae[],
 }

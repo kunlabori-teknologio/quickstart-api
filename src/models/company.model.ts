@@ -46,10 +46,10 @@ export class Company extends Entity {
   responsible: string;
 
   @property({
-    type: 'string',
+    type: 'any',
     required: true,
   })
-  cnae: string;
+  cnae: ICnae[];
 
 
   constructor(data?: Partial<Company>) {
