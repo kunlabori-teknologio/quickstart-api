@@ -26,6 +26,6 @@ interface ISumaryCompany {
   uniqueId: string,
   birthday: Date,
   email: string,
-  responsable: string,
+  responsible: string,
   cnae: ICnae[],
 }
