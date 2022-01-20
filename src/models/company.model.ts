@@ -17,9 +17,9 @@ export class Company extends Entity {
 
   @property({
     type: 'string',
-    required: true,
+    required: false,
   })
-  tradeName: string;
+  tradeName?: string;
 
   @property({
     type: 'string',
@@ -35,9 +35,9 @@ export class Company extends Entity {
 
   @property({
     type: 'string',
-    required: true,
+    required: false,
   })
-  email: string;
+  email?: string;
 
   @property({
     type: 'string',

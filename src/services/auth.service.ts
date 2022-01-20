@@ -116,7 +116,7 @@ export class AuthService {
       if (!datesCompare) throw new HttpErrors[400]('Birthday incorrect');
       // Check if profile has already added in some user
       const userWithSameProfile = await this.userRepository.findOne({where: {[`${userType}Id`]: profile._id}});
-      if (userWithSameProfile) throw new HttpErrors[400](`The unique id is already been used in the ${hideEmailString(userWithSameProfile.email as string)} account`);
+      if (userWithSameProfile) throw new HttpErrors[400](`The unique id is already being used by ${hideEmailString(userWithSameProfile.email as string)}`);
       // Put profile, project and invite in user
       const user = await this.useService.updateUser({
         userType,
