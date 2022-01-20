@@ -42,7 +42,7 @@ export class AuthController {
   }
 
   @get('auth/get-user')
-  async getSumaryUserInfo(): Promise<ISumaryUser | undefined> {
+  async getSumaryUserInfo(): Promise<ISumaryUser> {
     let authorization = this.request.headers.authorization!;
     if (!authorization) throw new HttpErrors[401]('Unauthorized')
     authorization = authorization.split(' ')[1];

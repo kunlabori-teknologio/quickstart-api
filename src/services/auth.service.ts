@@ -77,26 +77,17 @@ export class AuthService {
     return token;
   }
 
-  public async getUser(authToken: string): Promise<ISumaryUser | undefined> {
+  public async getUser(authToken: string): Promise<ISumaryUser> {
     try {
       const tokenDecoded = jwt.verify(authToken, process.env.JWT_SECRET!) as JwtPayload;
       const user = await this.userRepository.findById(tokenDecoded.id);
       if (!user.personId && !user.companyId) throw new HttpErrors[404]('User not registered');
-      let profileInfo;
-      if (user.personId) {
-        profileInfo = await this.personRepository.findById(user.personId);
-        return {
-          userId: user._id!,
-          personInfo: profileInfo as ISumaryPerson,
-        }
-      }
-      if (user.companyId) {
-        profileInfo = await this.companyRepository.findById(user.companyId);
-        return {
-          userId: user._id!,
-          companyInfo: profileInfo as ISumaryCompany,
-        }
-      }
+      const userType = user.personId ? 'person' : 'company';
+      const profileInfo = await this[`${userType}Repository`].findById(user.personId || user.companyId);
+      return {
+        userId: user._id!,
+        [`${userType}Info`]: profileInfo as ISumaryPerson | ISumaryCompany,
+      };
     } catch (e) {
       throw new HttpErrors[400](e.message);
     }
