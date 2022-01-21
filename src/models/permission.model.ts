@@ -1,4 +1,5 @@
 import {Model, model, property} from '@loopback/repository';
+import {getJsonSchema} from '@loopback/rest';
 import {Default} from './default.model';
 
 // ACL schema model
@@ -54,6 +55,7 @@ export class Permission extends Default {
     type: 'array',
     itemType: 'any',
     required: true,
+    jsonSchema: getJsonSchema(ACLSchema),
   })
   acl: ACLSchema[];
 

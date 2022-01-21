@@ -24,6 +24,12 @@ export class Module extends Default {
   })
   description?: string;
 
+  @property({
+    type: 'string',
+    required: true,
+  })
+  projectId: string;
+
 
   constructor(data?: Partial<Module>) {
     super(data);
