@@ -4,11 +4,11 @@ interface ICompanyFromAPI {
   fantasia: string,
   inicioAtividade: string,
   responsavel: string,
-  cnae: ICnae[],
+  cnae: IBusinessActivityCode[],
   email: string,
 }
 
-interface ICnae {
+interface IBusinessActivityCode {
   divisao: string,
   grupo: string,
   classe: string,

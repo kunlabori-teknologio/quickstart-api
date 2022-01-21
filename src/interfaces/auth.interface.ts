@@ -27,5 +27,5 @@ interface ISumaryCompany {
   birthday: Date,
   email: string,
   responsible: string,
-  cnae: ICnae[],
+  cnae: IBusinessActivityCode[],
 }

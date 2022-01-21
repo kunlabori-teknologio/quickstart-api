@@ -53,6 +53,16 @@ export class Person extends Entity {
   })
   username?: string;
 
+  @property({
+    type: 'string'
+  })
+  nickname?: string
+
+  @property({
+    type: 'string'
+  })
+  genderIdentity?: string
+
 
   constructor(data?: Partial<Person>) {
     super(data);

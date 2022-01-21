@@ -49,7 +49,7 @@ export class Company extends Entity {
     type: 'any',
     required: true,
   })
-  cnae: ICnae[];
+  businessActivityCode: IBusinessActivityCode[];
 
 
   constructor(data?: Partial<Company>) {

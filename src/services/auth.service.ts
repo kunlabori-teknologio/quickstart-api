@@ -5,6 +5,7 @@ import {google} from 'googleapis';
 import jwt, {JwtPayload} from 'jsonwebtoken';
 import {CompanyDTO} from '../dto/company.dto';
 import {Company, Person} from '../models';
+import {AdditionalInfoModel} from '../models/signup.model';
 import {PersonRepository, ProjectRepository, UserRepository} from '../repositories';
 import {compareDates} from '../utils/date-manipulation-functions';
 import {getUserType, userTypes} from '../utils/general-functions';
@@ -93,7 +94,10 @@ export class AuthService {
     }
   }
 
-  public async createUser(authToken: string, uniqueId: string, birthday: Date, country: string): Promise<ISumaryUser> {
+  public async createUser(
+    {authToken, uniqueId, birthday, country, additionalInfo}:
+      {authToken: string, uniqueId: string, birthday: Date, country: string, additionalInfo?: AdditionalInfoModel}
+  ): Promise<ISumaryUser> {
     try {
       const tokenDecoded = jwt.verify(authToken, process.env.JWT_SECRET!) as JwtPayload;
       // Get user type and profile (person or company)
@@ -101,7 +105,9 @@ export class AuthService {
       // Get or create a profile
       const profile =
         await this[`${userType}Repository`].findOne({where: {uniqueId: uniqueId}}) ??
-        await this.createProfile({userType, uniqueId});
+        await this.createProfile({userType, uniqueId, additionalInfo});
+      // Check if profile has the additional info
+      // const hasAllAdditionalInfo = Object.keys(profile).some(attr => additionalInfo[`${userType}Info`].includes(attr));
       // Check birthday
       const datesCompare: boolean = compareDates(profile.birthday, birthday);
       if (!datesCompare) throw new HttpErrors[400]('Birthday incorrect');
@@ -125,14 +131,16 @@ export class AuthService {
     }
   }
 
-  private async createProfile({userType, uniqueId}: {userType: userTypes, uniqueId: string}): Promise<Person | Company> {
-    const apiResponse = await fetch(`${process.env.API_CPF_CNPJ}/${userType === 'person' ? 2 : 6}/${uniqueId}`);
-    const personCompanyFromAPI: IPersonFromAPI | ICompanyFromAPI = await apiResponse.json();
+  private async createProfile(
+    {userType, uniqueId, additionalInfo}: {userType: userTypes, uniqueId: string, additionalInfo?: AdditionalInfoModel}
+  ): Promise<Person | Company> {
+    const apiResponse = await fetch(`${process.env.API_CPF_CNPJ}/${userType === 'person' ? 2 : 6}/${uniqueId.replace(/\D/g, "")}`);
+    const dataFromApi: IPersonFromAPI | ICompanyFromAPI = await apiResponse.json();
     const profileDTO: PersonDTO | CompanyDTO =
       userType === 'person' ?
-        new PersonDTO(personCompanyFromAPI as IPersonFromAPI) :
-        new CompanyDTO(personCompanyFromAPI as ICompanyFromAPI);
-    const profileCreated = await this[`${userType}Repository`].create(profileDTO);
+        new PersonDTO({dataFromApi: dataFromApi as IPersonFromAPI, additionalInfo: additionalInfo as AdditionalInfoModel}) :
+        new CompanyDTO({dataFromApi: dataFromApi as ICompanyFromAPI, additionalInfo: additionalInfo as AdditionalInfoModel});
+    const profileCreated = await this[`${userType}Repository`].create({...profileDTO});
     return profileCreated;
   }
 

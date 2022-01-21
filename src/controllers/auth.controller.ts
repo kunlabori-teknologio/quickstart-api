@@ -59,10 +59,13 @@ export class AuthController {
     })
     signupeRequest: Signup
   ): Promise<ISumaryUser> {
-    let authorization = this.request.headers.authorization!;
-    if (!authorization) throw new HttpErrors[401]('Unauthorized')
-    authorization = authorization.split(' ')[1];
-    return this.authService.createUser(authorization, signupeRequest.uniqueId.replace(/\D/g, ""), signupeRequest.birthday, signupeRequest.country);
+    let authToken = this.request.headers.authorization!;
+    if (!authToken) throw new HttpErrors[401]('Unauthorized')
+    authToken = authToken.split(' ')[1];
+    return this.authService.createUser({authToken, ...signupeRequest});
+    // signupeRequest.uniqueId.replace(/\D/g, ""),
+    // signupeRequest.birthday, signupeRequest.country
+
   }
 
   @get('auth/refresh-token/{projectSecret}')
