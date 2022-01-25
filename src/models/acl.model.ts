@@ -1,49 +1,25 @@
 import {Model, model, property} from '@loopback/repository';
-import {Default} from './default.model';
 
-// Permission schema model
-@model()
-class PermissionSchema extends Model {
+@model({name: 'ACL'})
+export class Acl extends Model {
   @property({
+    name: 'module',
+    description: "The module's id",
     required: true,
     mongodb: {
       dataType: 'ObjectId'
     },
   })
-  moduleId: string;
+  module: string;
 
   @property({
+    name: 'aclActions',
+    description: "Array of the ACLAction ids",
     type: 'array',
     itemType: 'string',
     default: [],
   })
-  actions: string[];
-}
-
-@model({name: 'ACL'})
-export class Acl extends Default {
-  @property({
-    type: 'string',
-    id: true,
-    generated: true,
-    mongodb: {
-      dataType: 'ObjectId'
-    },
-  })
-  _id?: string;
-
-  @property({
-    type: 'string',
-    required: true,
-  })
-  name: string;
-
-  @property({
-    type: 'array',
-    itemType: PermissionSchema,
-    default: [],
-  })
-  permissions?: PermissionSchema[];
+  aclActions: string[];
 
   constructor(data?: Partial<Acl>) {
     super(data);

@@ -1,25 +1,7 @@
-import {Model, model, property} from '@loopback/repository';
+import {model, property} from '@loopback/repository';
 import {getJsonSchema} from '@loopback/rest';
+import {Acl} from './acl.model';
 import {Default} from './default.model';
-
-// ACL schema model
-@model()
-class ACLSchema extends Model {
-  @property({
-    required: true,
-    mongodb: {
-      dataType: 'ObjectId'
-    },
-  })
-  module: string;
-
-  @property({
-    type: 'array',
-    itemType: 'string',
-    default: [],
-  })
-  aclActions: string[];
-}
 
 @model()
 export class Permission extends Default {
@@ -34,30 +16,51 @@ export class Permission extends Default {
   _id?: string;
 
   @property({
+    name: 'name',
+    description: "The permission's name",
     type: 'string',
     required: true,
+    jsonSchema: {
+      maxLength: 30,
+      errorMessage: {
+        maxLength: 'Name should not exceed 30 characters.',
+      },
+    }
   })
   name: string;
 
   @property({
+    name: 'description',
+    description: "The permission's description",
     type: 'string',
     required: true,
+    jsonSchema: {
+      maxLength: 50,
+      errorMessage: {
+        maxLength: 'Description should not exceed 50 characters.',
+      },
+    }
   })
   description: string;
 
   @property({
+    name: 'users',
+    description: "The users that have the permission",
     type: 'array',
     itemType: 'string',
+    required: false,
   })
   users?: string[];
 
   @property({
+    name: 'acl',
+    description: "The acls related to the permission",
     type: 'array',
     itemType: 'any',
     required: true,
-    jsonSchema: getJsonSchema(ACLSchema),
+    jsonSchema: getJsonSchema(Acl),
   })
-  acl: ACLSchema[];
+  acl: Acl[];
 
   constructor(data?: Partial<Permission>) {
     super(data);

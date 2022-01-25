@@ -82,12 +82,12 @@ export class AuthService {
     try {
       const tokenDecoded = jwt.verify(authToken, process.env.JWT_SECRET!) as JwtPayload;
       const user = await this.userRepository.findById(tokenDecoded.id);
-      if (!user.personId && !user.companyId) throw new HttpErrors[404]('User not registered');
+      // if (!user.personId && !user.companyId) throw new HttpErrors[404]('User not registered');
       const userType = user.personId ? 'person' : 'company';
-      const profileInfo = await this[`${userType}Repository`].findById(user.personId || user.companyId);
+      // const profileInfo = await this[`${userType}Repository`].findById(user.personId || user.companyId);
       return {
         userId: user._id!,
-        [`${userType}Info`]: profileInfo as ISumaryPerson | ISumaryCompany,
+        // [`${userType}Info`]: profileInfo as ISumaryPerson | ISumaryCompany,
       };
     } catch (e) {
       throw new HttpErrors[400](e.message);

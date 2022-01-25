@@ -10,7 +10,7 @@ export class Default extends Entity {
 
   @property({
     type: 'date',
-    default: new Date(),
+    defaultFn: 'now',
   })
   _createdAt?: Date;
 

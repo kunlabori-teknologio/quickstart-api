@@ -8,6 +8,7 @@ export class ModuleRepository extends DefaultCrudRepository<
   typeof Module.prototype._id,
   ModuleRelations
 > {
+
   constructor(
     @inject('datasources.mongodb') dataSource: MongodbDataSource,
   ) {

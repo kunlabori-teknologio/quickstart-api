@@ -1,5 +1,4 @@
 export * from './acl-action.repository';
-export * from './acl.repository';
 export * from './company.repository';
 export * from './invitation.repository';
 export * from './module.repository';

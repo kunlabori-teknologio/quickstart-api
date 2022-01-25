@@ -14,25 +14,21 @@ export class Invitation extends Default {
   _id?: string;
 
   @property({
+    name: 'inviterId',
+    description: "The inviter userId",
     type: 'string',
+    required: true,
   })
-  type?: string;
+  inviterId: string;
 
   @property({
-    type: 'string',
-  })
-  email?: string;
-
-  @property({
-    type: 'string',
-  })
-  name?: string;
-
-  @property({
+    name: 'permissions',
+    description: "The permissions array",
     type: 'array',
-    itemType: 'any',
+    itemType: 'string',
+    required: true,
   })
-  permissions?: any[];
+  permissions: string[];
 
 
   constructor(data?: Partial<Invitation>) {

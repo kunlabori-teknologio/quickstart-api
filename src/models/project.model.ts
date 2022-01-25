@@ -1,5 +1,6 @@
-import {model, property} from '@loopback/repository';
+import {model, property, hasMany} from '@loopback/repository';
 import {Default} from './default.model';
+import {Module} from './module.model';
 
 @model()
 export class Project extends Default {
@@ -11,21 +12,44 @@ export class Project extends Default {
   _id?: string;
 
   @property({
+    name: 'name',
+    description: "The project's name",
     type: 'string',
     required: true,
+    jsonSchema: {
+      maxLength: 30,
+      errorMessage: {
+        maxLength: 'Name should not exceed 30 characters.',
+      },
+    }
   })
   name: string;
 
   @property({
+    name: 'description',
+    description: "The project's description",
     type: 'string',
+    required: false,
+    jsonSchema: {
+      maxLength: 50,
+      errorMessage: {
+        maxLength: 'Description should not exceed 50 characters.',
+      },
+    }
   })
   description?: string;
 
   @property({
+    name: 'secret',
+    description: "The project's secret",
     type: 'string',
-    required: true,
+    required: false,
+    defaultFn: 'uuidv4',
   })
-  secret: string;
+  secret?: string;
+
+  @hasMany(() => Module)
+  modules: Module[];
 
   constructor(data?: Partial<Project>) {
     super(data);
