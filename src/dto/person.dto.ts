@@ -23,8 +23,8 @@ export class PersonDTO implements Person {
     this.gender = dataFromApi.genero;
     this.mother = dataFromApi.mae;
     this.country = 'br';
-    this.nickname = additionalInfo.personInfo?.nickname;
-    this.genderIdentity = additionalInfo.personInfo?.genderIdentity;
+    this.nickname = additionalInfo?.personInfo?.nickname;
+    this.genderIdentity = additionalInfo?.personInfo?.genderIdentity;
   }
 
   getId() {

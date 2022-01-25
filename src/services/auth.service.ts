@@ -107,7 +107,8 @@ export class AuthService {
         await this[`${userType}Repository`].findOne({where: {uniqueId: uniqueId}}) ??
         await this.createProfile({userType, uniqueId, additionalInfo});
       // Update profile with additional info
-      await this[`${userType}Repository`].updateById(profile._id as string, {...(additionalInfo as AdditionalInfoModel)[`${userType}Info`]});
+      if (additionalInfo)
+        await this[`${userType}Repository`].updateById(profile._id as string, {...(additionalInfo as AdditionalInfoModel)[`${userType}Info`]});
       // Check birthday
       const datesCompare: boolean = compareDates(profile.birthday, birthday);
       if (!datesCompare) throw new HttpErrors[400]('Birthday incorrect');
