@@ -1,25 +1,41 @@
-import {Model, model, property} from '@loopback/repository';
+import {hasMany, model, property} from '@loopback/repository';
+import {AclAction} from './acl-action.model';
+import {AclHasActions} from './acl-has-actions.model';
+import {Default} from './default.model';
 
 @model({name: 'ACL'})
-export class Acl extends Model {
+export class Acl extends Default {
   @property({
-    name: 'module',
-    description: "The module's id",
-    required: true,
+    type: 'string',
+    id: true,
+    generated: true,
     mongodb: {
       dataType: 'ObjectId'
     },
   })
-  module: string;
+  _id?: string;
 
   @property({
-    name: 'aclActions',
-    description: "Array of the ACLAction ids",
-    type: 'array',
-    itemType: 'string',
-    default: [],
+    name: 'name',
+    description: "The ACL's name",
+    type: 'string',
+    required: true,
+    jsonSchema: {
+      maxLength: 30,
+      errorMessage: {
+        maxLength: 'Name should not exceed 30 characters.',
+      },
+    }
   })
-  aclActions: string[];
+  name: string;
+
+  @hasMany(() => AclAction, {through: {model: () => AclHasActions}})
+  aclActions: AclAction[];
+
+  @property({
+    type: 'string',
+  })
+  moduleId?: string;
 
   constructor(data?: Partial<Acl>) {
     super(data);

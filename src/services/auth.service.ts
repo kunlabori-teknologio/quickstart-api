@@ -82,9 +82,9 @@ export class AuthService {
     try {
       const tokenDecoded = jwt.verify(authToken, process.env.JWT_SECRET!) as JwtPayload;
       const user = await this.userRepository.findById(tokenDecoded.id);
-      // if (!user.personId && !user.companyId) throw new HttpErrors[404]('User not registered');
-      const userType = user.personId ? 'person' : 'company';
-      // const profileInfo = await this[`${userType}Repository`].findById(user.personId || user.companyId);
+      // if (!user.person && !user.company) throw new HttpErrors[404]('User not registered');
+      const userType = user.person ? 'person' : 'company';
+      // const profileInfo = await this[`${userType}Repository`].findById(user.person || user.company);
       return {
         userId: user._id!,
         // [`${userType}Info`]: profileInfo as ISumaryPerson | ISumaryCompany,

@@ -1,4 +1,5 @@
-import {model, property} from '@loopback/repository';
+import {hasMany, model, property} from '@loopback/repository';
+import {Acl} from './acl.model';
 import {Default} from './default.model';
 
 @model()
@@ -41,10 +42,8 @@ export class Module extends Default {
   })
   description?: string;
 
-  @property({
-    type: 'string',
-  })
-  projectId?: string;
+  @hasMany(() => Acl)
+  acls: Acl[];
 
   constructor(data?: Partial<Module>) {
     super(data);

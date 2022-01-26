@@ -5,16 +5,19 @@ export class Default extends Entity {
 
   @property({
     type: 'string',
+    hidden: true,
   })
   _createdBy?: string;
 
   @property({
     type: 'date',
+    hidden: true,
     defaultFn: 'now',
   })
   _createdAt?: Date;
 
   @property({
+    hidden: true,
     type: 'string',
   })
   _ownerId?: string;

@@ -1,7 +1,7 @@
-import {model, property} from '@loopback/repository';
-import {getJsonSchema} from '@loopback/rest';
-import {Acl} from './acl.model';
+import {model, property, hasMany} from '@loopback/repository';
 import {Default} from './default.model';
+import {Acl} from './acl.model';
+import {PermissionHasAcls} from './permission-has-acls.model';
 
 @model()
 export class Permission extends Default {
@@ -43,24 +43,8 @@ export class Permission extends Default {
   })
   description: string;
 
-  @property({
-    name: 'users',
-    description: "The users that have the permission",
-    type: 'array',
-    itemType: 'string',
-    required: false,
-  })
-  users?: string[];
-
-  @property({
-    name: 'acl',
-    description: "The acls related to the permission",
-    type: 'array',
-    itemType: 'any',
-    required: true,
-    jsonSchema: getJsonSchema(Acl),
-  })
-  acl: Acl[];
+  @hasMany(() => Acl, {through: {model: () => PermissionHasAcls}})
+  acls: Acl[];
 
   constructor(data?: Partial<Permission>) {
     super(data);

@@ -1,7 +1,7 @@
 import {model, property} from '@loopback/repository';
 import {Default} from './default.model';
 
-@model({name: 'AclAction'})
+@model({name: 'ACLAction'})
 export class AclAction extends Default {
   @property({
     type: 'string',

@@ -1,4 +1,3 @@
-import {authenticate} from '@loopback/authentication';
 import {inject} from '@loopback/core';
 import {
   Count,
@@ -13,7 +12,7 @@ import {SecurityBindings, securityId, UserProfile} from '@loopback/security';
 import {Module} from '../models';
 import {ModuleRepository} from '../repositories';
 
-@authenticate('autentikigo')
+//@authenticate('autentikigo')
 export class ModuleController {
   constructor(
     @repository(ModuleRepository)

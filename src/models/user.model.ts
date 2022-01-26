@@ -1,6 +1,8 @@
-import {Entity, hasOne, model, property} from '@loopback/repository';
+import {Entity, hasOne, model, property, hasMany} from '@loopback/repository';
 import {Company} from './company.model';
 import {Person} from './person.model';
+import {Permission} from './permission.model';
+import {UserHasPermissions} from './user-has-permissions.model';
 
 @model()
 export class User extends Entity {
@@ -57,10 +59,13 @@ export class User extends Entity {
   appleId?: string;
 
   @hasOne(() => Person)
-  personId: Person;
+  person: Person;
 
   @hasOne(() => Company)
-  companyId: Company;
+  company: Company;
+
+  @hasMany(() => Permission, {through: {model: () => UserHasPermissions}})
+  permissions: Permission[];
 
   constructor(data?: Partial<User>) {
     super(data);

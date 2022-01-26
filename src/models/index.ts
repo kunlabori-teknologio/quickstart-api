@@ -10,3 +10,7 @@ export * from './project.model';
 export * from './user.model';
 
 
+export * from './acl-has-actions.model';
+export * from './permission-has-acls.model';
+export * from './user-has-permissions.model';
+export * from './invitation-has-permissions.model';

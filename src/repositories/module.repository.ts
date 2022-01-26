@@ -1,7 +1,8 @@
-import {inject} from '@loopback/core';
-import {DefaultCrudRepository} from '@loopback/repository';
+import {inject, Getter} from '@loopback/core';
+import {DefaultCrudRepository, repository, HasManyRepositoryFactory} from '@loopback/repository';
 import {MongodbDataSource} from '../datasources';
-import {Module, ModuleRelations} from '../models';
+import {Module, ModuleRelations, Acl} from '../models';
+import {AclRepository} from './acl.repository';
 
 export class ModuleRepository extends DefaultCrudRepository<
   Module,
@@ -9,9 +10,13 @@ export class ModuleRepository extends DefaultCrudRepository<
   ModuleRelations
 > {
 
+  public readonly acls: HasManyRepositoryFactory<Acl, typeof Module.prototype._id>;
+
   constructor(
-    @inject('datasources.mongodb') dataSource: MongodbDataSource,
+    @inject('datasources.mongodb') dataSource: MongodbDataSource, @repository.getter('AclRepository') protected aclRepositoryGetter: Getter<AclRepository>,
   ) {
     super(Module, dataSource);
+    this.acls = this.createHasManyRepositoryFactoryFor('acls', aclRepositoryGetter,);
+    this.registerInclusionResolver('acls', this.acls.inclusionResolver);
   }
 }

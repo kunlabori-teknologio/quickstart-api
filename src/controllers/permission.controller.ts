@@ -1,4 +1,3 @@
-import {authenticate} from '@loopback/authentication';
 import {inject} from '@loopback/core';
 import {
   Count,
@@ -17,7 +16,7 @@ import {SecurityBindings, securityId, UserProfile} from '@loopback/security';
 import {Permission} from '../models';
 import {PermissionRepository} from '../repositories';
 
-@authenticate('autentikigo')
+//@authenticate('autentikigo')
 export class PermissionController {
   constructor(
     @repository(PermissionRepository)

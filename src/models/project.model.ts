@@ -1,6 +1,5 @@
-import {model, property, hasMany} from '@loopback/repository';
+import {model, property} from '@loopback/repository';
 import {Default} from './default.model';
-import {Module} from './module.model';
 
 @model()
 export class Project extends Default {
@@ -47,9 +46,6 @@ export class Project extends Default {
     defaultFn: 'uuidv4',
   })
   secret?: string;
-
-  @hasMany(() => Module)
-  modules: Module[];
 
   constructor(data?: Partial<Project>) {
     super(data);
