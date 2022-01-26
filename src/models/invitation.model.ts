@@ -1,7 +1,7 @@
-import {model, property, hasMany} from '@loopback/repository';
+import {hasMany, model, property} from '@loopback/repository';
 import {Default} from '.';
-import {Permission} from './permission.model';
 import {InvitationHasPermissions} from './invitation-has-permissions.model';
+import {Permission} from './permission.model';
 
 @model()
 export class Invitation extends Default {
@@ -14,14 +14,6 @@ export class Invitation extends Default {
     },
   })
   _id?: string;
-
-  @property({
-    name: 'inviterId',
-    description: "The inviter userId",
-    type: 'string',
-    required: true,
-  })
-  inviterId: string;
 
   @hasMany(() => Permission, {through: {model: () => InvitationHasPermissions}})
   permissions: Permission[];

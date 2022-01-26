@@ -46,6 +46,11 @@ export class Permission extends Default {
   @hasMany(() => Acl, {through: {model: () => PermissionHasAcls}})
   acls: Acl[];
 
+  @property({
+    type: 'string',
+  })
+  projectId?: string;
+
   constructor(data?: Partial<Permission>) {
     super(data);
   }

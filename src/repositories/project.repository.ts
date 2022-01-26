@@ -1,7 +1,8 @@
-import {inject} from '@loopback/core';
-import {DefaultCrudRepository} from '@loopback/repository';
+import {inject, Getter} from '@loopback/core';
+import {DefaultCrudRepository, repository, HasManyRepositoryFactory} from '@loopback/repository';
 import {MongodbDataSource} from '../datasources';
-import {Project, ProjectRelations} from '../models';
+import {Project, ProjectRelations, Permission} from '../models';
+import {PermissionRepository} from './permission.repository';
 
 export class ProjectRepository extends DefaultCrudRepository<
   Project,
@@ -9,9 +10,13 @@ export class ProjectRepository extends DefaultCrudRepository<
   ProjectRelations
 > {
 
+  public readonly permissions: HasManyRepositoryFactory<Permission, typeof Project.prototype._id>;
+
   constructor(
-    @inject('datasources.mongodb') dataSource: MongodbDataSource,
+    @inject('datasources.mongodb') dataSource: MongodbDataSource, @repository.getter('PermissionRepository') protected permissionRepositoryGetter: Getter<PermissionRepository>,
   ) {
     super(Project, dataSource);
+    this.permissions = this.createHasManyRepositoryFactoryFor('permissions', permissionRepositoryGetter,);
+    this.registerInclusionResolver('permissions', this.permissions.inclusionResolver);
   }
 }

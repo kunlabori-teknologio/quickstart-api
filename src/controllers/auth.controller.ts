@@ -1,13 +1,15 @@
 import {inject, service} from '@loopback/core';
 import {
-  get, getModelSchemaRef, HttpErrors, OperationVisibility, param, post, Request, requestBody, Response,
+  get, getModelSchemaRef, OperationVisibility, param, post, Request, requestBody, response, Response,
   RestBindings,
   visibility
 } from '@loopback/rest';
 import {URLSearchParams} from 'url';
+import {User} from '../models';
 import {Signup} from '../models/signup.model';
 import {AuthService} from '../services';
-import {IRegistryCheck, ISumaryUser} from './../interfaces/auth.interface';
+import {getAuthTokenFromHeader} from '../utils/general-functions';
+import {IRegistryCheck} from './../interfaces/auth.interface';
 
 export class AuthController {
   constructor(
@@ -21,13 +23,24 @@ export class AuthController {
     private authService: AuthService,
   ) { }
 
-  @get('auth/google-signin')
+  @get('auth/web/google-signin')
+  @response(204, {
+    description: 'Redirect user to google login page',
+  })
   async googleLogin(
     @param.query.string('redirectUri') redirectUri: string,
   ): Promise<void> {
     const url = await this.authService.getGoogleAuthURL(redirectUri);
     return this.response.redirect(url);
   }
+
+  @get('auth/web/apple-signin')
+  @response(204, {
+    description: 'Redirect user to google login page',
+  })
+  async appleLogin(
+    @param.query.string('redirectUri') redirectUri: string,
+  ): Promise<void> { }
 
   @visibility(OperationVisibility.UNDOCUMENTED)
   @get('auth/google')
@@ -39,15 +52,48 @@ export class AuthController {
     return this.response.redirect(`${redirectUri}?token=${code}`);
   }
 
-  @get('auth')
+  @get('auth/check')
+  @response(200, {
+    description: 'User registration verification',
+    content: {
+      'application/json': {
+        schema: {
+          type: 'object',
+          title: 'User registration verification',
+          properties: {
+            registeredUser: {type: 'boolean'},
+            authToken: {type: 'string'},
+            user: getModelSchemaRef(User, {includeRelations: true}),
+          },
+        },
+      },
+    },
+  })
   async getSumaryUserInfo(
     @param.query.string('code') code: string,
+    @param.query.string('projectId') projectId: string,
   ): Promise<IRegistryCheck> {
-    const registryCheck = await this.authService.checkUser(code);
+    const registryCheck = await this.authService.checkUser(code, projectId);
     return registryCheck;
   }
 
   @post('auth/signup')
+  @response(200, {
+    description: 'User registered',
+    content: {
+      'application/json': {
+        schema: {
+          type: 'object',
+          title: 'User registered',
+          properties: {
+            registeredUser: {type: 'boolean'},
+            authToken: {type: 'string'},
+            user: getModelSchemaRef(User, {includeRelations: true}),
+          },
+        },
+      },
+    },
+  })
   async signup(
     @requestBody({
       content: {
@@ -55,24 +101,17 @@ export class AuthController {
       }
     })
     signupeRequest: Signup
-  ): Promise<ISumaryUser> {
-    let authToken = this.request.headers.authorization!;
-    if (!authToken) throw new HttpErrors[401]('Unauthorized')
-    authToken = authToken.split(' ')[1];
+  ): Promise<IRegistryCheck> {
+    let authToken = getAuthTokenFromHeader(this.request.headers);
     return this.authService.createUser({authToken, ...signupeRequest});
-    // signupeRequest.uniqueId.replace(/\D/g, ""),
-    // signupeRequest.birthday, signupeRequest.country
-
   }
 
   @get('auth/refresh-token/{projectSecret}')
   async refreshToken(
     @param.path.string('projectSecret') projectSecret: string,
   ): Promise<string> {
-    let authorization = this.request.headers.authorization as string;
-    if (!authorization) throw new HttpErrors[401]('Unauthorized')
-    authorization = authorization.split(' ')[1];
-    const token = await this.authService.refreshToken(authorization, projectSecret);
+    let authToken = getAuthTokenFromHeader(this.request.headers);
+    const token = await this.authService.refreshToken(authToken, projectSecret);
     return token;
   }
 }

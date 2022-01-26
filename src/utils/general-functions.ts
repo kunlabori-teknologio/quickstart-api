@@ -1,3 +1,6 @@
+import {HttpErrors} from '@loopback/rest';
+import {IncomingHttpHeaders} from 'http';
+
 // Usertypes
 export enum userTypes {
   person = 'person',
@@ -26,4 +29,14 @@ export function getUserType(
   const type = uniqueIdLength.get(country)?.find(el => el.length === uniqueIdNumberCount)?.type as userTypes;
   // TODO: erro when not found userType
   return type || 'person';
+}
+
+export function getAuthTokenFromHeader(headers: IncomingHttpHeaders) {
+  let authToken = headers.authorization!;
+  if (!authToken) throw new HttpErrors[401]('Unauthorized');
+  return authToken.split(' ')[1];
+}
+
+export function excludeDefaultParamsFromSchema(): any[] {
+  return ['_createdAt', '_createdBy', '_id', '_ownerId'];
 }

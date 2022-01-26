@@ -11,3 +11,4 @@ export * from './project.controller';
 export * from './user-has-permissions.controller';
 export * from './user.controller';
 export * from './invitation-has-permissions.controller';
+export * from './project-permission.controller';
