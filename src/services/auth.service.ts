@@ -4,6 +4,7 @@ import {HttpErrors} from '@loopback/rest';
 import {google} from 'googleapis';
 import jwt, {JwtPayload} from 'jsonwebtoken';
 import {CompanyDTO} from '../dto/company.dto';
+import {ISsoUser, ISumaryUser} from '../interfaces/auth.interface';
 import {Company, Person} from '../models';
 import {AdditionalInfoModel} from '../models/signup.model';
 import {PersonRepository, ProjectRepository, UserRepository} from '../repositories';
@@ -11,6 +12,8 @@ import {compareDates} from '../utils/date-manipulation-functions';
 import {getUserType, userTypes} from '../utils/general-functions';
 import {hideEmailString} from '../utils/string-manipulation-functions';
 import {PersonDTO} from './../dto/person.dto';
+import {ssoEnum, SSOUserDto} from './../dto/sso-user.dto';
+import {IRegistryCheck} from './../interfaces/auth.interface';
 import {CompanyRepository} from './../repositories/company.repository';
 import {UserService} from './user.service';
 
@@ -43,7 +46,7 @@ export class AuthService {
   /*
    * Add service methods here
    */
-  public async getGoogleAuthURL(project: string, inviteToken?: string): Promise<string> {
+  public async getGoogleAuthURL(redirectUri: string): Promise<string> {
     const url = this.googleOAuth2Client.generateAuthUrl({
       access_type: "offline",
       scope:
@@ -51,7 +54,7 @@ export class AuthService {
           "https://www.googleapis.com/auth/userinfo.profile",
           "https://www.googleapis.com/auth/userinfo.email",
         ],
-      state: `project=${project}&inviteToken=${inviteToken}`,
+      state: `redirectUri=${redirectUri}`,
     });
     return url;
   }
@@ -61,10 +64,42 @@ export class AuthService {
     this.googleOAuth2Client.setCredentials(tokens);
     let oauth2 = google.oauth2({version: 'v2', auth: this.googleOAuth2Client});
     const googleUser = await oauth2.userinfo.v2.me.get();
-    return {
-      googleId: googleUser.data.id as string,
-      email: googleUser.data.email as string,
-    };
+    return new SSOUserDto({dataFromSSO: googleUser.data as IUserFromGoogle, sso: 'google' as ssoEnum});
+  }
+
+  public async checkUser(code: string): Promise<IRegistryCheck> {
+    try {
+      const ssoUser = await this.getGoogleAuthenticatedUser(code);
+      const user = await this.userRepository.findOne({
+        where: {googleId: ssoUser.googleId},
+        include: [
+          {relation: 'person'}, {relation: 'company'},
+          {
+            relation: 'permissions',
+            scope: {
+              include: [
+                {
+                  relation: 'acls',
+                  scope: {
+                    include: [{relation: 'aclActions'}]
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      });
+      let authToken;
+      if (user) {
+        authToken = jwt.sign({id: user._id, }, process.env.JWT_SECRET!, {expiresIn: '5m'});
+        return {registeredUser: true, authToken, user};
+      } else {
+        authToken = jwt.sign({googleId: ssoUser.googleId, }, process.env.JWT_SECRET!, {expiresIn: '5m'});
+        return {registeredUser: false, authToken};
+      }
+    } catch (e) {
+      throw new HttpErrors[400](e.message);
+    }
   }
 
   public async getTokenToAuthenticateUser(ssoUser: ISsoUser, projectId: string, inviteId?: string): Promise<string> {
@@ -76,22 +111,6 @@ export class AuthService {
       inviteId,
     }, process.env.JWT_SECRET!, {expiresIn: '5m'});
     return token;
-  }
-
-  public async getUser(authToken: string): Promise<ISumaryUser> {
-    try {
-      const tokenDecoded = jwt.verify(authToken, process.env.JWT_SECRET!) as JwtPayload;
-      const user = await this.userRepository.findById(tokenDecoded.id);
-      // if (!user.person && !user.company) throw new HttpErrors[404]('User not registered');
-      const userType = user.person ? 'person' : 'company';
-      // const profileInfo = await this[`${userType}Repository`].findById(user.person || user.company);
-      return {
-        userId: user._id!,
-        // [`${userType}Info`]: profileInfo as ISumaryPerson | ISumaryCompany,
-      };
-    } catch (e) {
-      throw new HttpErrors[400](e.message);
-    }
   }
 
   public async createUser(

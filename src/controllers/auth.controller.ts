@@ -7,6 +7,7 @@ import {
 import {URLSearchParams} from 'url';
 import {Signup} from '../models/signup.model';
 import {AuthService} from '../services';
+import {IRegistryCheck, ISumaryUser} from './../interfaces/auth.interface';
 
 export class AuthController {
   constructor(
@@ -22,10 +23,9 @@ export class AuthController {
 
   @get('auth/google-signin')
   async googleLogin(
-    @param.query.string('projectId') project: string,
-    @param.query.string('inviteToken') inviteToken: string,
+    @param.query.string('redirectUri') redirectUri: string,
   ): Promise<void> {
-    const url = await this.authService.getGoogleAuthURL(project, inviteToken);
+    const url = await this.authService.getGoogleAuthURL(redirectUri);
     return this.response.redirect(url);
   }
 
@@ -35,19 +35,16 @@ export class AuthController {
     @param.query.string('code') code: string,
     @param.query.string('state') state: string,
   ): Promise<void> {
-    const googleUser: ISsoUser = await this.authService.getGoogleAuthenticatedUser(code);
-    const stateParams = new URLSearchParams(state);
-    const token: string = await this.authService.getTokenToAuthenticateUser(googleUser, stateParams.get('project')!, stateParams.get('invite')!);
-    return this.response.redirect(`${process.env.UI_SPLASH_URI}?token=${token}`);
+    const redirectUri = new URLSearchParams(state).get('redirectUri');
+    return this.response.redirect(`${redirectUri}?token=${code}`);
   }
 
-  @get('auth/get-user')
-  async getSumaryUserInfo(): Promise<ISumaryUser> {
-    let authorization = this.request.headers.authorization!;
-    if (!authorization) throw new HttpErrors[401]('Unauthorized')
-    authorization = authorization.split(' ')[1];
-    const user = await this.authService.getUser(authorization);
-    return user;
+  @get('auth')
+  async getSumaryUserInfo(
+    @param.query.string('code') code: string,
+  ): Promise<IRegistryCheck> {
+    const registryCheck = await this.authService.checkUser(code);
+    return registryCheck;
   }
 
   @post('auth/signup')

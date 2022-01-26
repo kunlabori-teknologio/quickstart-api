@@ -1,16 +1,24 @@
-interface ISsoUser {
+import {User} from '../models';
+
+export interface ISsoUser {
   googleId?: string,
   appleId?: string,
-  email: string,
+  email?: string,
 }
 
-interface ISumaryUser {
+export interface IRegistryCheck {
+  registeredUser: boolean,
+  authToken?: string,
+  user?: User
+}
+
+export interface ISumaryUser {
   userId: string,
   personInfo?: ISumaryPerson,
   companyInfo?: ISumaryCompany,
 }
 
-interface ISumaryPerson {
+export interface ISumaryPerson {
   name: string,
   uniqueId: string,
   birthday: Date,
@@ -20,7 +28,7 @@ interface ISumaryPerson {
   username: string,
 }
 
-interface ISumaryCompany {
+export interface ISumaryCompany {
   corporateName: string,
   tradeName: string,
   uniqueId: string,

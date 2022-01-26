@@ -7,3 +7,13 @@ interface IInvitation {
   projectId: string;
   invitedAt: Date;
 }
+
+interface IUserFromGoogle {
+  id?: string;
+  email?: string;
+}
+
+interface IUserFromApple {
+  id?: string;
+  email?: string;
+}
