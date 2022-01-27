@@ -25,13 +25,24 @@ export class AuthController {
 
   @get('auth/web/google-signin')
   @response(204, {
-    description: 'Redirect user to google login page',
+    description: 'Get google login page URL',
+    content: {
+      'application/json': {
+        schema: {
+          type: 'object',
+          title: 'Google login page url',
+          properties: {
+            url: {type: 'string'}
+          },
+        }
+      },
+    },
   })
   async googleLogin(
     @param.query.string('redirectUri') redirectUri: string,
-  ): Promise<void> {
+  ): Promise<any> {
     const url = await this.authService.getGoogleAuthURL(redirectUri);
-    return this.response.redirect(url);
+    return {url};
   }
 
   @get('auth/web/apple-signin')
