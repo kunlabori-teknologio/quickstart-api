@@ -83,8 +83,9 @@ export class AuthController {
   async getSumaryUserInfo(
     @param.query.string('code') code: string,
     @param.query.string('projectId') projectId: string,
+    @param.query.string('permissionId') permissionId?: string,
   ): Promise<IRegistryCheck> {
-    const registryCheck = await this.authService.checkUser(code, projectId);
+    const registryCheck = await this.authService.checkUser(code, projectId, permissionId);
     return registryCheck;
   }
 

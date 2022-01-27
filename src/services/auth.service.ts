@@ -15,6 +15,7 @@ import {PersonDTO} from './../dto/person.dto';
 import {ssoEnum, SSOUserDto} from './../dto/sso-user.dto';
 import {IRegistryCheck} from './../interfaces/auth.interface';
 import {CompanyRepository} from './../repositories/company.repository';
+import {UserHasPermissionsRepository} from './../repositories/user-has-permissions.repository';
 import {UserService} from './user.service';
 
 const fetch = require('node-fetch');
@@ -32,6 +33,8 @@ export class AuthService {
     private companyRepository: CompanyRepository,
     @repository(ProjectRepository)
     private projectRepository: ProjectRepository,
+    @repository(UserHasPermissionsRepository)
+    private userHasPermissionsRepository: UserHasPermissionsRepository,
     // Services
     @service(UserService)
     private userService: UserService,
@@ -61,7 +64,7 @@ export class AuthService {
     return url;
   }
 
-  public async checkUser(code: string, projectId: string): Promise<IRegistryCheck> {
+  public async checkUser(code: string, projectId: string, permissionId?: string): Promise<IRegistryCheck> {
 
     // Local functions
     const getGoogleAuthenticatedUser = async (code: string): Promise<ISsoUser> => {
@@ -85,15 +88,22 @@ export class AuthService {
       let authToken;
 
       if (user) {
+        /**
+         * Create permission
+         */
+        if (permissionId)
+          await this.userHasPermissionsRepository.create({userId: user._id, permissionId})
+        /**
+         * Create auth token
+         */
         authToken = jwt.sign({
           id: user._id, projectId
         }, process.env.JWT_SECRET!, {expiresIn: '5m'});
-
         return {registeredUser: true, authToken, user};
       } else {
         authToken = jwt.sign({
           googleId: ssoUser.googleId, appleId: null,
-          email: ssoUser.email, projectId
+          email: ssoUser.email, projectId, permissionId
         }, process.env.JWT_SECRET!, {expiresIn: '5m'});
 
         return {registeredUser: false, authToken};
@@ -157,6 +167,11 @@ export class AuthService {
         appleId: tokenDecoded.appleId,
         email: tokenDecoded.email,
       });
+      /**
+       * Create permission
+       */
+      if (tokenDecoded.permissionId)
+        await this.userHasPermissionsRepository.create({userId: user._id, permissionId: tokenDecoded.permissionId});
 
       // Relate user to profile and update additional info
       await this[`${userType}Repository`].updateById(profile._id as string,
