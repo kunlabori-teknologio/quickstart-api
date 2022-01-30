@@ -7,9 +7,8 @@ export interface ISsoUser {
 }
 
 export interface IRegistryCheck {
-  registeredUser: boolean,
-  authToken?: string,
-  user?: User
+  authToken?: string | null,
+  user?: User | null
 }
 
 export interface ISumaryUser {

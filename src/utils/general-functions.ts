@@ -1,5 +1,7 @@
-import {HttpErrors} from '@loopback/rest';
+import {Response} from '@loopback/rest';
 import {IncomingHttpHeaders} from 'http';
+import {unauthorizedError} from './http-response';
+import {localeMessage, serverMessages} from './server-messages';
 
 // Usertypes
 export enum userTypes {
@@ -27,13 +29,15 @@ export function getUserType(
   const uniqueIdOnlyNumber: string = uniqueId.replace(/[^a-zA-Z0-9]/g, '');
   const uniqueIdNumberCount: number = uniqueIdOnlyNumber.length;
   const type = uniqueIdLength.get(country)?.find(el => el.length === uniqueIdNumberCount)?.type as userTypes;
-  // TODO: erro when not found userType
-  return type || 'person';
+  if (!type) throw new Error(serverMessages['auth']['uniqueIdIncorrect'][localeMessage]);
+  return type;
 }
 
-export function getAuthTokenFromHeader(headers: IncomingHttpHeaders) {
+export function getAuthTokenFromHeader(
+  headers: IncomingHttpHeaders, response: Response
+) {
   let authToken = headers.authorization!;
-  if (!authToken) throw new HttpErrors[401]('Unauthorized');
+  if (!authToken) unauthorizedError({response});
   return authToken.split(' ')[1];
 }
 

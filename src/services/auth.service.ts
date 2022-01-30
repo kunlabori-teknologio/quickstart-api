@@ -1,21 +1,22 @@
 import {BindingScope, injectable, service} from '@loopback/core';
 import {repository} from '@loopback/repository';
-import {HttpErrors} from '@loopback/rest';
+import {Response} from '@loopback/rest';
 import {google} from 'googleapis';
 import jwt, {JwtPayload} from 'jsonwebtoken';
 import {CompanyDTO} from '../dto/company.dto';
 import {ISsoUser} from '../interfaces/auth.interface';
 import {Company, Person} from '../models';
 import {AdditionalInfoModel} from '../models/signup.model';
-import {PersonRepository, ProjectRepository, UserRepository} from '../repositories';
+import {PersonRepository, UserRepository} from '../repositories';
 import {compareDates} from '../utils/date-manipulation-functions';
 import {getUserType, userTypes} from '../utils/general-functions';
+import {internalServerError, notFoundError, unauthorizedError} from '../utils/http-response';
 import {hideEmailString} from '../utils/string-manipulation-functions';
 import {PersonDTO} from './../dto/person.dto';
 import {ssoEnum, SSOUserDto} from './../dto/sso-user.dto';
 import {IRegistryCheck} from './../interfaces/auth.interface';
 import {CompanyRepository} from './../repositories/company.repository';
-import {UserHasPermissionsRepository} from './../repositories/user-has-permissions.repository';
+import {localeMessage, serverMessages} from './../utils/server-messages';
 import {UserService} from './user.service';
 
 const fetch = require('node-fetch');
@@ -23,197 +24,225 @@ const fetch = require('node-fetch');
 @injectable({scope: BindingScope.TRANSIENT})
 export class AuthService {
   constructor(
-    /* Add @inject to inject parameters */
-    // Repositories
+    /**
+     * Repositories
+     */
     @repository(UserRepository)
     private userRepository: UserRepository,
     @repository(PersonRepository)
     private personRepository: PersonRepository,
     @repository(CompanyRepository)
     private companyRepository: CompanyRepository,
-    @repository(ProjectRepository)
-    private projectRepository: ProjectRepository,
-    @repository(UserHasPermissionsRepository)
-    private userHasPermissionsRepository: UserHasPermissionsRepository,
-    // Services
+    /**
+     * Services
+     */
     @service(UserService)
     private userService: UserService,
   ) { }
-
+  /**
+   * Google oAuth config
+   */
   googleOAuth2Client = new google.auth.OAuth2(
     process.env.GOOGLE_CLIENT_ID,
     process.env.GOOGLE_CLIENT_SECRET,
     `${process.env.SERVER_ROOT_URI}:${process.env.PORT}/auth/google`
   );
-
-  /*
-   * Add service methods here
+  /**
+   * Get google login page url
+   * @returns google login page url
    */
-  public async getGoogleAuthURL(redirectUri: string): Promise<string> {
-
-    const url = this.googleOAuth2Client.generateAuthUrl({
-      access_type: "offline",
-      scope:
-        [
-          "https://www.googleapis.com/auth/userinfo.profile",
-          "https://www.googleapis.com/auth/userinfo.email",
-        ],
-      state: `redirectUri=${redirectUri}`,
-    });
-
-    return url;
+  public async getGoogleAuthURL(): Promise<string> {
+    try {
+      const url = this.googleOAuth2Client.generateAuthUrl({
+        access_type: "offline",
+        scope:
+          [
+            "https://www.googleapis.com/auth/userinfo.profile",
+            "https://www.googleapis.com/auth/userinfo.email",
+          ],
+        state: `redirectUri=${process.env.GOOGLE_LOGIN_REDIRECT_URI}`,
+      });
+      return url;
+    } catch (err) {
+      throw new Error(serverMessages['auth']['getGoogleUrl'][localeMessage]);
+    }
   }
-
-  public async checkUser(code: string, projectId: string, permissionId?: string): Promise<IRegistryCheck> {
-
-    // Local functions
-    const getGoogleAuthenticatedUser = async (code: string): Promise<ISsoUser> => {
+  /**
+   * Get google user
+   * @param code string
+   * @param response Response
+   * @returns SSO user interface
+   */
+  private async getGoogleUser(
+    {code, response}: {code: string, response: Response}
+  ): Promise<ISsoUser | undefined> {
+    try {
       const {tokens} = await this.googleOAuth2Client.getToken(code);
       this.googleOAuth2Client.setCredentials(tokens);
       let oauth2 = google.oauth2({version: 'v2', auth: this.googleOAuth2Client});
       const googleUser = await oauth2.userinfo.v2.me.get();
-
       return new SSOUserDto({dataFromSSO: googleUser.data as IUserFromGoogle, sso: 'google' as ssoEnum});
-    }
-
-    // Main function
-    try {
-      const ssoUser = await getGoogleAuthenticatedUser(code);
-
-      const user = await this.userService.getUserWithPermissions({
-        condition: {where: {googleId: ssoUser.googleId}},
-        projectId
-      });
-
-      let authToken;
-
-      if (user) {
-        /**
-         * Create permission
-         */
-        if (permissionId)
-          await this.userHasPermissionsRepository.create({userId: user._id, permissionId})
-        /**
-         * Create auth token
-         */
-        authToken = jwt.sign({
-          id: user._id, projectId
-        }, process.env.JWT_SECRET!, {expiresIn: '5m'});
-        return {registeredUser: true, authToken, user};
-      } else {
-        authToken = jwt.sign({
-          googleId: ssoUser.googleId, appleId: null,
-          email: ssoUser.email, projectId, permissionId
-        }, process.env.JWT_SECRET!, {expiresIn: '5m'});
-
-        return {registeredUser: false, authToken};
-      }
-
-    } catch (e) {
-
-      throw new HttpErrors[400](e.message);
-
+    } catch (err) {
+      internalServerError({response, message: serverMessages['auth']['getGoogleUser'][localeMessage]});
     }
   }
-
-  public async createUser(
-    {authToken, uniqueId, birthday, country, additionalInfo}:
-      {authToken: string, uniqueId: string, birthday: Date, country: string, additionalInfo?: AdditionalInfoModel}
-  ): Promise<IRegistryCheck> {
-
-    // Local functions
-    const createProfile = async (
-      {userType, uniqueId, additionalInfo}:
-        {userType: userTypes, uniqueId: string, additionalInfo?: AdditionalInfoModel}
-    ): Promise<Person | Company> => {
-      const apiResponse = await fetch(`${process.env.API_CPF_CNPJ}/${userType === 'person' ? 2 : 6}/${uniqueId.replace(/\D/g, "")}`);
-
-      const dataFromApi: IPersonFromAPI | ICompanyFromAPI = await apiResponse.json();
-
-      const profileDTO: PersonDTO | CompanyDTO =
-        userType === 'person' ?
-          new PersonDTO({dataFromApi: dataFromApi as IPersonFromAPI, additionalInfo: additionalInfo as AdditionalInfoModel}) :
-          new CompanyDTO({dataFromApi: dataFromApi as ICompanyFromAPI, additionalInfo: additionalInfo as AdditionalInfoModel});
-
-      const profileCreated = await this[`${userType}Repository`].create({...profileDTO});
-
-      return profileCreated;
+  /**
+   * User login
+   * @param code sso code
+   * @returns
+   */
+  public async login(
+    {code, response}: {code: string, response: Response}
+  ): Promise<IRegistryCheck | undefined> {
+    /**
+     * Get google user
+     */
+    const ssoUser = await this.getGoogleUser({code, response});
+    /**
+     * Check if the user is already registered
+     */
+    const user = await this.userService.getUserWithPermissions({
+      condition: {where: {googleId: ssoUser?.googleId}},
+      projectId: process.env.PROJECT_ID!,
+    });
+    if (user) {
+      return {
+        user,
+        authToken: jwt.sign({
+          id: user?._id, projectId: process.env.PROJECT_ID!
+        }, process.env.PROJECT_SECRET!, {expiresIn: '5m'})
+      }
+    } else {
+      notFoundError({
+        response,
+        message: serverMessages['auth']['unregisteredUser'][localeMessage],
+        data: {
+          signupToken: jwt.sign({
+            googleId: ssoUser?.googleId, appleId: null,
+            email: ssoUser?.email, projectId: process.env.PROJECT_ID!
+          }, process.env.PROJECT_SECRET!, {expiresIn: '5m'})
+        }
+      });
     }
-
-    // Main function
-    try {
-
-      const tokenDecoded = jwt.verify(authToken, process.env.JWT_SECRET!) as JwtPayload;
-
-      // Get user type and profile (person or company)
+  }
+  /**
+   * Create profile
+   * @param userType user types enum
+   * @param uniqueId string
+   * @param additionalInfo additional info instance
+   * @returns
+   */
+  private async createProfile(
+    {userType, uniqueId, additionalInfo}:
+      {userType: userTypes, uniqueId: string, additionalInfo?: AdditionalInfoModel}
+  ): Promise<Person | Company> {
+    /**
+     * Get data from CPF/CNPJ API
+     */
+    let apiResponse = await fetch(`${process.env.API_CPF_CNPJ}/${userType === 'person' ? 2 : 6}/${uniqueId.replace(/\D/g, "")}`);
+    apiResponse = apiResponse.json();
+    if (!apiResponse.status) throw new Error(serverMessages['auth']['uniqueIdNotFound'][localeMessage]);
+    const dataFromApi: IPersonFromAPI | ICompanyFromAPI = await apiResponse;
+    /**
+     * Create profile
+     */
+    const profileDTO: PersonDTO | CompanyDTO =
+      userType === 'person' ?
+        new PersonDTO({dataFromApi: dataFromApi as IPersonFromAPI, additionalInfo: additionalInfo as AdditionalInfoModel}) :
+        new CompanyDTO({dataFromApi: dataFromApi as ICompanyFromAPI, additionalInfo: additionalInfo as AdditionalInfoModel});
+    const profileCreated = await this[`${userType}Repository`].create({...profileDTO});
+    return profileCreated;
+  }
+  /**
+   * Create user
+   * @param authToken string
+   * @param uniqueId string
+   * @param birthday date
+   * @param country string
+   * @param additionalInfo AdditionalInfo instance
+   * @param response Response http instance
+   * @returns
+   */
+  public async createUser(
+    {authToken, uniqueId, birthday, country, additionalInfo, response}:
+      {authToken: string, uniqueId: string, birthday: Date, country: string, additionalInfo?: AdditionalInfoModel, response: Response}
+  ): Promise<IRegistryCheck | void> {
+    uniqueId = uniqueId.replace(/[^a-zA-Z0-9]/g, '');
+    /**
+     * Decode token
+     */
+    return jwt.verify(authToken, process.env.PROJECT_SECRET!, async (err, tokenDecoded) => {
+      if (err) unauthorizedError({response});
+      /**
+       * Get user type (person or company)
+       */
       const userType = getUserType({uniqueId, country});
-
-      // Get or create a profile
+      /**
+       * Get or create a profile
+       */
       const profile =
         await this[`${userType}Repository`].findOne({where: {uniqueId: uniqueId}}) ??
-        await createProfile({userType, uniqueId, additionalInfo});
-
-      // Check birthday
+        await this.createProfile({userType, uniqueId, additionalInfo});
+      /**
+       * Check birthday
+       */
       const datesCompare: boolean = compareDates(profile.birthday, birthday);
-      if (!datesCompare) throw new HttpErrors[400]('Birthday incorrect');
-
-      // Check if profile has already added in some user
-      const userWithSameProfile = await this.userRepository.findOne({where: {[`${userType}`]: profile._id}});
-      if (userWithSameProfile) throw new HttpErrors[400](`The unique id is already being used by ${hideEmailString(userWithSameProfile.email as string)}`);
-
-      // Create user
+      if (!datesCompare) throw new Error(serverMessages['auth']['birthdayIncorrect'][localeMessage]);
+      /**
+       * Check if profile has already added in some user
+       */
+      const userWithSameProfile = await this.userRepository.findOne({
+        include: [{
+          relation: `${userType}`,
+          scope: {where: {uniqueId}}
+        }]
+      });
+      if (userWithSameProfile) throw new Error(`${serverMessages['auth']['uniqueIdInUse'][localeMessage]} ${hideEmailString(userWithSameProfile.email as string)}`);
+      /**
+       * Create user
+       */
       const user = await this.userRepository.create({
-        googleId: tokenDecoded.googleId,
-        appleId: tokenDecoded.appleId,
-        email: tokenDecoded.email,
+        googleId: tokenDecoded?.googleId,
+        appleId: tokenDecoded?.appleId,
+        email: tokenDecoded?.email,
       });
       /**
-       * Create permission
+       * Relate user to profile and update additional info
        */
-      if (tokenDecoded.permissionId)
-        await this.userHasPermissionsRepository.create({userId: user._id, permissionId: tokenDecoded.permissionId});
-
-      // Relate user to profile and update additional info
       await this[`${userType}Repository`].updateById(profile._id as string,
         {
           ...(additionalInfo ? (additionalInfo as AdditionalInfoModel)[`${userType}Info`] : {}),
           userId: user?._id as string,
         }
       );
-
-      // Get user info and create new auth token
+      /**
+       * Get user info and create new auth token
+       */
       const userCreated = await this.userService.getUserWithPermissions({
         condition: {where: {_id: user?._id as string}},
-        projectId: tokenDecoded.projectId,
+        projectId: tokenDecoded?.projectId,
       });
-      const newAuthToken = jwt.sign({id: user._id, projectId: tokenDecoded.projectId}, process.env.JWT_SECRET!, {expiresIn: '5m'});
-      return {registeredUser: true, authToken: newAuthToken, user: userCreated!};
-
-    } catch (e) {
-
-      throw new HttpErrors[400](e.message);
-
-    }
+      const newAuthToken = jwt.sign({id: user._id, projectId: tokenDecoded?.projectId}, process.env.PROJECT_SECRET!, {expiresIn: '5m'});
+      return {authToken: newAuthToken, user: userCreated!};
+    });
   }
-
-  public async refreshToken(authToken: string, projectSecret: string): Promise<string> {
-    try {
-      const decoded = jwt.decode(authToken) as JwtPayload;
-
-      const project = await this.projectRepository.findById(decoded.projectId);
-      if (!project) throw new Error('Project not found!');
-      if (project.secret !== projectSecret) throw new Error('Project secret incorrect');
-
-      const token = jwt.sign({
-        id: decoded.id,
-        projectId: decoded.projectId,
-      }, process.env.JWT_SECRET!, {expiresIn: '5m'});
-      return token;
-
-    } catch (e) {
-
-      throw new HttpErrors[400](e.message)
-
-    }
+  /**
+   * Refresh token
+   * @param authToken
+   * @returns
+   */
+  public async refreshToken(authToken: string): Promise<string> {
+    /**
+     * Decode token
+     */
+    const decoded = jwt.decode(authToken) as JwtPayload;
+    /**
+     * Generate new token
+     */
+    const token = jwt.sign({
+      id: decoded.id,
+      projectId: decoded.projectId,
+    }, process.env.PROJECT_SECRET!, {expiresIn: '5m'});
+    return token;
   }
 }

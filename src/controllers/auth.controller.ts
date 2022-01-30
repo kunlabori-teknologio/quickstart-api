@@ -1,78 +1,61 @@
 import {inject, service} from '@loopback/core';
 import {
-  get, getModelSchemaRef, OperationVisibility, param, post, Request, requestBody, response, Response,
-  RestBindings,
-  visibility
+  get, getModelSchemaRef, param, post, Request, requestBody, response, Response,
+  RestBindings
 } from '@loopback/rest';
-import {URLSearchParams} from 'url';
 import {User} from '../models';
 import {Signup} from '../models/signup.model';
 import {AuthService} from '../services';
 import {getAuthTokenFromHeader} from '../utils/general-functions';
+import {badRequestError, internalServerError, ok} from '../utils/http-response';
 import {IRegistryCheck} from './../interfaces/auth.interface';
 
 export class AuthController {
   constructor(
-    @inject(RestBindings.Http.RESPONSE)
-    private response: Response,
-
+    /**
+     * Http injects
+     */
     @inject(RestBindings.Http.REQUEST)
     private request: Request,
-
+    @inject(RestBindings.Http.RESPONSE)
+    private response: Response,
+    /**
+     * Services
+     */
     @service(AuthService)
     private authService: AuthService,
   ) { }
 
-  @get('auth/web/google-signin')
-  @response(204, {
-    description: 'Get google login page URL',
+  @get('auth/google-url')
+  @response(200, {
+    description: 'Google login page URL',
     content: {
       'application/json': {
         schema: {
-          type: 'object',
+          type: 'string',
           title: 'Google login page url',
-          properties: {
-            url: {type: 'string'}
-          },
         }
       },
     },
   })
-  async googleLogin(
-    @param.query.string('redirectUri') redirectUri: string,
-  ): Promise<any> {
-    const url = await this.authService.getGoogleAuthURL(redirectUri);
-    return {url};
+  async googleLogin(): Promise<void> {
+    try {
+      const url = await this.authService.getGoogleAuthURL();
+      ok({response: this.response, data: url});
+    } catch (err) {
+      internalServerError({response: this.response, message: err.message});
+    }
   }
 
-  @get('auth/web/apple-signin')
-  @response(204, {
-    description: 'Redirect user to google login page',
-  })
-  async appleLogin(
-    @param.query.string('redirectUri') redirectUri: string,
-  ): Promise<void> { }
-
-  @visibility(OperationVisibility.UNDOCUMENTED)
-  @get('auth/google')
-  async getUserDataFromGoogle(
-    @param.query.string('code') code: string,
-    @param.query.string('state') state: string,
-  ): Promise<void> {
-    const redirectUri = new URLSearchParams(state).get('redirectUri');
-    return this.response.redirect(`${redirectUri}?token=${code}`);
-  }
-
-  @get('auth/check')
+  @get('auth/login')
   @response(200, {
-    description: 'User registration verification',
+    description: 'User login',
     content: {
       'application/json': {
         schema: {
           type: 'object',
-          title: 'User registration verification',
+          title: 'User login',
           properties: {
-            registeredUser: {type: 'boolean'},
             authToken: {type: 'string'},
             user: getModelSchemaRef(User, {includeRelations: true}),
           },
@@ -80,12 +63,10 @@ export class AuthController {
       },
     },
   })
-  async getSumaryUserInfo(
+  async login(
     @param.query.string('code') code: string,
-    @param.query.string('projectId') projectId: string,
-    @param.query.string('permissionId') permissionId?: string,
-  ): Promise<IRegistryCheck> {
-    const registryCheck = await this.authService.checkUser(code, projectId, permissionId);
+  ): Promise<IRegistryCheck | void> {
+    const registryCheck = await this.authService.login({code, response: this.response});
     return registryCheck;
   }
 
@@ -98,7 +79,6 @@ export class AuthController {
           type: 'object',
           title: 'User registered',
           properties: {
-            registeredUser: {type: 'boolean'},
             authToken: {type: 'string'},
             user: getModelSchemaRef(User, {includeRelations: true}),
           },
@@ -113,17 +93,24 @@ export class AuthController {
       }
     })
     signupeRequest: Signup
-  ): Promise<IRegistryCheck> {
-    let authToken = getAuthTokenFromHeader(this.request.headers);
-    return this.authService.createUser({authToken, ...signupeRequest});
+  ): Promise<void> {
+    try {
+      let authToken = getAuthTokenFromHeader(this.request.headers, this.response);
+      const data = await this.authService.createUser({
+        ...signupeRequest,
+        authToken,
+        response: this.response
+      });
+      ok({response: this.response, data});
+    } catch (err) {
+      badRequestError({response: this.response, message: err.message});
+    }
   }
 
-  @get('auth/refresh-token/{projectSecret}')
-  async refreshToken(
-    @param.path.string('projectSecret') projectSecret: string,
-  ): Promise<string> {
-    let authToken = getAuthTokenFromHeader(this.request.headers);
-    const token = await this.authService.refreshToken(authToken, projectSecret);
+  @get('auth/refresh-token')
+  async refreshToken(): Promise<string> {
+    let authToken = getAuthTokenFromHeader(this.request.headers, this.response);
+    const token = await this.authService.refreshToken(authToken);
     return token;
   }
 }

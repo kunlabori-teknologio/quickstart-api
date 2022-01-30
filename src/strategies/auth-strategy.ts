@@ -24,7 +24,7 @@ export class AutentikigoStrategy implements AuthenticationStrategy {
     try {
 
       const token = request.headers.authorization?.split(' ')[1];
-      const secret = process.env.JWT_SECRET;
+      const secret = process.env.PROJECT_SECRET;
 
       // Get user id
       const decoded = verify(token!, secret!) as JwtPayload;
