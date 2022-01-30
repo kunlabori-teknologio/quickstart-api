@@ -44,3 +44,36 @@ export function getAuthTokenFromHeader(
 export function excludeDefaultParamsFromSchema(): any[] {
   return ['_createdAt', '_createdBy', '_id', '_ownerId'];
 }
+/**
+ * Create filter params to http request
+ * @param limit number
+ * @param page number
+ * @param orderBy number
+ * @returns
+ */
+export function createFilterRequestParams(urlString: string): any {
+  /**
+   * Get params from url
+   */
+  const url = new URL(`${process.env.SERVER_ROOT_URI}${urlString}`).searchParams;
+  /**
+   * Create where conditions
+   */
+  let where: any[] = [];
+  url.forEach((value, key) => {
+    if (!['limit', 'page', 'order_by'].includes(key)) {
+      var pattern = new RegExp('.*' + value + '.*', "i");
+      where.push({[key]: {like: pattern}});
+    }
+  })
+  /**
+   * Return filter options
+   */
+  const filters = {
+    limit: (url.get('limit') ?? 100) as number,
+    skip: ((url.get('limit') ?? 100) as number) * ((url.get('page') ?? 0) as number),
+    order: [(url.get('order_by') || '')],
+    where: where.length ? {'and': where} : {},
+  };
+  return filters;
+}

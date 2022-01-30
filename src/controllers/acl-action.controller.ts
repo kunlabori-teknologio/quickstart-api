@@ -1,24 +1,74 @@
+import {inject} from '@loopback/core';
 import {
-  Count,
-  CountSchema,
-  Filter,
   FilterExcludingWhere,
-  repository,
-  Where
+  repository
 } from '@loopback/repository';
-import {get, getModelSchemaRef, param, response} from '@loopback/rest';
+import {get, getModelSchemaRef, param, Request, response, Response, RestBindings} from '@loopback/rest';
 import {AclAction} from '../models';
 import {AclActionRepository} from '../repositories';
+import {createFilterRequestParams} from '../utils/general-functions';
+import {ok} from '../utils/http-response';
 
 //@authenticate('autentikigo')
 export class AclActionController {
   constructor(
+    /**
+     * Repositories
+     */
     @repository(AclActionRepository)
     public aclActionRepository: AclActionRepository,
-
+    /**
+     * Http injections
+     */
+    @inject(RestBindings.Http.REQUEST)
+    private request: Request,
+    @inject(RestBindings.Http.RESPONSE)
+    private response: Response,
     // @inject(SecurityBindings.USER, {optional: true})
     // private currentUser?: UserProfile,
   ) { }
+
+  @get('/acl-actions')
+  @response(200, {
+    description: 'Array of AclAction model instances',
+    content: {
+      'application/json': {
+        schema: {
+          type: 'array',
+          items: getModelSchemaRef(AclAction, {includeRelations: true}),
+        },
+      },
+    },
+  })
+  async find(): Promise<void> {
+    const result = await this.aclActionRepository.find(
+      createFilterRequestParams(this.request.url)
+    );
+    const total = await this.aclActionRepository.count();
+    ok({
+      response: this.response,
+      data: {
+        total: total?.count,
+        result,
+      }
+    })
+  }
+
+  @get('/acl-actions/{id}')
+  @response(200, {
+    description: 'AclAction model instance',
+    content: {
+      'application/json': {
+        schema: getModelSchemaRef(AclAction, {includeRelations: true}),
+      },
+    },
+  })
+  async findById(
+    @param.path.string('id') id: string,
+    @param.filter(AclAction, {exclude: 'where'}) filter?: FilterExcludingWhere<AclAction>
+  ): Promise<AclAction> {
+    return this.aclActionRepository.findById(id, filter);
+  }
 
   // @post('/acl-actions')
   // @response(200, {
@@ -42,34 +92,16 @@ export class AclActionController {
   //   return this.aclActionRepository.create(aclAction);
   // }
 
-  @get('/acl-actions/count')
-  @response(200, {
-    description: 'AclAction model count',
-    content: {'application/json': {schema: CountSchema}},
-  })
-  async count(
-    @param.where(AclAction) where?: Where<AclAction>,
-  ): Promise<Count> {
-    return this.aclActionRepository.count(where);
-  }
-
-  @get('/acl-actions')
-  @response(200, {
-    description: 'Array of AclAction model instances',
-    content: {
-      'application/json': {
-        schema: {
-          type: 'array',
-          items: getModelSchemaRef(AclAction, {includeRelations: true}),
-        },
-      },
-    },
-  })
-  async find(
-    @param.filter(AclAction) filter?: Filter<AclAction>,
-  ): Promise<AclAction[]> {
-    return this.aclActionRepository.find(filter);
-  }
+  // @get('/acl-actions/count')
+  // @response(200, {
+  //   description: 'AclAction model count',
+  //   content: {'application/json': {schema: CountSchema}},
+  // })
+  // async count(
+  //   @param.where(AclAction) where?: Where<AclAction>,
+  // ): Promise<Count> {
+  //   return this.aclActionRepository.count(where);
+  // }
 
   // @patch('/acl-actions')
   // @response(200, {
@@ -89,22 +121,6 @@ export class AclActionController {
   // ): Promise<Count> {
   //   return this.aclActionRepository.updateAll(aclAction, where);
   // }
-
-  @get('/acl-actions/{id}')
-  @response(200, {
-    description: 'AclAction model instance',
-    content: {
-      'application/json': {
-        schema: getModelSchemaRef(AclAction, {includeRelations: true}),
-      },
-    },
-  })
-  async findById(
-    @param.path.string('id') id: string,
-    @param.filter(AclAction, {exclude: 'where'}) filter?: FilterExcludingWhere<AclAction>
-  ): Promise<AclAction> {
-    return this.aclActionRepository.findById(id, filter);
-  }
 
   // @patch('/acl-actions/{id}')
   // @response(204, {
