@@ -27,8 +27,8 @@ export function ok(
  * @param internalCode string
  */
 export function badRequestError(
-  {response, message, data, internalCode}:
-    {response: Response, message?: string, data?: any, internalCode?: string}
+  {response, message, data, internalCode, logMessage}:
+    {response: Response, message?: string, data?: any, internalCode?: string, logMessage?: string}
 ): void {
   response.status(400);
   response.send({

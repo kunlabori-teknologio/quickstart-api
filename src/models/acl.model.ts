@@ -29,13 +29,14 @@ export class Acl extends Default {
   })
   name: string;
 
-  @hasMany(() => AclAction, {through: {model: () => AclHasActions}})
-  aclActions: AclAction[];
-
   @property({
     type: 'string',
   })
-  moduleId?: string;
+  module?: string;
+
+  @hasMany(() => AclAction, {through: {model: () => AclHasActions}})
+  aclActions: AclAction[];
+
 
   constructor(data?: Partial<Acl>) {
     super(data);

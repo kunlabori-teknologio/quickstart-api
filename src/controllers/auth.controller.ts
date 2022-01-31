@@ -103,7 +103,11 @@ export class AuthController {
       });
       ok({response: this.response, data});
     } catch (err) {
-      badRequestError({response: this.response, message: err.message});
+      badRequestError({
+        response: this.response,
+        message: err.message,
+        logMessage: err.message,
+      });
     }
   }
 

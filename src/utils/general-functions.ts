@@ -46,12 +46,11 @@ export function excludeDefaultParamsFromSchema(): any[] {
 }
 /**
  * Create filter params to http request
- * @param limit number
- * @param page number
- * @param orderBy number
+ * @param urlString string
+ * @param whereAdditional array of where object
  * @returns
  */
-export function createFilterRequestParams(urlString: string): any {
+export function createFilterRequestParams(urlString: string, whereAdditional?: any[]): any {
   /**
    * Get params from url
    */
@@ -66,6 +65,10 @@ export function createFilterRequestParams(urlString: string): any {
       where.push({[key]: {like: pattern}});
     }
   })
+  /**
+   * Add where additional
+   */
+  if (whereAdditional) where = [...where, ...whereAdditional];
   /**
    * Return filter options
    */

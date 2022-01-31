@@ -41,17 +41,16 @@ export class AclActionController {
     },
   })
   async find(): Promise<void> {
-    const result = await this.aclActionRepository.find(
-      createFilterRequestParams(this.request.url)
-    );
-    const total = await this.aclActionRepository.count();
+    const filters = createFilterRequestParams(this.request.url);
+    const result = await this.aclActionRepository.find(filters);
+    const total = await this.aclActionRepository.count(filters['where']);
     ok({
       response: this.response,
       data: {
         total: total?.count,
         result,
       }
-    })
+    });
   }
 
   @get('/acl-actions/{id}')
@@ -66,8 +65,9 @@ export class AclActionController {
   async findById(
     @param.path.string('id') id: string,
     @param.filter(AclAction, {exclude: 'where'}) filter?: FilterExcludingWhere<AclAction>
-  ): Promise<AclAction> {
-    return this.aclActionRepository.findById(id, filter);
+  ): Promise<void> {
+    const data = await this.aclActionRepository.findById(id, filter);
+    ok({response: this.response, data});
   }
 
   // @post('/acl-actions')
