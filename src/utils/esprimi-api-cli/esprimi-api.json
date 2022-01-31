@@ -1,0 +1,23 @@
+{
+  "project-info": {
+    "project-name": "camelCase",
+    "project-id": "spinal-case",
+    "project-secret": "uuid"
+  },
+  "database-info": {
+    "mongo-url": ""
+  },
+  "modules": [
+    {
+      "name": "UpperCamelCase",
+      "properties": [
+        {
+          "name": "camelCase",
+          "type": "string | number | boolean | array | date | any",
+          "itemType": "string | number | boolean | array | date | any",
+          "required": true
+        }
+      ]
+    }
+  ]
+}

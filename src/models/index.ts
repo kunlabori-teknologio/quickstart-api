@@ -10,3 +10,4 @@ export * from './permission.model';
 export * from './person.model';
 export * from './user-has-permissions.model';
 export * from './user.model';
+export * from './esprimi-default.model';
