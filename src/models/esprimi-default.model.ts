@@ -1,7 +1,8 @@
-import {Entity, model, property} from '@loopback/repository';
+import {model, property} from '@loopback/repository';
+import {Default} from '.';
 
 @model()
-export class EsprimiDefault extends Entity {
+export class EsprimiDefault extends Default {
   @property({
     type: 'string',
     id: true,
@@ -9,38 +10,7 @@ export class EsprimiDefault extends Entity {
   })
   _id?: string;
 
-  @property({
-    type: 'string',
-  })
-  string?: string;
-
-  @property({
-    type: 'number',
-  })
-  number?: number;
-
-  @property({
-    type: 'boolean',
-  })
-  boolean?: boolean;
-
-  @property({
-    type: 'array',
-    itemType: 'any',
-  })
-  array?: any[];
-
-  @property({
-    type: 'date',
-  })
-  date?: string;
-
-  @property({
-    type: 'any',
-  })
-  any?: any;
-
-
+  // End properties
   constructor(data?: Partial<EsprimiDefault>) {
     super(data);
   }

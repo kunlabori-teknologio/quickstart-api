@@ -1,12 +1,16 @@
 const str = require('@supercharge/strings');
-
+/**
+ * Check name convention
+ * @param {array} moduleNames
+ * @param {string} namingConvention ex.: 'camelCase', 'UpperCamelCase'
+ */
 exports.checkNames = (moduleNames, namingConvention) => {
   let isCamel;
   for (let index = 0; index < moduleNames.length; index++) {
     const name = moduleNames[index];
     switch (namingConvention) {
       case 'camelCase':
-        isCamel = str(name).isCamel();
+        isCamel = str(name).isCamel() || str(name).isLower();
         if (!isCamel) throw new Error(`${name} is not camel case`);
         break;
 

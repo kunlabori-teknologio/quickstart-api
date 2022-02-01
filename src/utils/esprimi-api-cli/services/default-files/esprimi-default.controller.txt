@@ -1,0 +1,187 @@
+import {authenticate} from '@loopback/authentication';
+import {inject} from '@loopback/core';
+import {
+  repository
+} from '@loopback/repository';
+import {
+  del, get,
+  getModelSchemaRef, param, post, put, Request, requestBody,
+  response, Response, RestBindings
+} from '@loopback/rest';
+import {SecurityBindings, securityId, UserProfile} from '@loopback/security';
+import {EsprimiDefault} from '../models';
+import {EsprimiDefaultRepository} from '../repositories';
+import {createFilterRequestParams, excludeDefaultParamsFromSchema} from '../utils/general-functions';
+import {badRequestError, ok} from '../utils/http-response';
+import {localeMessage, serverMessages} from './../utils/server-messages';
+
+@authenticate('autentikigo')
+export class EsprimiDefaultController {
+  constructor(
+    /**
+     * Repositories
+     */
+    @repository(EsprimiDefaultRepository)
+    public esprimiDefaultRepository: EsprimiDefaultRepository,
+    /**
+     * Http injections
+     */
+    @inject(RestBindings.Http.REQUEST)
+    private request: Request,
+    @inject(RestBindings.Http.RESPONSE)
+    private response: Response,
+    /**
+     * User profile
+     */
+    @inject(SecurityBindings.USER, {optional: true})
+    private currentUser?: UserProfile,
+  ) { }
+
+  @post('/esprimi-default')
+  @response(200, {
+    description: 'EsprimiDefault model instance',
+    content: {'application/json': {schema: getModelSchemaRef(EsprimiDefault)}},
+  })
+  async create(
+    @requestBody({
+      content: {
+        'application/json': {
+          schema: getModelSchemaRef(EsprimiDefault, {
+            title: 'NewEsprimiDefault',
+            exclude: excludeDefaultParamsFromSchema(),
+          })
+        },
+      },
+    })
+    data: any,
+  ): Promise<void> {
+    try {
+      /**
+       * Create
+       */
+      const _createdBy = this.currentUser?.[securityId] as string;
+      const dataCreated = await this.esprimiDefaultRepository.create({...data, _createdBy});
+      ok({response: this.response, data: dataCreated, message: serverMessages['crudSuccess']['create'][localeMessage]});
+    } catch (err) {
+      badRequestError({
+        response: this.response,
+        message: serverMessages['crudError']['create'][localeMessage],
+        logMessage: err.message,
+      });
+    }
+  }
+
+  @get('/esprimi-default')
+  @response(200, {
+    description: 'Array of EsprimiDefault model instances',
+    content: {
+      'application/json': {
+        schema: {
+          type: 'array',
+          items: getModelSchemaRef(EsprimiDefault, {includeRelations: true}),
+        },
+      },
+    },
+  })
+  async find(): Promise<void> {
+    try {
+      /**
+       * Create filters
+       */
+      const filters = createFilterRequestParams(this.request.url);
+      const result = await this.esprimiDefaultRepository.find({...filters});
+      const total = await this.esprimiDefaultRepository.count(filters['where']);
+      ok({
+        response: this.response,
+        message: serverMessages['crudSuccess']['read'][localeMessage],
+        data: {
+          total: total?.count,
+          result,
+        }
+      });
+    } catch (err) {
+      badRequestError({
+        response: this.response,
+        message: serverMessages['crudError']['read'][localeMessage],
+        logMessage: err.message,
+      })
+    }
+  }
+
+  @get('/esprimi-default/{id}')
+  @response(200, {
+    description: 'EsprimiDefault model instance',
+    content: {
+      'application/json': {
+        schema: getModelSchemaRef(EsprimiDefault, {includeRelations: true}),
+      },
+    },
+  })
+  async findById(
+    @param.path.string('id') id: string,
+  ): Promise<void> {
+    try {
+      const data = await this.esprimiDefaultRepository.findById(id);
+      ok({response: this.response, data, message: serverMessages['crudSuccess']['read'][localeMessage]});
+    } catch (err) {
+      badRequestError({
+        response: this.response,
+        message: serverMessages['crudError']['read'][localeMessage],
+        logMessage: err.message,
+      })
+    }
+  }
+
+  @put('/esprimi-default/{id}')
+  @response(204, {
+    description: 'EsprimiDefault PUT success',
+  })
+  async updateById(
+    @param.path.string('id') id: string,
+    @requestBody({
+      content: {
+        'application/json': {
+          schema: getModelSchemaRef(EsprimiDefault, {
+            title: 'NewEsprimiDefault',
+            exclude: excludeDefaultParamsFromSchema(),
+          }),
+        },
+      },
+    })
+    data: any,
+  ): Promise<void> {
+    try {
+      /**
+       * Update
+       */
+      const dataUpdated = await this.esprimiDefaultRepository.updateById(id, data);
+      /**
+       * Get
+       */
+      ok({response: this.response, data: dataUpdated, message: serverMessages['crudSuccess']['update'][localeMessage]});
+    } catch (err) {
+      badRequestError({
+        response: this.response,
+        message: serverMessages['crudError']['update'][localeMessage],
+        logMessage: err.message,
+      })
+    }
+  }
+
+  @del('/esprimi-default/{id}')
+  @response(204, {
+    description: 'EsprimiDefault DELETE success',
+  })
+  async deleteById(@param.path.string('id') id: string): Promise<void> {
+    try {
+      await this.esprimiDefaultRepository.deleteById(id);
+      ok({response: this.response, message: serverMessages['crudSuccess']['delete'][localeMessage]});
+    } catch (err) {
+      badRequestError({
+        response: this.response,
+        message: serverMessages['crudError']['delete'][localeMessage],
+        logMessage: err.message,
+      })
+    }
+  }
+}
