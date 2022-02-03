@@ -1,4 +1,5 @@
 export * from './acl-action.controller';
+export * from './acl-has-actions.controller';
 export * from './acl.controller';
 export * from './auth.controller';
 // export * from './invitation.controller';

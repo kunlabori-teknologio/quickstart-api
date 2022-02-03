@@ -1,167 +1,183 @@
-import {inject, service} from '@loopback/core';
+import {inject} from '@loopback/core'
 import {
   repository
-} from '@loopback/repository';
+} from '@loopback/repository'
 import {
+  del,
   get,
-  getModelSchemaRef, param, response, Response,
+  param,
+  post,
+  Request,
+  requestBody,
+  response,
+  Response,
   RestBindings
-} from '@loopback/rest';
-import {User} from '../models';
-import {UserRepository} from '../repositories';
-import {badRequestError, ok} from '../utils/http-response';
-import {UserService} from './../services/user.service';
-import {localeMessage, serverMessages} from './../utils/server-messages';
+} from '@loopback/rest'
+import {HttpClass} from '../classes/http.class'
+import {Permission} from '../models'
+import {Company} from '../models/company.model'
+import {Person} from '../models/person.model'
+import {User} from '../models/user.model'
+import {CompanyRepository, UserRepository} from '../repositories'
+import {localeMessage} from '../utils/server-messages'
+import {PersonRepository} from './../repositories/person.repository'
+import {UserHasPermissionsRepository} from './../repositories/user-has-permissions.repository'
+import {serverMessages} from './../utils/server-messages'
 
 export class UserController {
-  constructor(
-    /**
-     * Repositories
-     */
-    @repository(UserRepository)
-    public userRepository: UserRepository,
-    /**
-     * Services
-     */
-    @service(UserService)
-    private userService: UserService,
-    /**
-     * Http injects
-     */
-    @inject(RestBindings.Http.RESPONSE)
-    private response: Response,
-  ) { }
 
-  @get('/users/{id}')
+  private httpClass
+
+  constructor(
+    @repository(UserRepository) public userRepository: UserRepository,
+    @repository(UserHasPermissionsRepository) private userHasPermissionsRepository: UserHasPermissionsRepository,
+    @repository(PersonRepository) private personRepository: PersonRepository,
+    @repository(CompanyRepository) private companyRepository: CompanyRepository,
+
+    @inject(RestBindings.Http.REQUEST) private request: Request,
+    @inject(RestBindings.Http.RESPONSE) private response: Response,
+  ) {
+    this.httpClass = new HttpClass({response: this.response})
+  }
+
+  @get('/users/{userId}')
   @response(200, {
     description: 'User model instance',
-    content: {
-      'application/json': {
-        schema: getModelSchemaRef(User, {includeRelations: true}),
-      },
-    },
+    properties: new HttpClass().findOneSchema(User, false)
   })
   async findById(
-    @param.path.string('id') id: string,
+    @param.path.string('userId') id: string,
   ): Promise<void> {
     try {
-      const data = await this.userService.getUserWithPermissions({
-        condition: {where: {_id: id}},
-        projectId: process.env.PROJECT_ID!,
-      });
-      ok({response: this.response, data, message: serverMessages['crudSuccess']['read'][localeMessage]});
+      const data = await this.userRepository.findById(id)
+      this.httpClass.okResponse({data, message: serverMessages['crudSuccess']['read'][localeMessage]})
     } catch (err) {
-      badRequestError({
-        response: this.response,
+      this.httpClass.badRequestErrorResponse({
         message: serverMessages['crudError']['read'][localeMessage],
-        logMessage: err.message,
+        logMessage: err.message
       })
     }
   }
 
-  // @post('/users')
-  // @response(200, {
-  //   description: 'User model instance',
-  //   content: {'application/json': {schema: getModelSchemaRef(User)}},
-  // })
-  // async create(
-  //   @requestBody({
-  //     content: {
-  //       'application/json': {
-  //         schema: getModelSchemaRef(User, {
-  //           title: 'NewUser',
-  //           exclude: ['_id'],
-  //         }),
-  //       },
-  //     },
-  //   })
-  //   user: Omit<User, '_id'>,
-  // ): Promise<User> {
-  //   return this.userRepository.create(user);
-  // }
+  @get('/users/{userId}/person')
+  @response(200, {
+    description: 'Person model instance',
+    properties: new HttpClass().findOneSchema(Person)
+  })
+  async findPersonRelated(
+    @param.path.string('userId') userId: string,
+  ): Promise<void> {
+    try {
+      const data = await this.personRepository.findOne({where: {userId}})
+      if (!data) throw new Error(serverMessages['user']['personNotFound'][localeMessage])
+      this.httpClass.okResponse({data, message: serverMessages['crudSuccess']['read'][localeMessage]})
+    } catch (err) {
+      this.httpClass.badRequestErrorResponse({
+        message: serverMessages['crudError']['read'][localeMessage],
+        logMessage: err.message
+      })
+    }
+  }
 
-  // @get('/users/count')
-  // @response(200, {
-  //   description: 'User model count',
-  //   content: {'application/json': {schema: CountSchema}},
-  // })
-  // async count(
-  //   @param.where(User) where?: Where<User>,
-  // ): Promise<Count> {
-  //   return this.userRepository.count(where);
-  // }
+  @get('/users/{userId}/company')
+  @response(200, {
+    description: 'Company model instance',
+    properties: new HttpClass().findOneSchema(Company)
+  })
+  async findCompanyRelated(
+    @param.path.string('userId') userId: string,
+  ): Promise<void> {
+    try {
+      const data = await this.companyRepository.findOne({where: {userId}})
+      if (!data) throw new Error(serverMessages['user']['companyNotFound'][localeMessage])
+      this.httpClass.okResponse({data, message: serverMessages['crudSuccess']['read'][localeMessage]})
+    } catch (err) {
+      this.httpClass.badRequestErrorResponse({
+        message: serverMessages['crudError']['read'][localeMessage],
+        logMessage: err.message
+      })
+    }
+  }
 
-  // @get('/users')
-  // @response(200, {
-  //   description: 'Array of User model instances',
-  //   content: {
-  //     'application/json': {
-  //       schema: {
-  //         type: 'array',
-  //         items: getModelSchemaRef(User, {includeRelations: true}),
-  //       },
-  //     },
-  //   },
-  // })
-  // async find(
-  //   @param.filter(User) filter?: Filter<User>,
-  // ): Promise<User[]> {
-  //   return this.userRepository.find(filter);
-  // }
+  @post('/users/{userId}/permissions')
+  @response(200, {
+    description: 'Give permissions',
+    properties: new HttpClass().findOneSchema(User, true)
+  })
+  async createPermissionRelated(
+    @param.path.string('userId') userId: string,
+    @requestBody({
+      content: {
+        'application/json': {schema: {type: 'array', items: {type: 'string'}}}
+      }
+    })
+    permissionIds: string[],
+  ): Promise<void> {
+    try {
+      await this.userHasPermissionsRepository.createAll(permissionIds.map((permissionId) => {
+        return {permissionId, userId}
+      }))
+      const data = await this.userRepository.findById(userId, {include: ['person', 'company', 'permissions']})
+      this.httpClass.createResponse({data})
+    } catch (err) {
+      this.httpClass.badRequestErrorResponse({
+        message: serverMessages['crudError']['create'][localeMessage],
+        logMessage: err.message
+      })
+    }
+  }
 
-  // @patch('/users')
-  // @response(200, {
-  //   description: 'User PATCH success count',
-  //   content: {'application/json': {schema: CountSchema}},
-  // })
-  // async updateAll(
-  //   @requestBody({
-  //     content: {
-  //       'application/json': {
-  //         schema: getModelSchemaRef(User, {partial: true}),
-  //       },
-  //     },
-  //   })
-  //   user: User,
-  //   @param.where(User) where?: Where<User>,
-  // ): Promise<Count> {
-  //   return this.userRepository.updateAll(user, where);
-  // }
+  @get('/users/{userId}/permissions')
+  @response(200, {
+    description: 'Array of permission',
+    properties: new HttpClass().findAllResponseSchema(Permission)
+  })
+  async findPermissionsRelated(
+    @param.path.string('userId') id: string,
+    @param.query.number('limit') limit: number,
+    @param.query.number('page') page: number,
+    @param.query.string('order_by') order_by: string,
+  ): Promise<void> {
+    try {
+      const filters = this.httpClass.createFilterRequestParams(this.request.url)
+      const result = await this.userRepository.permissions(id).find({...filters, include: ['acls']})
+      const total = (await this.userRepository.permissions(id).find({where: filters['where']})).length
+      this.httpClass.okResponse({
+        data: {total: total, result},
+        message: serverMessages['crudSuccess']['read'][localeMessage],
+      })
+    } catch (err) {
+      this.httpClass.badRequestErrorResponse({
+        message: serverMessages['crudError']['read'][localeMessage],
+        logMessage: err.message
+      })
+    }
+  }
 
-  // @patch('/users/{id}')
-  // @response(204, {
-  //   description: 'User PATCH success',
-  // })
-  // async updateById(
-  //   @param.path.string('id') id: string,
-  //   @requestBody({
-  //     content: {
-  //       'application/json': {
-  //         schema: getModelSchemaRef(User, {partial: true}),
-  //       },
-  //     },
-  //   })
-  //   user: User,
-  // ): Promise<void> {
-  //   await this.userRepository.updateById(id, user);
-  // }
-
-  // @put('/users/{id}')
-  // @response(204, {
-  //   description: 'User PUT success',
-  // })
-  // async replaceById(
-  //   @param.path.string('id') id: string,
-  //   @requestBody() user: User,
-  // ): Promise<void> {
-  //   await this.userRepository.replaceById(id, user);
-  // }
-
-  // @del('/users/{id}')
-  // @response(204, {
-  //   description: 'User DELETE success',
-  // })
-  // async deleteById(@param.path.string('id') id: string): Promise<void> {
-  //   await this.userRepository.deleteById(id);
-  // }
+  @del('/users/{userId}/permissions')
+  @response(200, {description: 'delete a Permission'})
+  async delteAclActionsRelated(
+    @param.path.string('userId') userId: string,
+    @requestBody({
+      content: {
+        'application/json': {schema: {type: 'array', items: {type: 'string'}}}
+      }
+    })
+    permissionIds: string[],
+  ): Promise<void> {
+    try {
+      await this.userHasPermissionsRepository.deleteAll({
+        or:
+          (permissionIds.map((permissionId) => {return {and: [{userId}, {permissionId}]}}))
+      })
+      this.httpClass.noContentResponse({
+        message: serverMessages['crudSuccess']['delete'][localeMessage]
+      })
+    } catch (err) {
+      this.httpClass.badRequestErrorResponse({
+        message: serverMessages['crudError']['delete'][localeMessage],
+        logMessage: err.message
+      })
+    }
+  }
 }

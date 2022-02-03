@@ -1,14 +1,9 @@
 import {inject, service} from '@loopback/core';
 import {
-  get, getModelSchemaRef, param, post, Request, requestBody, response, Response,
+  Request, Response,
   RestBindings
 } from '@loopback/rest';
-import {User} from '../models';
-import {Signup} from '../models/signup.model';
 import {AuthService} from '../services';
-import {getAuthTokenFromHeader} from '../utils/general-functions';
-import {badRequestError, internalServerError, ok} from '../utils/http-response';
-import {IRegistryCheck} from './../interfaces/auth.interface';
 
 export class AuthController {
   constructor(
@@ -26,95 +21,95 @@ export class AuthController {
     private authService: AuthService,
   ) { }
 
-  @get('auth/google-url')
-  @response(200, {
-    description: 'Google login page URL',
-    content: {
-      'application/json': {
-        schema: {
-          type: 'string',
-          title: 'Google login page url',
-        }
-      },
-    },
-  })
-  async googleLogin(): Promise<void> {
-    try {
-      const url = await this.authService.getGoogleAuthURL();
-      ok({response: this.response, data: url});
-    } catch (err) {
-      internalServerError({response: this.response, message: err.message});
-    }
-  }
+  // @get('auth/google-url')
+  // @response(200, {
+  //   description: 'Google login page URL',
+  //   content: {
+  //     'application/json': {
+  //       schema: {
+  //         type: 'string',
+  //         title: 'Google login page url',
+  //       }
+  //     },
+  //   },
+  // })
+  // async googleLogin(): Promise<void> {
+  //   try {
+  //     const url = await this.authService.getGoogleAuthURL();
+  //     ok({response: this.response, data: url});
+  //   } catch (err) {
+  //     internalServerError({response: this.response, message: err.message});
+  //   }
+  // }
 
-  @get('auth/login')
-  @response(200, {
-    description: 'User login',
-    content: {
-      'application/json': {
-        schema: {
-          type: 'object',
-          title: 'User login',
-          properties: {
-            authToken: {type: 'string'},
-            user: getModelSchemaRef(User, {includeRelations: true}),
-          },
-        },
-      },
-    },
-  })
-  async login(
-    @param.query.string('code') code: string,
-  ): Promise<IRegistryCheck | void> {
-    const registryCheck = await this.authService.login({code, response: this.response});
-    return registryCheck;
-  }
+  // @get('auth/login')
+  // @response(200, {
+  //   description: 'User login',
+  //   content: {
+  //     'application/json': {
+  //       schema: {
+  //         type: 'object',
+  //         title: 'User login',
+  //         properties: {
+  //           authToken: {type: 'string'},
+  //           user: getModelSchemaRef(User, {includeRelations: true}),
+  //         },
+  //       },
+  //     },
+  //   },
+  // })
+  // async login(
+  //   @param.query.string('code') code: string,
+  // ): Promise<IRegistryCheck | void> {
+  //   const registryCheck = await this.authService.login({code, response: this.response});
+  //   return registryCheck;
+  // }
 
-  @post('auth/signup')
-  @response(200, {
-    description: 'User registered',
-    content: {
-      'application/json': {
-        schema: {
-          type: 'object',
-          title: 'User registered',
-          properties: {
-            authToken: {type: 'string'},
-            user: getModelSchemaRef(User, {includeRelations: true}),
-          },
-        },
-      },
-    },
-  })
-  async signup(
-    @requestBody({
-      content: {
-        'application/json': {schema: getModelSchemaRef(Signup)}
-      }
-    })
-    signupeRequest: Signup
-  ): Promise<void> {
-    try {
-      let authToken = getAuthTokenFromHeader(this.request.headers, this.response);
-      const data = await this.authService.createUser({
-        ...signupeRequest,
-        authToken,
-        response: this.response
-      });
-      ok({response: this.response, data});
-    } catch (err) {
-      badRequestError({
-        response: this.response,
-        message: err.message,
-        logMessage: err.message,
-      });
-    }
-  }
+  // @post('auth/signup')
+  // @response(200, {
+  //   description: 'User registered',
+  //   content: {
+  //     'application/json': {
+  //       schema: {
+  //         type: 'object',
+  //         title: 'User registered',
+  //         properties: {
+  //           authToken: {type: 'string'},
+  //           user: getModelSchemaRef(User, {includeRelations: true}),
+  //         },
+  //       },
+  //     },
+  //   },
+  // })
+  // async signup(
+  //   @requestBody({
+  //     content: {
+  //       'application/json': {schema: getModelSchemaRef(Signup)}
+  //     }
+  //   })
+  //   signupeRequest: Signup
+  // ): Promise<void> {
+  //   try {
+  //     let authToken = getAuthTokenFromHeader(this.request.headers, this.response);
+  //     const data = await this.authService.createUser({
+  //       ...signupeRequest,
+  //       authToken,
+  //       response: this.response
+  //     });
+  //     ok({response: this.response, data});
+  //   } catch (err) {
+  //     badRequestError({
+  //       response: this.response,
+  //       message: err.message,
+  //       logMessage: err.message,
+  //     });
+  //   }
+  // }
 
-  @get('auth/refresh-token')
-  async refreshToken(): Promise<string> {
-    let authToken = getAuthTokenFromHeader(this.request.headers, this.response);
-    const token = await this.authService.refreshToken(authToken);
-    return token;
-  }
+  // @get('auth/refresh-token')
+  // async refreshToken(): Promise<string> {
+  //   let authToken = getAuthTokenFromHeader(this.request.headers, this.response);
+  //   const token = await this.authService.refreshToken(authToken);
+  //   return token;
+  // }
 }

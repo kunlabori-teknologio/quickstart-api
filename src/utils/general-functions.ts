@@ -1,82 +1,55 @@
 import {Response} from '@loopback/rest';
 import {IncomingHttpHeaders} from 'http';
-import {unauthorizedError} from './http-response';
+import {HttpClass} from './../classes/http.class';
 import {localeMessage, serverMessages} from './server-messages';
 
-// Usertypes
-export enum userTypes {
+export enum userTypesEnum {
   person = 'person',
   company = 'company',
 }
-// Unique id type and length interface
-interface UniqueIdTypeLength {
+
+interface IUniqueIdInfos {
   type: string,
   length: number,
 }
-// Length of unique id by county
-const uniqueIdLength: Map<String, UniqueIdTypeLength[]> = new Map([
-  ['br', [{type: userTypes.person, length: 11}, {type: userTypes.company, length: 14},]]
-]);
-/**
- * Check if unique belongs a person or a company
- * @param uniqueId
- * @param country ex.: 'br'
- * @returns 'person' or 'company'
- */
-export function getUserType(
-  {uniqueId, country}: {uniqueId: string, country: string}
-): userTypes {
-  const uniqueIdOnlyNumber: string = uniqueId.replace(/[^a-zA-Z0-9]/g, '');
-  const uniqueIdNumberCount: number = uniqueIdOnlyNumber.length;
-  const type = uniqueIdLength.get(country)?.find(el => el.length === uniqueIdNumberCount)?.type as userTypes;
-  if (!type) throw new Error(serverMessages['auth']['uniqueIdIncorrect'][localeMessage]);
-  return type;
+
+interface IPrimaryUserInformation {
+  uniqueId: string,
+  country: string,
 }
 
-export function getAuthTokenFromHeader(
-  headers: IncomingHttpHeaders, response: Response
-) {
-  let authToken = headers.authorization!;
-  if (!authToken) unauthorizedError({response});
-  return authToken.split(' ')[1];
+const uniqueIdLength: Map<String, IUniqueIdInfos[]> = new Map([
+  ['br',
+    [
+      {type: userTypesEnum.person, length: 11},
+      {type: userTypesEnum.company, length: 14}
+    ]
+  ]
+])
+
+export function getUserType(primaryUserInfo: IPrimaryUserInformation): userTypesEnum {
+  const type = uniqueIdLength.get(primaryUserInfo.country)?.find(el => {
+    return el.length === getOnlyUniqueIdNumber(primaryUserInfo.uniqueId).length
+  })?.type as userTypesEnum
+
+  if (!type)
+    throw new Error(serverMessages['auth']['uniqueIdIncorrect'][localeMessage])
+
+  return type
 }
 
-export function excludeDefaultParamsFromSchema(): any[] {
-  return ['_createdAt', '_createdBy', '_id', '_ownerId'];
+function getOnlyUniqueIdNumber(uniqueId: string): string {
+  return uniqueId.replace(/[^a-zA-Z0-9]/g, '')
 }
-/**
- * Create filter params to http request
- * @param urlString string
- * @param whereAdditional array of where object
- * @returns
- */
-export function createFilterRequestParams(urlString: string, whereAdditional?: any[]): any {
-  /**
-   * Get params from url
-   */
-  const url = new URL(`${process.env.SERVER_ROOT_URI}${urlString}`).searchParams;
-  /**
-   * Create where conditions
-   */
-  let where: any[] = [];
-  url.forEach((value, key) => {
-    if (!['limit', 'page', 'order_by'].includes(key)) {
-      var pattern = new RegExp('.*' + value + '.*', "i");
-      where.push({[key]: {like: pattern}});
-    }
-  })
-  /**
-   * Add where additional
-   */
-  if (whereAdditional) where = [...where, ...whereAdditional];
-  /**
-   * Return filter options
-   */
-  const filters = {
-    limit: (url.get('limit') ?? 100) as number,
-    skip: ((url.get('limit') ?? 100) as number) * ((url.get('page') ?? 0) as number),
-    order: [(url.get('order_by') || '')],
-    where: where.length ? {'and': where} : {},
-  };
-  return filters;
+
+interface IHeaderAndResponse {
+  headers: IncomingHttpHeaders,
+  response: Response
+}
+
+export function getAuthTokenFromHeader(headerAndResponse: IHeaderAndResponse) {
+  let authToken = headerAndResponse.headers.authorization!
+  if (!authToken)
+    new HttpClass({response: headerAndResponse.response}).unauthorizedErrorResponse()
+  return authToken.split(' ')[1]
 }

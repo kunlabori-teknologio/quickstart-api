@@ -11,6 +11,14 @@ export const serverMessages = {
       'pt-BR': 'Requisição realizada com sucesso',
       'en-US': 'Successfully request',
     },
+    'created': {
+      'pt-BR': 'Recurso criado com sucesso',
+      'en-US': 'Resource successfully created',
+    },
+    'noContent': {
+      'pt-BR': 'Requisição realizada com sucesso e não há conteúdo adicional como resposta',
+      'en-US': 'Successfully request, but no content response',
+    },
     'badRequestError': {
       'pt-BR': 'Requisição incorreta ou corrompida',
       'en-US': 'Incorrect or corrupt request',
@@ -94,18 +102,14 @@ export const serverMessages = {
       'en-US': 'The unique id is already being used by ',
     },
   },
-  'permission': {
-    'userOrPermissionNotFound': {
-      'pt-BR': 'Usuário ou permissão incorreto! Verifique  os parâmetros e tente novamente',
-      'en-US': 'User or permission incorrect! Check parameters and try again',
+  'user': {
+    'personNotFound': {
+      'pt-BR': 'Usuário incorreto! Verifique  os parâmetros e tente novamente',
+      'en-US': 'User incorrect! Check parameters and try again',
     },
-    'permissionGiven': {
-      'pt-BR': 'Permissão dada com sucesso',
-      'en-US': 'Permission given successfully',
-    },
-    'permissionRemoved': {
-      'pt-BR': 'Permissão removida com sucesso',
-      'en-US': 'Permission removed successfully',
+    'companyNotFound': {
+      'pt-BR': 'Usuário incorreto! Verifique  os parâmetros e tente novamente',
+      'en-US': 'User incorrect! Check parameters and try again',
     }
   }
 }

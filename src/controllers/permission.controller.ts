@@ -1,419 +1,236 @@
-import {inject, service} from '@loopback/core';
+import {inject} from '@loopback/core'
 import {
   repository
-} from '@loopback/repository';
-import {
-  del, get,
-  getModelSchemaRef, param, post, put, Request, requestBody,
-  response, Response, RestBindings
-} from '@loopback/rest';
-import {SecurityBindings, securityId, UserProfile} from '@loopback/security';
-import {Permission, User} from '../models';
-import {PermissionRepository} from '../repositories';
-import {createFilterRequestParams, excludeDefaultParamsFromSchema} from '../utils/general-functions';
-import {badRequestError, ok} from '../utils/http-response';
-import {localeMessage, serverMessages} from '../utils/server-messages';
-import {UserRepository} from './../repositories/user.repository';
-import {PermissionService} from './../services/permission.service';
-import {UserService} from './../services/user.service';
+} from '@loopback/repository'
+import {del, get, param, patch, post, put, Request, requestBody, response, Response, RestBindings} from '@loopback/rest'
+import {SecurityBindings, securityId, UserProfile} from '@loopback/security'
+import {HttpClass} from '../classes/http.class'
+import {Acl} from '../models'
+import {Permission} from '../models/permission.model'
+import {PermissionRepository} from '../repositories'
+import {localeMessage, serverMessages} from '../utils/server-messages'
+import {PermissionHasAclsRepository} from './../repositories/permission-has-acls.repository'
 
 //@authenticate('autentikigo')
 export class PermissionController {
+
+  private httpClass
+
   constructor(
-    /**
-     * Repositories
-     */
-    @repository(PermissionRepository)
-    public permissionRepository: PermissionRepository,
-    @repository(UserRepository)
-    private userRepository: UserRepository,
-    /**
-     * Services
-     */
-    @service(PermissionService)
-    private permissionService: PermissionService,
-    @service(UserService)
-    private userService: UserService,
-    /**
-     * Http injections
-     */
-    @inject(RestBindings.Http.REQUEST)
-    private request: Request,
-    @inject(RestBindings.Http.RESPONSE)
-    private response: Response,
-    /**
-     * User Profile
-     */
-    @inject(SecurityBindings.USER, {optional: true})
-    private currentUser?: UserProfile,
-  ) { }
+    @repository(PermissionRepository) public permissionRepository: PermissionRepository,
+    @repository(PermissionHasAclsRepository) public permissionHasAclRepository: PermissionHasAclsRepository,
+
+    @inject(RestBindings.Http.REQUEST) private request: Request,
+    @inject(RestBindings.Http.RESPONSE) private response: Response,
+
+    @inject(SecurityBindings.USER, {optional: true}) private currentUser?: UserProfile,
+  ) {
+    this.httpClass = new HttpClass({response: this.response})
+  }
+
+  private getPermissionRelatedAcls = {
+    relation: 'acls',
+    scope: {
+      include: [
+        {relation: 'aclActions'}
+      ]
+    }
+  }
 
   @post('/permissions')
   @response(200, {
     description: 'Permission model instance',
-    content: {'application/json': {schema: getModelSchemaRef(Permission)}},
+    properties: new HttpClass().findOneSchema(Permission)
   })
   async create(
-    @requestBody({
-      content: {
-        'application/json': {
-          schema: {
-            type: 'object',
-            properties: {
-              permissionInfo: getModelSchemaRef(Permission, {
-                title: 'NewPermission',
-                exclude: [
-                  ...excludeDefaultParamsFromSchema(),
-                  'projectId',
-                ]
-              }),
-              acls: {
-                type: 'array',
-                items: {type: 'string'},
-              }
-            }
-          },
-        },
-      },
-    })
-    data: any,
+    @requestBody({content: new HttpClass().requestSchema(Permission)}) data: any,
   ): Promise<void> {
     try {
-      /**
-       * Create Permission
-       */
-      const _createdBy = this.currentUser?.[securityId] as string;
-      const permissionCreated = await this.permissionRepository.create({
-        ...data.permissionInfo, _createdBy, projectId: process.env.PROJECT_ID
-      });
-      /**
-       * Relate acls
-       */
-      await this.permissionService.relateACLs({permissionId: permissionCreated._id!, aclsIds: data.acls});
-      /**
-       * Get permission with acls
-       */
-      const permission = await this.permissionRepository.findById(permissionCreated._id, {
-        include: [{
-          relation: 'acls',
-          scope: {
-            include: [{relation: 'aclActions'}]
-          }
-        }],
-      });
-      ok({response: this.response, data: permission, message: serverMessages['crudSuccess']['create'][localeMessage]});
+      const _createdBy = this.currentUser?.[securityId] as string
+      const permission = await this.permissionRepository.create({...data, _createdBy})
+      this.httpClass.createResponse({data: permission})
     } catch (err) {
-      badRequestError({
-        response: this.response,
+      this.httpClass.badRequestErrorResponse({
         message: serverMessages['crudError']['create'][localeMessage],
-        logMessage: err.message,
-      });
+        logMessage: err.message
+      })
     }
   }
 
   @get('/permissions')
   @response(200, {
     description: 'Array of Permission model instances',
-    content: {
-      'application/json': {
-        schema: {
-          type: 'array',
-          items: getModelSchemaRef(Permission, {includeRelations: true}),
-        },
-      },
-    },
+    properties: new HttpClass().findAllResponseSchema(Permission)
   })
-  async find(): Promise<void> {
+  async find(
+    @param.query.number('limit') limit: number,
+    @param.query.number('page') page: number,
+    @param.query.string('order_by') order_by: string,
+  ): Promise<void> {
     try {
-      /**
-       * Create filters
-       */
-      const filters = createFilterRequestParams(
-        this.request.url,
-        [{'projectId': process.env.PROJECT_ID}],
-      );
-      const result = await this.permissionRepository.find({
-        ...filters,
-        include: [{
-          relation: 'acls',
-          scope: {
-            include: [{relation: 'aclActions'}]
-          }
-        }]
-      });
-      const total = await this.permissionRepository.count(filters['where']);
-      ok({
-        response: this.response,
+      const filters = this.httpClass.createFilterRequestParams(this.request.url)
+      const result = await this.permissionRepository.find({...filters, include: [this.getPermissionRelatedAcls]})
+      const total = await this.permissionRepository.count(filters['where'])
+      this.httpClass.okResponse({
+        data: {total: total?.count, result},
         message: serverMessages['crudSuccess']['read'][localeMessage],
-        data: {
-          total: total?.count,
-          result,
-        }
-      });
+      })
     } catch (err) {
-      badRequestError({
-        response: this.response,
+      this.httpClass.badRequestErrorResponse({
         message: serverMessages['crudError']['read'][localeMessage],
-        logMessage: err.message,
+        logMessage: err.message
       })
     }
   }
 
-  @get('/permissions/{id}')
+  @get('/permissions/{permissionId}')
   @response(200, {
     description: 'Permission model instance',
-    content: {
-      'application/json': {
-        schema: getModelSchemaRef(Permission, {includeRelations: true}),
-      },
-    },
+    properties: new HttpClass().findOneSchema(Permission)
   })
   async findById(
-    @param.path.string('id') id: string,
+    @param.path.string('permissionId') id: string,
   ): Promise<void> {
     try {
-      const data = await this.permissionRepository.findById(id, {
-        include: [{
-          relation: 'acls',
-          scope: {
-            include: [{relation: 'aclActions'}]
-          }
-        }]
-      });
-      ok({response: this.response, data, message: serverMessages['crudSuccess']['read'][localeMessage]});
+      const data = await this.permissionRepository.findById(id, {include: [this.getPermissionRelatedAcls]})
+      this.httpClass.okResponse({data, message: serverMessages['crudSuccess']['read'][localeMessage]})
     } catch (err) {
-      badRequestError({
-        response: this.response,
+      this.httpClass.badRequestErrorResponse({
         message: serverMessages['crudError']['read'][localeMessage],
-        logMessage: err.message,
+        logMessage: err.message
       })
     }
   }
 
-  @put('/permissions/{id}')
-  @response(204, {
-    description: 'Permission PUT success',
-  })
-  async replaceById(
-    @param.path.string('id') id: string,
-    @requestBody({
-      content: {
-        'application/json': {
-          schema: {
-            type: 'object',
-            properties: {
-              permissionInfo: getModelSchemaRef(Permission, {
-                title: 'NewPermission',
-                exclude: [
-                  ...excludeDefaultParamsFromSchema(),
-                  'projectId',
-                ],
-              }),
-              acls: {
-                type: 'array',
-                items: {type: 'string'},
-              }
-            }
-          },
-        },
-      },
-    })
-    data: any,
+  @put('/permissions/{permissionId}')
+  @response(200, {description: 'Permission PUT success'})
+  async updateById(
+    @param.path.string('permissionId') id: string,
+    @requestBody({content: new HttpClass().requestSchema(Permission)}) data: any,
   ): Promise<void> {
     try {
-      /**
-       * Delete acls related
-       */
-      await this.permissionService.deleteRelatedACLs({permissionId: id});
-      /**
-       * Update permission
-       */
-      await this.permissionRepository.updateById(id, {
-        ...data.permissionInfo,
-        projectId: process.env.PROJECT_ID
-      });
-      /**
-       * Relate acls
-       */
-      await this.permissionService.relateACLs({permissionId: id, aclsIds: data.acls});
-      /**
-       * Get permission with acls
-       */
-      const acl = await this.permissionRepository.findById(id, {
-        include: [{
-          relation: 'acls',
-          scope: {
-            include: [{relation: 'aclActions'}]
-          }
-        }]
-      });
-      ok({response: this.response, data: acl, message: serverMessages['crudSuccess']['update'][localeMessage]});
+      await this.permissionRepository.updateById(id, data)
+      this.httpClass.noContentResponse()
     } catch (err) {
-      badRequestError({
-        response: this.response,
+      this.httpClass.badRequestErrorResponse({
         message: serverMessages['crudError']['update'][localeMessage],
         logMessage: err.message,
       })
     }
   }
 
-  @del('/permissions/{id}')
-  @response(204, {
-    description: 'Permission DELETE success',
-  })
-  async deleteById(@param.path.string('id') id: string): Promise<void> {
+  @patch('/permissions/{permissionId}')
+  @response(200, {description: 'Permission PATCH success'})
+  async partialUpdateById(
+    @param.path.string('permissionId') id: string,
+    @requestBody({content: new HttpClass().requestSchema(Permission, true)}) data: any,
+  ): Promise<void> {
     try {
-      await this.permissionRepository.deleteById(id);
-      ok({response: this.response, message: serverMessages['crudSuccess']['delete'][localeMessage]});
+      await this.permissionRepository.updateById(id, data)
+      this.httpClass.noContentResponse()
     } catch (err) {
-      badRequestError({
-        response: this.response,
+      this.httpClass.badRequestErrorResponse({
+        message: serverMessages['crudError']['update'][localeMessage],
+        logMessage: err.message,
+      })
+    }
+  }
+
+  @del('/permissions/{permissionId}')
+  @response(204, {description: 'Permission DELETE success'})
+  async deleteById(
+    @param.path.string('permissionId') id: string
+  ): Promise<void> {
+    try {
+      await this.permissionRepository.deleteById(id)
+      this.httpClass.noContentResponse()
+    } catch (err) {
+      this.httpClass.badRequestErrorResponse({
         message: serverMessages['crudError']['delete'][localeMessage],
         logMessage: err.message,
       })
     }
   }
 
-  /**
-   * Give and remove permission to a user
-   */
-  @post('/permissions/give/{userId}')
+  @post('/permissions/{permissionId}/acls')
   @response(200, {
-    description: 'User model instance',
-    content: {'application/json': {schema: getModelSchemaRef(User)}},
+    description: 'create a Acls model instance',
+    properties: new HttpClass().findOneSchema(Permission)
   })
-  async givePermission(
-    @param.path.string('userId') userId: string,
+  async createAclsRelated(
+    @param.path.string('permissionId') permissionId: string,
     @requestBody({
       content: {
-        'application/json': {
-          schema: {
-            title: 'Permission ids array',
-            type: 'array',
-            items: {type: 'string'},
-          },
-        },
-      },
+        'application/json': {schema: {type: 'array', items: {type: 'string'}}}
+      }
     })
-    permissionsIds: string[],
+    aclIds: string[],
   ): Promise<void> {
     try {
-      /**
-       * Check user and permission
-       */
-      await this.permissionService.checkIfUserAndPermissionsExists({userId, permissionsIds});
-      /**
-       * Relate permissions
-       */
-      await this.permissionService.relatePermissions({userId, permissionsIds});
-      /**
-       * Get user with permissions
-       */
-      const user = await this.userService.getUserWithPermissions({
-        condition: {where: {_id: userId}},
-        projectId: process.env.PROJECT_ID!,
-      });
-      ok({response: this.response, data: user, message: serverMessages['permission']['permissionGiven'][localeMessage]});
+      await this.permissionHasAclRepository.createAll(aclIds.map((aclId) => {
+        return {permissionId, aclId}
+      }))
+      const data = await this.permissionRepository.findById(permissionId, {include: [this.getPermissionRelatedAcls]})
+      this.httpClass.createResponse({data})
     } catch (err) {
-      badRequestError({
-        response: this.response,
-        message: serverMessages['crudError']['update'][localeMessage],
-        logMessage: err.message,
-      });
+      this.httpClass.badRequestErrorResponse({
+        message: serverMessages['crudError']['create'][localeMessage],
+        logMessage: err.message
+      })
     }
   }
 
-  @del('/permissions/remove/{userId}')
+  @get('/permissions/{permissionId}/acls')
   @response(200, {
-    description: 'User model instance',
-    content: {'application/json': {schema: getModelSchemaRef(User)}},
+    description: 'Array of permission has many Acls through PermissionHasAcls',
+    properties: new HttpClass().findAllResponseSchema(Acl)
   })
-  async removePermission(
-    @param.path.string('userId') userId: string,
-    @requestBody({
-      content: {
-        'application/json': {
-          schema: {
-            title: 'Permission ids array',
-            type: 'array',
-            items: {type: 'string'},
-          },
-        },
-      },
-    })
-    permissionsIds: string[],
+  async findAclActionsRelated(
+    @param.path.string('permissionId') id: string,
+    @param.query.number('limit') limit: number,
+    @param.query.number('page') page: number,
+    @param.query.string('order_by') order_by: string,
   ): Promise<void> {
     try {
-      /**
-       * Check user and permission
-       */
-      await this.permissionService.checkIfUserAndPermissionsExists({userId, permissionsIds});
-      /**
-       * Remove permissions
-       */
-      await this.permissionService.removePermissions({userId, permissionsIds});
-      /**
-       * Get user with permissions
-       */
-      const user = await this.userService.getUserWithPermissions({
-        condition: {where: {_id: userId}},
-        projectId: process.env.PROJECT_ID!,
-      });
-      ok({response: this.response, data: user, message: serverMessages['permission']['permissionRemoved'][localeMessage]});
+      const filters = this.httpClass.createFilterRequestParams(this.request.url)
+      const result = await this.permissionRepository.acls(id).find({...filters, include: ['aclActions']})
+      const total = (await this.permissionRepository.acls(id).find({where: filters['where']})).length
+      this.httpClass.okResponse({
+        data: {total: total, result},
+        message: serverMessages['crudSuccess']['read'][localeMessage],
+      })
     } catch (err) {
-      badRequestError({
-        response: this.response,
-        message: serverMessages['crudError']['update'][localeMessage],
-        logMessage: err.message,
-      });
+      this.httpClass.badRequestErrorResponse({
+        message: serverMessages['crudError']['read'][localeMessage],
+        logMessage: err.message
+      })
     }
   }
 
-  // @get('/permissions/count')
-  // @response(200, {
-  //   description: 'Permission model count',
-  //   content: {'application/json': {schema: CountSchema}},
-  // })
-  // async count(
-  //   @param.where(Permission) where?: Where<Permission>,
-  // ): Promise<Count> {
-  //   return this.permissionRepository.count(where);
-  // }
-
-  // @patch('/permissions')
-  // @response(200, {
-  //   description: 'Permission PATCH success count',
-  //   content: {'application/json': {schema: CountSchema}},
-  // })
-  // async updateAll(
-  //   @requestBody({
-  //     content: {
-  //       'application/json': {
-  //         schema: getModelSchemaRef(Permission, {partial: true}),
-  //       },
-  //     },
-  //   })
-  //   permission: Permission,
-  //   @param.where(Permission) where?: Where<Permission>,
-  // ): Promise<Count> {
-  //   return this.permissionRepository.updateAll(permission, where);
-  // }
-
-  // @patch('/permissions/{id}')
-  // @response(204, {
-  //   description: 'Permission PATCH success',
-  // })
-  // async updateById(
-  //   @param.path.string('id') id: string,
-  //   @requestBody({
-  //     content: {
-  //       'application/json': {
-  //         schema: getModelSchemaRef(Permission, {partial: true}),
-  //       },
-  //     },
-  //   })
-  //   permission: Permission,
-  // ): Promise<void> {
-  //   await this.permissionRepository.updateById(id, permission);
-  // }
+  @del('/permissions/{permissionId}/acls')
+  @response(200, {description: 'delete a Acl'})
+  async delteAclActionsRelated(
+    @param.path.string('permissionId') permissionId: string,
+    @requestBody({
+      content: {
+        'application/json': {schema: {type: 'array', items: {type: 'string'}}}
+      }
+    })
+    aclIds: string[],
+  ): Promise<void> {
+    try {
+      await this.permissionHasAclRepository.deleteAll({
+        or:
+          (aclIds.map((aclId) => {return {and: [{permissionId}, {aclId}]}}))
+      })
+      this.httpClass.noContentResponse({
+        message: serverMessages['crudSuccess']['delete'][localeMessage]
+      })
+    } catch (err) {
+      this.httpClass.badRequestErrorResponse({
+        message: serverMessages['crudError']['delete'][localeMessage],
+        logMessage: err.message
+      })
+    }
+  }
 }

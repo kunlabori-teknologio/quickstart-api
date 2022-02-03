@@ -1,7 +1,7 @@
-import {hasMany, model, property} from '@loopback/repository';
+import {model, property, hasMany} from '@loopback/repository';
+import {Default} from './default.model';
 import {AclAction} from './acl-action.model';
 import {AclHasActions} from './acl-has-actions.model';
-import {Default} from './default.model';
 
 @model({name: 'ACL'})
 export class Acl extends Default {
@@ -36,7 +36,6 @@ export class Acl extends Default {
 
   @hasMany(() => AclAction, {through: {model: () => AclHasActions}})
   aclActions: AclAction[];
-
 
   constructor(data?: Partial<Acl>) {
     super(data);
