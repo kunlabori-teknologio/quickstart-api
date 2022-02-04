@@ -80,7 +80,8 @@ export class AuthController {
       const tokenAndUser = await this.authService.login(payload)
       this.httpClass.okResponse({
         data: tokenAndUser,
-        message: serverMessages['auth'][tokenAndUser?.authToken ? 'loginSuccess' : 'unregisteredUser'][localeMessage]
+        message: serverMessages['auth'][tokenAndUser?.authToken ? 'loginSuccess' : 'unregisteredUser'][localeMessage],
+        statusCode: tokenAndUser?.authToken ? 200 : 601
       })
     } catch (err) {
       this.httpClass.badRequestErrorResponse({logMessage: err.message})
