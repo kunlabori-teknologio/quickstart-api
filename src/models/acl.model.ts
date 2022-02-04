@@ -1,24 +1,7 @@
-import {Model, model, property} from '@loopback/repository';
+import {model, property, hasMany} from '@loopback/repository';
 import {Default} from './default.model';
-
-// Permission schema model
-@model()
-class PermissionSchema extends Model {
-  @property({
-    required: true,
-    mongodb: {
-      dataType: 'ObjectId'
-    },
-  })
-  moduleId: string;
-
-  @property({
-    type: 'array',
-    itemType: 'string',
-    default: [],
-  })
-  actions: string[];
-}
+import {AclAction} from './acl-action.model';
+import {AclHasActions} from './acl-has-actions.model';
 
 @model({name: 'ACL'})
 export class Acl extends Default {
@@ -33,17 +16,26 @@ export class Acl extends Default {
   _id?: string;
 
   @property({
+    name: 'name',
+    description: "The ACL's name",
     type: 'string',
     required: true,
+    jsonSchema: {
+      maxLength: 30,
+      errorMessage: {
+        maxLength: 'Name should not exceed 30 characters.',
+      },
+    }
   })
   name: string;
 
   @property({
-    type: 'array',
-    itemType: PermissionSchema,
-    default: [],
+    type: 'string',
   })
-  permissions?: PermissionSchema[];
+  module?: string;
+
+  @hasMany(() => AclAction, {through: {model: () => AclHasActions}})
+  aclActions: AclAction[];
 
   constructor(data?: Partial<Acl>) {
     super(data);

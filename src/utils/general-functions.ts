@@ -1,29 +1,55 @@
-// Usertypes
-export enum userTypes {
+import {Response} from '@loopback/rest';
+import {IncomingHttpHeaders} from 'http';
+import {HttpClass} from './../classes/http.class';
+import {localeMessage, serverMessages} from './server-messages';
+
+export enum userTypesEnum {
   person = 'person',
   company = 'company',
 }
-// Unique id type and length interface
-interface UniqueIdTypeLength {
+
+interface IUniqueIdInfos {
   type: string,
   length: number,
 }
-// Length of unique id by county
-const uniqueIdLength: Map<String, UniqueIdTypeLength[]> = new Map([
-  ['br', [{type: userTypes.person, length: 11}, {type: userTypes.company, length: 14},]]
-]);
-/**
- * Check if unique belongs a person or a company
- * @param uniqueId
- * @param country ex.: 'br'
- * @returns 'person' or 'company'
- */
-export function getUserType(
-  {uniqueId, country}: {uniqueId: string, country: string}
-): userTypes {
-  const uniqueIdOnlyNumber: string = uniqueId.replace(/[^a-zA-Z0-9]/g, '');
-  const uniqueIdNumberCount: number = uniqueIdOnlyNumber.length;
-  const type = uniqueIdLength.get(country)?.find(el => el.length === uniqueIdNumberCount)?.type as userTypes;
-  // TODO: erro when not found userType
-  return type || 'person';
+
+interface IPrimaryUserInformation {
+  uniqueId: string,
+  country: string,
+}
+
+const uniqueIdLength: Map<String, IUniqueIdInfos[]> = new Map([
+  ['br',
+    [
+      {type: userTypesEnum.person, length: 11},
+      {type: userTypesEnum.company, length: 14}
+    ]
+  ]
+])
+
+export function getUserType(primaryUserInfo: IPrimaryUserInformation): userTypesEnum {
+  const type = uniqueIdLength.get(primaryUserInfo.country)?.find(el => {
+    return el.length === getOnlyUniqueIdNumber(primaryUserInfo.uniqueId).length
+  })?.type as userTypesEnum
+
+  if (!type)
+    throw new Error(serverMessages['auth']['uniqueIdIncorrect'][localeMessage])
+
+  return type
+}
+
+function getOnlyUniqueIdNumber(uniqueId: string): string {
+  return uniqueId.replace(/[^a-zA-Z0-9]/g, '')
+}
+
+interface IHeaderAndResponse {
+  headers: IncomingHttpHeaders,
+  response: Response
+}
+
+export function getAuthTokenFromHeader(headerAndResponse: IHeaderAndResponse) {
+  let authToken = headerAndResponse.headers.authorization!
+  if (!authToken)
+    new HttpClass({response: headerAndResponse.response}).unauthorizedErrorResponse()
+  return authToken.split(' ')[1]
 }

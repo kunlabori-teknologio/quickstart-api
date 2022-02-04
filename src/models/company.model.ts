@@ -51,6 +51,10 @@ export class Company extends Entity {
   })
   businessActivityCode: IBusinessActivityCode[];
 
+  @property({
+    type: 'string',
+  })
+  userId?: string;
 
   constructor(data?: Partial<Company>) {
     super(data);

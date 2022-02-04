@@ -1,5 +1,7 @@
-import {model, property} from '@loopback/repository';
+import {hasMany, model, property} from '@loopback/repository';
 import {Default} from '.';
+import {InvitationHasPermissions} from './invitation-has-permissions.model';
+import {Permission} from './permission.model';
 
 @model()
 export class Invitation extends Default {
@@ -13,27 +15,8 @@ export class Invitation extends Default {
   })
   _id?: string;
 
-  @property({
-    type: 'string',
-  })
-  type?: string;
-
-  @property({
-    type: 'string',
-  })
-  email?: string;
-
-  @property({
-    type: 'string',
-  })
-  name?: string;
-
-  @property({
-    type: 'array',
-    itemType: 'any',
-  })
-  permissions?: any[];
-
+  @hasMany(() => Permission, {through: {model: () => InvitationHasPermissions}})
+  permissions: Permission[];
 
   constructor(data?: Partial<Invitation>) {
     super(data);

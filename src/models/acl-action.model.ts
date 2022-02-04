@@ -1,7 +1,7 @@
 import {model, property} from '@loopback/repository';
 import {Default} from './default.model';
 
-@model({name: 'AclAction'})
+@model({name: 'ACLAction'})
 export class AclAction extends Default {
   @property({
     type: 'string',
@@ -14,8 +14,16 @@ export class AclAction extends Default {
   _id?: string;
 
   @property({
+    name: 'name',
+    description: "The ACLAction's name",
     type: 'string',
     required: true,
+    jsonSchema: {
+      maxLength: 30,
+      errorMessage: {
+        maxLength: 'Name should not exceed 30 characters.',
+      },
+    }
   })
   name: string;
 

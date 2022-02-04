@@ -63,6 +63,10 @@ export class Person extends Entity {
   })
   genderIdentity?: string
 
+  @property({
+    type: 'string',
+  })
+  userId?: string;
 
   constructor(data?: Partial<Person>) {
     super(data);
