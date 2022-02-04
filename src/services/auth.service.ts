@@ -63,17 +63,22 @@ export class AuthService {
     })
   }
 
-  public async login(userLoginInfo: any): Promise<string | null> {
+  public async login(userLoginInfo: any): Promise<any | null> {
     const {email, googleId} = userLoginInfo
 
-    const user = await this.userRepository.findOne({where: {and: [{email}, {googleId}]}})
+    const user = await this.userRepository.findOne({
+      where: {and: [{email}, {googleId}]}, include: ['person', 'company', 'permissions']
+    })
     if (!user) return null
 
-    return jwt.sign({
-      id: user?._id,
-    }, process.env.PROJECT_SECRET!, {
-      expiresIn: '5m'
-    })
+    return {
+      authToken: jwt.sign({
+        id: user?._id,
+      }, process.env.PROJECT_SECRET!, {
+        expiresIn: '5m'
+      }),
+      userData: user
+    }
   }
 
   public async createProfile(

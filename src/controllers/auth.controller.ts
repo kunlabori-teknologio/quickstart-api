@@ -77,10 +77,10 @@ export class AuthController {
   async login(): Promise<void> {
     try {
       const payload = this.httpClass.verifyToken(this.request.headers.authorization!, process.env.PROJECT_SECRET!)
-      const authToken = await this.authService.login(payload)
+      const tokenAndUser = await this.authService.login(payload)
       this.httpClass.okResponse({
-        data: {authToken},
-        message: serverMessages['auth'][authToken ? 'loginSuccess' : 'unregisteredUser'][localeMessage]
+        data: tokenAndUser,
+        message: serverMessages['auth'][tokenAndUser.authToken ? 'loginSuccess' : 'unregisteredUser'][localeMessage]
       })
     } catch (err) {
       this.httpClass.badRequestErrorResponse({logMessage: err.message})
