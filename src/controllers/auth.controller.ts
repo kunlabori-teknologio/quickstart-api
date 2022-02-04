@@ -108,13 +108,10 @@ export class AuthController {
       if (!theDatesMatch(profile.birthday, data.birthday))
         throw new Error(serverMessages['auth']['birthdayIncorrect'][localeMessage])
 
-      const userWithSameProfile = await this.userRepository.findOne({
-        include: [{
-          relation: `${userType}`,
-          scope: {where: {uniqueId: data.uniqueId}}
-        }]
-      })
-      if (userWithSameProfile) throw new Error(`${serverMessages['auth']['uniqueIdInUse'][localeMessage]} ${hideEmailString(userWithSameProfile.email as string)}`)
+      if (profile.userId) {
+        const userWithSameProfile = await this.userRepository.findOne({where: {_id: profile.userId}})
+        if (userWithSameProfile) throw new Error(`${serverMessages['auth']['uniqueIdInUse'][localeMessage]} ${hideEmailString(userWithSameProfile.email as string)}`)
+      }
 
       const newUser = await this.userRepository.create({
         googleId: payload?.googleId,
