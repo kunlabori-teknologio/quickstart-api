@@ -85,6 +85,10 @@ export const serverMessages = {
       'pt-BR': 'Usuário não registrado',
       'en-US': 'User is not registered',
     },
+    'loginSuccess': {
+      'pt-BR': 'Login realizado com sucesso',
+      'en-US': 'Successfully login',
+    },
     'uniqueIdIncorrect': {
       'pt-BR': 'CPF/CNPJ incorreto',
       'en-US': 'Incorrect unique id',
@@ -100,6 +104,26 @@ export const serverMessages = {
     'uniqueIdInUse': {
       'pt-BR': 'Este CPF/CNPJ já está sendo utilizado no usuário ',
       'en-US': 'The unique id is already being used by ',
+    },
+    'signupError': {
+      'pt-BR': 'Erro ao cadastrar o usuário',
+      'en-US': 'Signup error',
+    },
+    'signupSuccess': {
+      'pt-BR': 'Cadastro realizado com sucesso',
+      'en-US': 'Signup successfuly',
+    },
+    'createProfileError': {
+      'pt-BR': 'Erro ao criar o perfil do usuário',
+      'en-US': 'Create profile error',
+    },
+    'refreshTokenError': {
+      'pt-BR': 'Erro ao gerar o refresh token',
+      'en-US': 'Error generating refresh token',
+    },
+    'refreshTokenSuccess': {
+      'pt-BR': 'Refresh token gerado com sucesso',
+      'en-US': 'Refresh token generated successfully',
     },
   },
   'user': {

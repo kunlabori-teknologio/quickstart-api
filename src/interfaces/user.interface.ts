@@ -1,19 +1,6 @@
-interface IProject {
-  id: string,
-}
 
-interface IInvitation {
-  id: string;
-  projectId: string;
-  invitedAt: Date;
-}
-
-interface IUserFromGoogle {
-  id?: string;
+interface ILoginUserInfo {
   email?: string;
-}
-
-interface IUserFromApple {
-  id?: string;
-  email?: string;
+  googleId?: string;
+  appleId?: string;
 }

@@ -1,15 +1,15 @@
-import {inject} from '@loopback/core';
+import {inject} from '@loopback/core'
 import {
   repository
-} from '@loopback/repository';
-import {del, get, param, patch, post, put, Request, requestBody, response, Response, RestBindings} from '@loopback/rest';
-import {SecurityBindings, securityId, UserProfile} from '@loopback/security';
-import {AclAction} from '../models/acl-action.model';
-import {Acl} from '../models/acl.model';
-import {AclRepository} from '../repositories';
-import {localeMessage, serverMessages} from '../utils/server-messages';
-import {HttpClass} from './../classes/http.class';
-import {AclHasActionsRepository} from './../repositories/acl-has-actions.repository';
+} from '@loopback/repository'
+import {del, get, param, patch, post, put, Request, requestBody, response, Response, RestBindings} from '@loopback/rest'
+import {SecurityBindings, securityId, UserProfile} from '@loopback/security'
+import {AclAction} from '../models/acl-action.model'
+import {Acl} from '../models/acl.model'
+import {AclRepository} from '../repositories'
+import {localeMessage, serverMessages} from '../utils/server-messages'
+import {HttpClass} from './../classes/http.class'
+import {AclHasActionsRepository} from './../repositories/acl-has-actions.repository'
 
 //@authenticate('autentikigo')
 export class AclController {

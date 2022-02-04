@@ -1,6 +1,8 @@
-import {getModelSchemaRef, Response} from '@loopback/rest';
-import {IHttp, IHttpResponseData, IHttpResponseDataWithHttpCode} from '../interfaces/http.interface';
-import {localeMessage, serverMessages} from '../utils/server-messages';
+import {getModelSchemaRef, Response} from '@loopback/rest'
+import jwt, {JwtPayload} from 'jsonwebtoken'
+import {URL, URLSearchParams} from 'url'
+import {IHttp, IHttpResponseData, IHttpResponseDataWithHttpCode} from '../interfaces/http.interface'
+import {localeMessage, serverMessages} from '../utils/server-messages'
 
 enum httpResponseTypeEnum {
   ok = 'ok',
@@ -161,5 +163,23 @@ export class HttpClass {
       httpCode: 500,
       message: httpResponseData?.message || this.getMessage(httpResponseTypeEnum.internalServerError),
     });
+  }
+
+  public verifyToken(token: string, secret: string): JwtPayload | void {
+    try {
+      let authToken = token.split(' ')[1]
+      return jwt.verify(authToken, secret) as JwtPayload
+    } catch (err) {
+      this.unauthorizedErrorResponse()
+    }
+  }
+
+  public decodeToken(token: string): JwtPayload | void {
+    try {
+      let authToken = token.split(' ')[1]
+      return jwt.decode(authToken) as JwtPayload
+    } catch (err) {
+      this.unauthorizedErrorResponse()
+    }
   }
 }
