@@ -67,7 +67,10 @@ export class AuthService {
     const {email, googleId} = userLoginInfo
 
     const user = await this.userRepository.findOne({
-      where: {and: [{email}, {googleId}]}, include: ['person', 'company', 'permissions']
+      where: {and: [{email}, {googleId}]}, include: [
+        'person', 'company',
+        {relation: 'permissions', scope: {include: ['acls']}}
+      ]
     })
     if (!user) return null
 
