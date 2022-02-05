@@ -66,13 +66,28 @@ export class AuthService {
   public async login(userLoginInfo: any): Promise<any | null> {
     const {email, googleId} = userLoginInfo
 
-    const user = await this.userRepository.findOne({
+    const userWithArrayOfPermissions = await this.userRepository.findOne({
       where: {and: [{email}, {googleId}]}, include: [
         'person', 'company',
-        {relation: 'permissions', scope: {include: ['acls']}}
+        {
+          relation: 'permissionGroups', scope: {
+            where: {projectId: process.env.PROJECT_ID},
+            include: [{
+              relation: 'permissions', scope: {
+                include: ['module', 'permissionActions']
+              }
+            }]
+          }
+        }
       ]
     })
-    if (!user) return null
+    if (!userWithArrayOfPermissions) return null
+    let user = {
+      ...userWithArrayOfPermissions,
+      permissionGroup: userWithArrayOfPermissions.permissionGroups?.length ?
+        userWithArrayOfPermissions.permissionGroups[0] : {}
+    }
+    delete user['permissionGroups']
 
     return {
       authToken: jwt.sign({

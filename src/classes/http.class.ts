@@ -170,16 +170,21 @@ export class HttpClass {
       let authToken = token.split(' ')[1]
       return jwt.verify(authToken, secret) as JwtPayload
     } catch (err) {
-      this.unauthorizedErrorResponse({logMessage: err.message})
-    }
-  }
-
-  public decodeToken(token: string): JwtPayload | void {
-    try {
-      let authToken = token.split(' ')[1]
-      return jwt.decode(authToken) as JwtPayload
-    } catch (err) {
-      this.unauthorizedErrorResponse({logMessage: err.message})
+      let message = serverMessages['httpResponse']['unauthorizedError'][localeMessage]
+      let statusCode = 401
+      switch (err.name) {
+        case 'TokenExpiredError':
+          message = serverMessages['auth']['expiredAuthToken'][localeMessage]
+          statusCode = 602
+          break
+        case 'JsonWebTokenError':
+          message = serverMessages['auth']['invalidAuthToken'][localeMessage]
+          statusCode = 603
+          break
+        default:
+          break
+      }
+      this.unauthorizedErrorResponse({logMessage: err.message, message, statusCode})
     }
   }
 }

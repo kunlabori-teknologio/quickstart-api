@@ -6,20 +6,18 @@ import {
 import {del, get, param, patch, post, put, Request, requestBody, response, Response, RestBindings} from '@loopback/rest'
 import {SecurityBindings, securityId, UserProfile} from '@loopback/security'
 import {HttpClass} from '../classes/http.class'
-import {Acl} from '../models'
-import {Permission} from '../models/permission.model'
+import {Permission, PermissionAction} from '../models'
 import {PermissionRepository} from '../repositories'
+import {PermissionHasActionsRepository} from '../repositories/permission-has-actions.repository'
 import {localeMessage, serverMessages} from '../utils/server-messages'
-import {PermissionHasAclsRepository} from './../repositories/permission-has-acls.repository'
 
-//@authenticate('autentikigo')
 export class PermissionController {
 
   private httpClass
 
   constructor(
     @repository(PermissionRepository) public permissionRepository: PermissionRepository,
-    @repository(PermissionHasAclsRepository) public permissionHasAclRepository: PermissionHasAclsRepository,
+    @repository(PermissionHasActionsRepository) private permissionHasActionsRepository: PermissionHasActionsRepository,
 
     @inject(RestBindings.Http.REQUEST) private request: Request,
     @inject(RestBindings.Http.RESPONSE) private response: Response,
@@ -29,16 +27,7 @@ export class PermissionController {
     this.httpClass = new HttpClass({response: this.response})
   }
 
-  private getPermissionRelatedAcls = {
-    relation: 'acls',
-    scope: {
-      include: [
-        {relation: 'aclActions'}
-      ]
-    }
-  }
-
-  @authenticate({strategy: 'autentikigo', options: {module: 'Permission', action: 'createOne'}})
+  @authenticate({strategy: 'autentikigo', options: {collection: 'Permission', action: 'createOne'}})
   @post('/permissions')
   @response(200, {
     description: 'Permission model instance',
@@ -59,7 +48,7 @@ export class PermissionController {
     }
   }
 
-  @authenticate({strategy: 'autentikigo', options: {module: 'Permission', action: 'read'}})
+  @authenticate({strategy: 'autentikigo', options: {collection: 'Permission'}})
   @get('/permissions')
   @response(200, {
     description: 'Array of Permission model instances',
@@ -72,7 +61,7 @@ export class PermissionController {
   ): Promise<void> {
     try {
       const filters = this.httpClass.createFilterRequestParams(this.request.url)
-      const result = await this.permissionRepository.find({...filters, include: [this.getPermissionRelatedAcls]})
+      const result = await this.permissionRepository.find({...filters, include: ['permissionActions', 'module']})
       const total = await this.permissionRepository.count(filters['where'])
       this.httpClass.okResponse({
         data: {total: total?.count, result},
@@ -86,7 +75,7 @@ export class PermissionController {
     }
   }
 
-  @authenticate({strategy: 'autentikigo', options: {module: 'Permission', action: 'readOne'}})
+  @authenticate({strategy: 'autentikigo', options: {collection: 'Permission'}})
   @get('/permissions/{permissionId}')
   @response(200, {
     description: 'Permission model instance',
@@ -96,8 +85,11 @@ export class PermissionController {
     @param.path.string('permissionId') id: string,
   ): Promise<void> {
     try {
-      const data = await this.permissionRepository.findById(id, {include: [this.getPermissionRelatedAcls]})
-      this.httpClass.okResponse({data, message: serverMessages['crudSuccess']['read'][localeMessage]})
+      const data = await this.permissionRepository.findById(id, {include: ['permissionActions', 'module']})
+      this.httpClass.okResponse({
+        data,
+        message: serverMessages['crudSuccess']['read'][localeMessage]
+      })
     } catch (err) {
       this.httpClass.badRequestErrorResponse({
         message: serverMessages['crudError']['read'][localeMessage],
@@ -106,7 +98,7 @@ export class PermissionController {
     }
   }
 
-  @authenticate({strategy: 'autentikigo', options: {module: 'Permission', action: 'updateOne'}})
+  @authenticate({strategy: 'autentikigo', options: {collection: 'Permission', action: 'updateOne'}})
   @put('/permissions/{permissionId}')
   @response(200, {description: 'Permission PUT success'})
   async updateById(
@@ -124,7 +116,7 @@ export class PermissionController {
     }
   }
 
-  @authenticate({strategy: 'autentikigo', options: {module: 'Permission', action: 'updateOne'}})
+  @authenticate({strategy: 'autentikigo', options: {collection: 'Permission', action: 'updateOne'}})
   @patch('/permissions/{permissionId}')
   @response(200, {description: 'Permission PATCH success'})
   async partialUpdateById(
@@ -142,7 +134,7 @@ export class PermissionController {
     }
   }
 
-  @authenticate({strategy: 'autentikigo', options: {module: 'Permission', action: 'deleteOne'}})
+  @authenticate({strategy: 'autentikigo', options: {collection: 'Permission', action: 'deleteOne'}})
   @del('/permissions/{permissionId}')
   @response(204, {description: 'Permission DELETE success'})
   async deleteById(
@@ -159,26 +151,26 @@ export class PermissionController {
     }
   }
 
-  @authenticate({strategy: 'autentikigo', options: {module: 'Permission', action: 'create'}})
-  @post('/permissions/{permissionId}/acls')
+  @authenticate({strategy: 'autentikigo', options: {collection: 'Permission', action: 'create'}})
+  @post('/permissions/{permissionId}/permission-actions')
   @response(200, {
-    description: 'create a Acls model instance',
+    description: 'create a PermissionAction model instance',
     properties: new HttpClass().findOneSchema(Permission)
   })
-  async createAclsRelated(
+  async createPermissionActionsRelated(
     @param.path.string('permissionId') permissionId: string,
     @requestBody({
       content: {
         'application/json': {schema: {type: 'array', items: {type: 'string'}}}
       }
     })
-    aclIds: string[],
+    permissionActionIds: string[],
   ): Promise<void> {
     try {
-      await this.permissionHasAclRepository.createAll(aclIds.map((aclId) => {
-        return {permissionId, aclId}
+      await this.permissionHasActionsRepository.createAll(permissionActionIds.map((permissionActionId) => {
+        return {permissionId, permissionActionId}
       }))
-      const data = await this.permissionRepository.findById(permissionId, {include: [this.getPermissionRelatedAcls]})
+      const data = await this.permissionRepository.findById(permissionId, {include: ['permissionActions', 'module']})
       this.httpClass.createResponse({data})
     } catch (err) {
       this.httpClass.badRequestErrorResponse({
@@ -188,13 +180,13 @@ export class PermissionController {
     }
   }
 
-  @authenticate({strategy: 'autentikigo', options: {module: 'Permission', action: 'read'}})
-  @get('/permissions/{permissionId}/acls')
+  @authenticate({strategy: 'autentikigo', options: {collection: 'Permission'}})
+  @get('/permissions/{permissionId}/permission-actions')
   @response(200, {
-    description: 'Array of permission has many Acls through PermissionHasAcls',
-    properties: new HttpClass().findAllResponseSchema(Acl)
+    description: 'Array of Permission has many PermissionAction through PermissionHasActions',
+    properties: new HttpClass().findAllResponseSchema(PermissionAction)
   })
-  async findAclActionsRelated(
+  async findPermissionActionsRelated(
     @param.path.string('permissionId') id: string,
     @param.query.number('limit') limit: number,
     @param.query.number('page') page: number,
@@ -202,8 +194,8 @@ export class PermissionController {
   ): Promise<void> {
     try {
       const filters = this.httpClass.createFilterRequestParams(this.request.url)
-      const result = await this.permissionRepository.acls(id).find({...filters, include: ['aclActions']})
-      const total = (await this.permissionRepository.acls(id).find({where: filters['where']})).length
+      const result = await this.permissionRepository.permissionActions(id).find(filters)
+      const total = (await this.permissionRepository.permissionActions(id).find({where: filters['where']})).length
       this.httpClass.okResponse({
         data: {total: total, result},
         message: serverMessages['crudSuccess']['read'][localeMessage],
@@ -216,25 +208,30 @@ export class PermissionController {
     }
   }
 
-  @authenticate({strategy: 'autentikigo', options: {module: 'Permission', action: 'delete'}})
-  @del('/permissions/{permissionId}/acls')
-  @response(200, {description: 'delete a Acl'})
-  async delteAclActionsRelated(
+  @authenticate({strategy: 'autentikigo', options: {collection: 'Permission', action: 'delete'}})
+  @del('/permissions/{permissionId}/permission-actions')
+  @response(200, {
+    description: 'delete a PermissionAction model instance',
+    properties: new HttpClass().findOneSchema(Permission)
+  })
+  async deletePermissionActionsRelated(
     @param.path.string('permissionId') permissionId: string,
     @requestBody({
       content: {
         'application/json': {schema: {type: 'array', items: {type: 'string'}}}
       }
     })
-    aclIds: string[],
+    permissionActionIds: string[],
   ): Promise<void> {
     try {
-      await this.permissionHasAclRepository.deleteAll({
+      await this.permissionHasActionsRepository.deleteAll({
         or:
-          (aclIds.map((aclId) => {return {and: [{permissionId}, {aclId}]}}))
+          (permissionActionIds.map((permissionActionId) => {return {and: [{permissionId}, {permissionActionId}]}}))
       })
-      this.httpClass.noContentResponse({
-        message: serverMessages['crudSuccess']['delete'][localeMessage]
+      const data = await this.permissionRepository.findById(permissionId, {include: ['permissionActions', 'module']})
+      this.httpClass.okResponse({
+        message: serverMessages['crudSuccess']['delete'][localeMessage],
+        data
       })
     } catch (err) {
       this.httpClass.badRequestErrorResponse({

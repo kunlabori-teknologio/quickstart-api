@@ -1,11 +1,11 @@
 import {Getter, inject} from '@loopback/core';
-import {DefaultCrudRepository, HasOneRepositoryFactory, repository, HasManyThroughRepositoryFactory} from '@loopback/repository';
+import {DefaultCrudRepository, HasManyThroughRepositoryFactory, HasOneRepositoryFactory, repository} from '@loopback/repository';
 import {MongodbDataSource} from '../datasources';
-import {Company, Person, User, UserRelations, Permission, UserHasPermissions} from '../models';
+import {Company, PermissionGroup, Person, User, UserHasPermissionGroups, UserRelations} from '../models';
 import {CompanyRepository} from './company.repository';
+import {PermissionGroupRepository} from './permission-group.repository';
 import {PersonRepository} from './person.repository';
-import {UserHasPermissionsRepository} from './user-has-permissions.repository';
-import {PermissionRepository} from './permission.repository';
+import {UserHasPermissionGroupsRepository} from './user-has-permission-groups.repository';
 
 export class UserRepository extends DefaultCrudRepository<
   User,
@@ -17,17 +17,21 @@ export class UserRepository extends DefaultCrudRepository<
 
   public readonly company: HasOneRepositoryFactory<Company, typeof User.prototype._id>;
 
-  public readonly permissions: HasManyThroughRepositoryFactory<Permission, typeof Permission.prototype._id,
-          UserHasPermissions,
-          typeof User.prototype._id
-        >;
+  public readonly permissionGroups: HasManyThroughRepositoryFactory<PermissionGroup, typeof PermissionGroup.prototype._id,
+    UserHasPermissionGroups,
+    typeof User.prototype._id
+  >;
 
   constructor(
-    @inject('datasources.mongodb') dataSource: MongodbDataSource, @repository.getter('PersonRepository') protected personRepositoryGetter: Getter<PersonRepository>, @repository.getter('CompanyRepository') protected companyRepositoryGetter: Getter<CompanyRepository>, @repository.getter('UserHasPermissionsRepository') protected userHasPermissionsRepositoryGetter: Getter<UserHasPermissionsRepository>, @repository.getter('PermissionRepository') protected permissionRepositoryGetter: Getter<PermissionRepository>,
+    @inject('datasources.mongodb') dataSource: MongodbDataSource,
+    @repository.getter('PersonRepository') protected personRepositoryGetter: Getter<PersonRepository>,
+    @repository.getter('CompanyRepository') protected companyRepositoryGetter: Getter<CompanyRepository>,
+    @repository.getter('UserHasPermissionGroupsRepository') protected userHasPermissionGroupsRepositoryGetter: Getter<UserHasPermissionGroupsRepository>,
+    @repository.getter('PermissionGroupRepository') protected permissionGroupRepositoryGetter: Getter<PermissionGroupRepository>,
   ) {
     super(User, dataSource);
-    this.permissions = this.createHasManyThroughRepositoryFactoryFor('permissions', permissionRepositoryGetter, userHasPermissionsRepositoryGetter,);
-    this.registerInclusionResolver('permissions', this.permissions.inclusionResolver);
+    this.permissionGroups = this.createHasManyThroughRepositoryFactoryFor('permissionGroups', permissionGroupRepositoryGetter, userHasPermissionGroupsRepositoryGetter,);
+    this.registerInclusionResolver('permissionGroups', this.permissionGroups.inclusionResolver);
     this.company = this.createHasOneRepositoryFactoryFor('company', companyRepositoryGetter);
     this.registerInclusionResolver('company', this.company.inclusionResolver);
     this.person = this.createHasOneRepositoryFactoryFor('person', personRepositoryGetter);

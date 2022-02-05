@@ -1,14 +1,12 @@
-export * from './acl-action.repository';
-export * from './acl-has-actions.repository';
-export * from './acl.repository';
 export * from './company.repository';
 export * from './esprimi-default.repository';
-export * from './invitation-has-permissions.repository';
-export * from './invitation.repository';
-export * from './permission-has-acls.repository';
+export * from './module.repository';
+export * from './permission-action.repository';
+export * from './permission-group.repository';
+export * from './permission-has-actions.repository';
 export * from './permission.repository';
 export * from './person.repository';
-export * from './user-has-permissions.repository';
+export * from './user-has-permission-groups.repository';
 export * from './user.repository';
-
 // End repositories
+export * from './project.repository';

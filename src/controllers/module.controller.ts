@@ -6,17 +6,16 @@ import {
 import {del, get, param, patch, post, put, Request, requestBody, response, Response, RestBindings} from '@loopback/rest'
 import {SecurityBindings, securityId, UserProfile} from '@loopback/security'
 import {HttpClass} from '../classes/http.class'
-import {AclAction} from '../models/acl-action.model'
-import {AclActionRepository} from '../repositories'
+import {Module} from '../models/module.model'
+import {ModuleRepository} from '../repositories/module.repository'
 import {localeMessage, serverMessages} from '../utils/server-messages'
 
-//@authenticate('autentikigo')
-export class AclActionController {
+export class ModuleController {
 
   private httpClass
 
   constructor(
-    @repository(AclActionRepository) public aclActionRepository: AclActionRepository,
+    @repository(ModuleRepository) public moduleRepository: ModuleRepository,
 
     @inject(RestBindings.Http.REQUEST) private request: Request,
     @inject(RestBindings.Http.RESPONSE) private response: Response,
@@ -26,19 +25,19 @@ export class AclActionController {
     this.httpClass = new HttpClass({response: this.response})
   }
 
-  @authenticate({strategy: 'autentikigo', options: {module: 'ACLAction', action: 'createOne'}})
-  @post('/acl-actions')
+  @authenticate({strategy: 'autentikigo', options: {collection: 'Module', action: 'createOne'}})
+  @post('/modules')
   @response(200, {
-    description: 'AclAction model instance',
-    properties: new HttpClass().findOneSchema(AclAction)
+    description: 'Module model instance',
+    properties: new HttpClass().findOneSchema(Module)
   })
   async create(
-    @requestBody({content: new HttpClass().requestSchema(AclAction)}) data: any,
+    @requestBody({content: new HttpClass().requestSchema(Module)}) data: any,
   ): Promise<void> {
     try {
       const _createdBy = this.currentUser?.[securityId] as string
-      const aclAction = await this.aclActionRepository.create({...data, _createdBy})
-      this.httpClass.createResponse({data: aclAction})
+      const module = await this.moduleRepository.create({...data, _createdBy})
+      this.httpClass.createResponse({data: module})
     } catch (err) {
       this.httpClass.badRequestErrorResponse({
         message: serverMessages['crudError']['create'][localeMessage],
@@ -47,11 +46,11 @@ export class AclActionController {
     }
   }
 
-  @authenticate({strategy: 'autentikigo', options: {module: 'ACLAction', action: 'read'}})
-  @get('/acl-actions')
+  @authenticate({strategy: 'autentikigo', options: {collection: 'Module'}})
+  @get('/modules')
   @response(200, {
-    description: 'Array of AclAction model instances',
-    properties: new HttpClass().findAllResponseSchema(AclAction)
+    description: 'Array of Module model instances',
+    properties: new HttpClass().findAllResponseSchema(Module)
   })
   async find(
     @param.query.number('limit') limit: number,
@@ -60,8 +59,8 @@ export class AclActionController {
   ): Promise<void> {
     try {
       const filters = this.httpClass.createFilterRequestParams(this.request.url)
-      const result = await this.aclActionRepository.find(filters)
-      const total = await this.aclActionRepository.count(filters['where'])
+      const result = await this.moduleRepository.find(filters)
+      const total = await this.moduleRepository.count(filters['where'])
       this.httpClass.okResponse({
         data: {total: total?.count, result},
         message: serverMessages['crudSuccess']['read'][localeMessage]
@@ -74,17 +73,17 @@ export class AclActionController {
     }
   }
 
-  @authenticate({strategy: 'autentikigo', options: {module: 'ACLAction', action: 'readOne'}})
-  @get('/acl-actions/{aclActionId}')
+  @authenticate({strategy: 'autentikigo', options: {collection: 'Module'}})
+  @get('/modules/{moduleId}')
   @response(200, {
-    description: 'AclAction model instance',
-    properties: new HttpClass().findOneSchema(AclAction)
+    description: 'Module model instance',
+    properties: new HttpClass().findOneSchema(Module)
   })
   async findById(
-    @param.path.string('aclActionId') id: string,
+    @param.path.string('moduleId') id: string,
   ): Promise<void> {
     try {
-      const data = await this.aclActionRepository.findById(id)
+      const data = await this.moduleRepository.findById(id)
       this.httpClass.okResponse({
         data,
         message: serverMessages['crudSuccess']['read'][localeMessage]
@@ -97,15 +96,15 @@ export class AclActionController {
     }
   }
 
-  @authenticate({strategy: 'autentikigo', options: {module: 'ACLAction', action: 'updateOne'}})
-  @put('/acl-actions/{aclActionId}')
-  @response(200, {description: 'AclAction PUT success'})
+  @authenticate({strategy: 'autentikigo', options: {collection: 'Module', action: 'updateOne'}})
+  @put('/modules/{moduleId}')
+  @response(200, {description: 'Module PUT success'})
   async updateById(
-    @param.path.string('aclActionId') id: string,
-    @requestBody({content: new HttpClass().requestSchema(AclAction)}) data: any,
+    @param.path.string('moduleId') id: string,
+    @requestBody({content: new HttpClass().requestSchema(Module)}) data: any,
   ): Promise<void> {
     try {
-      await this.aclActionRepository.updateById(id, data)
+      await this.moduleRepository.updateById(id, data)
       this.httpClass.noContentResponse()
     } catch (err) {
       this.httpClass.badRequestErrorResponse({
@@ -115,15 +114,15 @@ export class AclActionController {
     }
   }
 
-  @authenticate({strategy: 'autentikigo', options: {module: 'ACLAction', action: 'create'}})
-  @patch('/acl-actions/{aclActionId}')
-  @response(200, {description: 'AclAction PATCH success'})
+  @authenticate({strategy: 'autentikigo', options: {collection: 'Module', action: 'create'}})
+  @patch('/modules/{moduleId}')
+  @response(200, {description: 'Module PATCH success'})
   async partialUpdateById(
-    @param.path.string('aclActionId') id: string,
-    @requestBody({content: new HttpClass().requestSchema(AclAction, true)}) data: any,
+    @param.path.string('moduleId') id: string,
+    @requestBody({content: new HttpClass().requestSchema(Module, true)}) data: any,
   ): Promise<void> {
     try {
-      await this.aclActionRepository.updateById(id, data)
+      await this.moduleRepository.updateById(id, data)
       this.httpClass.noContentResponse()
     } catch (err) {
       this.httpClass.badRequestErrorResponse({
@@ -133,14 +132,14 @@ export class AclActionController {
     }
   }
 
-  @authenticate({strategy: 'autentikigo', options: {module: 'ACLAction', action: 'deleteOne'}})
-  @del('/acl-actions/{aclActionId}')
-  @response(204, {description: 'AclAction DELETE success'})
+  @authenticate({strategy: 'autentikigo', options: {collection: 'Module', action: 'deleteOne'}})
+  @del('/modules/{moduleId}')
+  @response(204, {description: 'Module DELETE success'})
   async deleteById(
-    @param.path.string('aclActionId') id: string
+    @param.path.string('moduleId') id: string
   ): Promise<void> {
     try {
-      await this.aclActionRepository.deleteById(id)
+      await this.moduleRepository.deleteById(id)
       this.httpClass.noContentResponse()
     } catch (err) {
       this.httpClass.badRequestErrorResponse({

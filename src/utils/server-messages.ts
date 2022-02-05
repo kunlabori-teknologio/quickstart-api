@@ -28,7 +28,7 @@ export const serverMessages = {
       'en-US': 'Data not found',
     },
     'unauthorizedError': {
-      'pt-BR': 'Você não tem autorização para realizar essa ação',
+      'pt-BR': 'Você não tem permissão para realizar essa ação',
       'en-US': 'Unauthorized request',
     },
     'internalServerError': {

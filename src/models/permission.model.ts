@@ -1,7 +1,8 @@
-import {model, property, hasMany} from '@loopback/repository';
+import {belongsTo, hasMany, model, property} from '@loopback/repository';
 import {Default} from './default.model';
-import {Acl} from './acl.model';
-import {PermissionHasAcls} from './permission-has-acls.model';
+import {Module} from './module.model';
+import {PermissionAction} from './permission-action.model';
+import {PermissionHasActions} from './permission-has-actions.model';
 
 @model()
 export class Permission extends Default {
@@ -14,42 +15,18 @@ export class Permission extends Default {
     },
   })
   _id?: string;
+  @hasMany(() => PermissionAction, {through: {model: () => PermissionHasActions}})
+  permissionActions: PermissionAction[];
 
-  @property({
-    name: 'name',
-    description: "The permission's name",
-    type: 'string',
-    required: true,
-    jsonSchema: {
-      maxLength: 30,
-      errorMessage: {
-        maxLength: 'Name should not exceed 30 characters.',
-      },
-    }
-  })
-  name: string;
-
-  @property({
-    name: 'description',
-    description: "The permission's description",
-    type: 'string',
-    required: true,
-    jsonSchema: {
-      maxLength: 50,
-      errorMessage: {
-        maxLength: 'Description should not exceed 50 characters.',
-      },
-    }
-  })
-  description: string;
-
-  @hasMany(() => Acl, {through: {model: () => PermissionHasAcls}})
-  acls: Acl[];
+  @belongsTo(() => Module)
+  moduleId: string;
 
   @property({
     type: 'string',
   })
-  projectId?: string;
+  permissionGroupId?: string;
+
+  module?: any;
 
   constructor(data?: Partial<Permission>) {
     super(data);

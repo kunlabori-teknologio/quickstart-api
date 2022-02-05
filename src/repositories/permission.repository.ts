@@ -1,9 +1,11 @@
-import {inject, Getter} from '@loopback/core';
-import {DefaultCrudRepository, repository, HasManyThroughRepositoryFactory} from '@loopback/repository';
+import {Getter, inject} from '@loopback/core';
+import {BelongsToAccessor, DefaultCrudRepository, HasManyThroughRepositoryFactory, repository} from '@loopback/repository';
 import {MongodbDataSource} from '../datasources';
-import {Permission, PermissionRelations, Acl, PermissionHasAcls} from '../models';
-import {PermissionHasAclsRepository} from './permission-has-acls.repository';
-import {AclRepository} from './acl.repository';
+import {Module, Permission, PermissionAction, PermissionHasActions, PermissionRelations} from '../models';
+import {ModuleRepository} from './module.repository';
+import {PermissionActionRepository} from './permission-action.repository';
+import {PermissionGroupRepository} from './permission-group.repository';
+import {PermissionHasActionsRepository} from './permission-has-actions.repository';
 
 export class PermissionRepository extends DefaultCrudRepository<
   Permission,
@@ -11,16 +13,23 @@ export class PermissionRepository extends DefaultCrudRepository<
   PermissionRelations
 > {
 
-  public readonly acls: HasManyThroughRepositoryFactory<Acl, typeof Acl.prototype._id,
-          PermissionHasAcls,
-          typeof Permission.prototype._id
-        >;
+  public readonly permissionActions: HasManyThroughRepositoryFactory<PermissionAction, typeof PermissionAction.prototype._id,
+    PermissionHasActions,
+    typeof Permission.prototype._id
+  >;
+
+  public readonly module: BelongsToAccessor<Module, typeof Permission.prototype._id>;
 
   constructor(
-    @inject('datasources.mongodb') dataSource: MongodbDataSource, @repository.getter('PermissionHasAclsRepository') protected permissionHasAclsRepositoryGetter: Getter<PermissionHasAclsRepository>, @repository.getter('AclRepository') protected aclRepositoryGetter: Getter<AclRepository>,
+    @inject('datasources.mongodb') dataSource: MongodbDataSource,
+    @repository.getter('PermissionHasActionsRepository') protected permissionHasActionsRepositoryGetter: Getter<PermissionHasActionsRepository>,
+    @repository.getter('PermissionActionRepository') protected permissionActionRepositoryGetter: Getter<PermissionActionRepository>, @repository.getter('ModuleRepository') protected moduleRepositoryGetter: Getter<ModuleRepository>, @repository.getter('PermissionGroupRepository') protected permissionGroupRepositoryGetter: Getter<PermissionGroupRepository>,
   ) {
     super(Permission, dataSource);
-    this.acls = this.createHasManyThroughRepositoryFactoryFor('acls', aclRepositoryGetter, permissionHasAclsRepositoryGetter,);
-    this.registerInclusionResolver('acls', this.acls.inclusionResolver);
+    this.module = this.createBelongsToAccessorFor('module', moduleRepositoryGetter,);
+    this.registerInclusionResolver('module', this.module.inclusionResolver);
+
+    this.permissionActions = this.createHasManyThroughRepositoryFactoryFor('permissionActions', permissionActionRepositoryGetter, permissionHasActionsRepositoryGetter,);
+    this.registerInclusionResolver('permissionActions', this.permissionActions.inclusionResolver);
   }
 }

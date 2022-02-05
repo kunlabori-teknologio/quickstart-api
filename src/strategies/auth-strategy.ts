@@ -38,55 +38,41 @@ export class AutentikigoStrategy implements AuthenticationStrategy {
 
     try {
       const metadata = await this.getMetaData() as any
-      const module = metadata['0']['options']['module']
+      const collection = metadata['0']['options']['collection']
       const action = metadata['0']['options']['action']
 
       const token = request.headers.authorization!
       const secret = process.env.PROJECT_SECRET!
       const payload = this.httpClass.verifyToken(token, secret)
 
-      const permissions = await this.userRepository
-        .permissions(payload?.id)
+      const permissionGroups = await this.userRepository
+        .permissionGroups(payload?.id)
         .find({
           where: {projectId: process.env.PROJECT_ID},
-          include: [{relation: 'acls', scope: {include: ['aclActions']}}]
+          include: [{
+            relation: 'permissions', scope: {
+              include: [
+                {relation: 'permissionActions', scope: {where: {name: action}}},
+                {relation: 'module', scope: {where: {collection}}}
+              ]
+            }
+          }]
         })
+      const permissionGroup = permissionGroups[0]
+      if ((permissionGroup && permissionGroup.name !== 'Kunlatek - Admin') && action) {
+        let userHasPermission = false;
+        permissionGroup.permissions?.forEach(permission => {
+          if (permission.module && permission.permissionActions.length)
+            userHasPermission = true
+        })
+        if (!userHasPermission) throw new Error(serverMessages['httpResponse']['unauthorizedError'][localeMessage])
+      }
 
-      // Melhorar esse aninhamento de forEach.
-      // Usar o conector do loopback
-      let userHasPermission = false;
-      permissions.forEach(permission => {
-        permission.acls.forEach(acl => {
-          acl.aclActions.forEach(aclAction => {
-            if (
-              (aclAction.name === action && acl.module === module) ||
-              (acl.module === '*')
-            ) userHasPermission = true
-          })
-        })
-      })
-      if (!userHasPermission) throw new Error(serverMessages['httpResponse']['unauthorizedError'][localeMessage])
       const userProfile = this.convertIdToUserProfile(payload?.id);
       return userProfile;
 
     } catch (err) {
-
-      let message = serverMessages['httpResponse']['unauthorizedError'][localeMessage]
-      let statusCode = 401
-      switch (err.name) {
-        case 'TokenExpiredError':
-          message = serverMessages['auth']['expiredAuthToken'][localeMessage]
-          statusCode = 602
-          break
-        case 'JsonWebTokenError':
-          message = serverMessages['auth']['invalidAuthToken'][localeMessage]
-          statusCode = 603
-          break
-        default:
-          break
-      }
-
-      this.httpClass.unauthorizedErrorResponse({message, logMessage: err.message})
+      this.httpClass.unauthorizedErrorResponse({logMessage: err.message})
     }
   }
 

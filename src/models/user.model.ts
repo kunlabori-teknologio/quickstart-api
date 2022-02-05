@@ -1,8 +1,8 @@
-import {Entity, hasOne, model, property, hasMany} from '@loopback/repository';
+import {Entity, hasMany, hasOne, model, property} from '@loopback/repository';
 import {Company} from './company.model';
+import {PermissionGroup} from './permission-group.model';
 import {Person} from './person.model';
-import {Permission} from './permission.model';
-import {UserHasPermissions} from './user-has-permissions.model';
+import {UserHasPermissionGroups} from './user-has-permission-groups.model';
 
 @model()
 export class User extends Entity {
@@ -64,8 +64,8 @@ export class User extends Entity {
   @hasOne(() => Company)
   company: Company;
 
-  @hasMany(() => Permission, {through: {model: () => UserHasPermissions}})
-  permissions: Permission[];
+  @hasMany(() => PermissionGroup, {through: {model: () => UserHasPermissionGroups}})
+  permissionGroups?: PermissionGroup[];
 
   constructor(data?: Partial<User>) {
     super(data);
