@@ -1,3 +1,4 @@
+import {authenticate} from '@loopback/authentication'
 import {inject} from '@loopback/core'
 import {
   repository
@@ -40,6 +41,7 @@ export class UserController {
     this.httpClass = new HttpClass({response: this.response})
   }
 
+  @authenticate({strategy: 'autentikigo', options: {module: 'User', action: 'readOne'}})
   @get('/users/{userId}')
   @response(200, {
     description: 'User model instance',
@@ -59,6 +61,7 @@ export class UserController {
     }
   }
 
+  @authenticate({strategy: 'autentikigo', options: {module: 'User', action: 'readOne'}})
   @get('/users/{userId}/person')
   @response(200, {
     description: 'Person model instance',
@@ -79,6 +82,7 @@ export class UserController {
     }
   }
 
+  @authenticate({strategy: 'autentikigo', options: {module: 'User', action: 'readOne'}})
   @get('/users/{userId}/company')
   @response(200, {
     description: 'Company model instance',
@@ -99,6 +103,7 @@ export class UserController {
     }
   }
 
+  @authenticate({strategy: 'autentikigo', options: {module: 'User', action: 'create'}})
   @post('/users/{userId}/permissions')
   @response(200, {
     description: 'Give permissions',
@@ -127,6 +132,7 @@ export class UserController {
     }
   }
 
+  @authenticate({strategy: 'autentikigo', options: {module: 'User', action: 'read'}})
   @get('/users/{userId}/permissions')
   @response(200, {
     description: 'Array of permission',
@@ -154,6 +160,7 @@ export class UserController {
     }
   }
 
+  @authenticate({strategy: 'autentikigo', options: {module: 'User', action: 'delete'}})
   @del('/users/{userId}/permissions')
   @response(200, {description: 'delete a Permission'})
   async delteAclActionsRelated(

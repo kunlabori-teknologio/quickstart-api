@@ -53,3 +53,11 @@ export function getAuthTokenFromHeader(headerAndResponse: IHeaderAndResponse) {
     new HttpClass({response: headerAndResponse.response}).unauthorizedErrorResponse()
   return authToken.split(' ')[1]
 }
+
+export const getAclActionsFromHttpMethod: Map<String, string[]> = new Map([
+  ['GET', ['read', 'readOne']],
+  ['POST', ['create', 'createOne']],
+  ['PUT', ['update', 'updateOne']],
+  ['PATCH', ['update', 'updateOne']],
+  ['DELETE', ['delete', 'deleteOne']],
+])

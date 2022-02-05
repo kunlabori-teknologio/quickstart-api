@@ -2,6 +2,7 @@ import {inject, service} from '@loopback/core';
 import {repository} from '@loopback/repository';
 import {
   get,
+  getModelSchemaRef,
   OperationVisibility,
   param,
   post,
@@ -72,7 +73,17 @@ export class AuthController {
   @get('auth/login')
   @response(200, {
     description: 'Auth token',
-    properties: {authToken: {type: 'string'}}
+    properties: {
+      message: {type: 'string'},
+      statusCode: {type: 'number'},
+      data: {
+        properties: {
+          authToken: {type: 'string'},
+          authRefreshToken: {type: 'string'},
+          userData: getModelSchemaRef(User, {includeRelations: true}),
+        }
+      }
+    }
   })
   async login(): Promise<void> {
     try {
@@ -143,14 +154,23 @@ export class AuthController {
   @get('auth/refresh-token')
   @response(200, {
     description: 'Auth token',
-    properties: {authToken: {type: 'string'}}
+    properties: {
+      message: {type: 'string'},
+      statusCode: {type: 'number'},
+      data: {
+        properties: {
+          authToken: {type: 'string'},
+          authRefreshToken: {type: 'string'},
+        }
+      }
+    }
   })
   async refreshToken(): Promise<void> {
     try {
-      const payload = this.httpClass.decodeToken(this.request.headers.authorization!)
+      const payload = this.httpClass.verifyToken(this.request.headers.authorization!, process.env.PROJECT_SECRET!)
       const authToken = await this.authService.refreshToken(payload?.id);
       this.httpClass.okResponse({
-        data: {authToken},
+        data: authToken,
         message: serverMessages['auth']['refreshTokenSuccess'][localeMessage]
       })
     } catch (err) {

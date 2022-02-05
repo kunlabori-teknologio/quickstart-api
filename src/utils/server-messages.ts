@@ -125,6 +125,14 @@ export const serverMessages = {
       'pt-BR': 'Refresh token gerado com sucesso',
       'en-US': 'Refresh token generated successfully',
     },
+    'invalidAuthToken': {
+      'pt-BR': 'Token invalido',
+      'en-US': 'Invalid token',
+    },
+    'expiredAuthToken': {
+      'pt-BR': 'Token expirado',
+      'en-US': 'Token expired',
+    }
   },
   'user': {
     'personNotFound': {

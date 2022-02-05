@@ -1,3 +1,4 @@
+import {authenticate} from '@loopback/authentication'
 import {inject} from '@loopback/core'
 import {
   repository
@@ -11,7 +12,6 @@ import {localeMessage, serverMessages} from '../utils/server-messages'
 import {HttpClass} from './../classes/http.class'
 import {AclHasActionsRepository} from './../repositories/acl-has-actions.repository'
 
-//@authenticate('autentikigo')
 export class AclController {
 
   private httpClass
@@ -28,6 +28,7 @@ export class AclController {
     this.httpClass = new HttpClass({response: this.response})
   }
 
+  @authenticate({strategy: 'autentikigo', options: {module: 'ACL', action: 'createOne'}})
   @post('/acls')
   @response(200, {
     description: 'Acl model instance',
@@ -48,6 +49,7 @@ export class AclController {
     }
   }
 
+  @authenticate({strategy: 'autentikigo', options: {module: 'ACL', action: 'read'}})
   @get('/acls')
   @response(200, {
     description: 'Array of Acl model instances',
@@ -74,6 +76,7 @@ export class AclController {
     }
   }
 
+  @authenticate({strategy: 'autentikigo', options: {module: 'ACL', action: 'readOne'}})
   @get('/acls/{aclId}')
   @response(200, {
     description: 'Acl model instance',
@@ -96,6 +99,7 @@ export class AclController {
     }
   }
 
+  @authenticate({strategy: 'autentikigo', options: {module: 'ACL', action: 'updateOne'}})
   @put('/acls/{aclId}')
   @response(200, {description: 'Acl PUT success'})
   async updateById(
@@ -113,6 +117,7 @@ export class AclController {
     }
   }
 
+  @authenticate({strategy: 'autentikigo', options: {module: 'ACL', action: 'updateOne'}})
   @patch('/acls/{aclId}')
   @response(200, {description: 'Acl PATCH success'})
   async partialUpdateById(
@@ -130,6 +135,7 @@ export class AclController {
     }
   }
 
+  @authenticate({strategy: 'autentikigo', options: {module: 'ACL', action: 'deleteOne'}})
   @del('/acls/{aclId}')
   @response(204, {description: 'Acl DELETE success'})
   async deleteById(
@@ -146,6 +152,7 @@ export class AclController {
     }
   }
 
+  @authenticate({strategy: 'autentikigo', options: {module: 'ACL', action: 'create'}})
   @post('/acls/{aclId}/acl-actions')
   @response(200, {
     description: 'create a AclAction model instance',
@@ -174,6 +181,7 @@ export class AclController {
     }
   }
 
+  @authenticate({strategy: 'autentikigo', options: {module: 'ACL', action: 'read'}})
   @get('/acls/{aclId}/acl-actions')
   @response(200, {
     description: 'Array of Acl has many AclAction through AclHasActions',
@@ -201,6 +209,7 @@ export class AclController {
     }
   }
 
+  @authenticate({strategy: 'autentikigo', options: {module: 'ACL', action: 'delete'}})
   @del('/acls/{aclId}/acl-actions')
   @response(200, {
     description: 'create a AclAction model instance',

@@ -170,7 +170,7 @@ export class HttpClass {
       let authToken = token.split(' ')[1]
       return jwt.verify(authToken, secret) as JwtPayload
     } catch (err) {
-      this.unauthorizedErrorResponse()
+      this.unauthorizedErrorResponse({logMessage: err.message})
     }
   }
 
@@ -179,7 +179,7 @@ export class HttpClass {
       let authToken = token.split(' ')[1]
       return jwt.decode(authToken) as JwtPayload
     } catch (err) {
-      this.unauthorizedErrorResponse()
+      this.unauthorizedErrorResponse({logMessage: err.message})
     }
   }
 }

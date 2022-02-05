@@ -1,3 +1,4 @@
+import {authenticate} from '@loopback/authentication'
 import {inject} from '@loopback/core'
 import {
   repository
@@ -25,6 +26,7 @@ export class AclActionController {
     this.httpClass = new HttpClass({response: this.response})
   }
 
+  @authenticate({strategy: 'autentikigo', options: {module: 'ACLAction', action: 'createOne'}})
   @post('/acl-actions')
   @response(200, {
     description: 'AclAction model instance',
@@ -45,6 +47,7 @@ export class AclActionController {
     }
   }
 
+  @authenticate({strategy: 'autentikigo', options: {module: 'ACLAction', action: 'read'}})
   @get('/acl-actions')
   @response(200, {
     description: 'Array of AclAction model instances',
@@ -71,6 +74,7 @@ export class AclActionController {
     }
   }
 
+  @authenticate({strategy: 'autentikigo', options: {module: 'ACLAction', action: 'readOne'}})
   @get('/acl-actions/{aclActionId}')
   @response(200, {
     description: 'AclAction model instance',
@@ -93,6 +97,7 @@ export class AclActionController {
     }
   }
 
+  @authenticate({strategy: 'autentikigo', options: {module: 'ACLAction', action: 'updateOne'}})
   @put('/acl-actions/{aclActionId}')
   @response(200, {description: 'AclAction PUT success'})
   async updateById(
@@ -110,6 +115,7 @@ export class AclActionController {
     }
   }
 
+  @authenticate({strategy: 'autentikigo', options: {module: 'ACLAction', action: 'create'}})
   @patch('/acl-actions/{aclActionId}')
   @response(200, {description: 'AclAction PATCH success'})
   async partialUpdateById(
@@ -127,6 +133,7 @@ export class AclActionController {
     }
   }
 
+  @authenticate({strategy: 'autentikigo', options: {module: 'ACLAction', action: 'deleteOne'}})
   @del('/acl-actions/{aclActionId}')
   @response(204, {description: 'AclAction DELETE success'})
   async deleteById(

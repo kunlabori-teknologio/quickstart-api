@@ -1,3 +1,4 @@
+import {authenticate} from '@loopback/authentication'
 import {inject} from '@loopback/core'
 import {
   repository
@@ -37,6 +38,7 @@ export class PermissionController {
     }
   }
 
+  @authenticate({strategy: 'autentikigo', options: {module: 'Permission', action: 'createOne'}})
   @post('/permissions')
   @response(200, {
     description: 'Permission model instance',
@@ -57,6 +59,7 @@ export class PermissionController {
     }
   }
 
+  @authenticate({strategy: 'autentikigo', options: {module: 'Permission', action: 'read'}})
   @get('/permissions')
   @response(200, {
     description: 'Array of Permission model instances',
@@ -83,6 +86,7 @@ export class PermissionController {
     }
   }
 
+  @authenticate({strategy: 'autentikigo', options: {module: 'Permission', action: 'readOne'}})
   @get('/permissions/{permissionId}')
   @response(200, {
     description: 'Permission model instance',
@@ -102,6 +106,7 @@ export class PermissionController {
     }
   }
 
+  @authenticate({strategy: 'autentikigo', options: {module: 'Permission', action: 'updateOne'}})
   @put('/permissions/{permissionId}')
   @response(200, {description: 'Permission PUT success'})
   async updateById(
@@ -119,6 +124,7 @@ export class PermissionController {
     }
   }
 
+  @authenticate({strategy: 'autentikigo', options: {module: 'Permission', action: 'updateOne'}})
   @patch('/permissions/{permissionId}')
   @response(200, {description: 'Permission PATCH success'})
   async partialUpdateById(
@@ -136,6 +142,7 @@ export class PermissionController {
     }
   }
 
+  @authenticate({strategy: 'autentikigo', options: {module: 'Permission', action: 'deleteOne'}})
   @del('/permissions/{permissionId}')
   @response(204, {description: 'Permission DELETE success'})
   async deleteById(
@@ -152,6 +159,7 @@ export class PermissionController {
     }
   }
 
+  @authenticate({strategy: 'autentikigo', options: {module: 'Permission', action: 'create'}})
   @post('/permissions/{permissionId}/acls')
   @response(200, {
     description: 'create a Acls model instance',
@@ -180,6 +188,7 @@ export class PermissionController {
     }
   }
 
+  @authenticate({strategy: 'autentikigo', options: {module: 'Permission', action: 'read'}})
   @get('/permissions/{permissionId}/acls')
   @response(200, {
     description: 'Array of permission has many Acls through PermissionHasAcls',
@@ -207,6 +216,7 @@ export class PermissionController {
     }
   }
 
+  @authenticate({strategy: 'autentikigo', options: {module: 'Permission', action: 'delete'}})
   @del('/permissions/{permissionId}/acls')
   @response(200, {description: 'delete a Acl'})
   async delteAclActionsRelated(

@@ -77,6 +77,11 @@ export class AuthService {
       }, process.env.PROJECT_SECRET!, {
         expiresIn: '5m'
       }),
+      authRefreshToken: jwt.sign({
+        id: user?._id,
+      }, process.env.PROJECT_SECRET!, {
+        expiresIn: '10m'
+      }),
       userData: user
     }
   }
@@ -103,10 +108,18 @@ export class AuthService {
     }
   }
 
-  public async refreshToken(id: string): Promise<string> {
-    return jwt.sign({id},
-      process.env.PROJECT_SECRET!, {
-      expiresIn: '5m'
-    })
+  public async refreshToken(id: string): Promise<any> {
+    return {
+      authToken: jwt.sign({
+        id: id,
+      }, process.env.PROJECT_SECRET!, {
+        expiresIn: '5m'
+      }),
+      authRefreshToken: jwt.sign({
+        id: id,
+      }, process.env.PROJECT_SECRET!, {
+        expiresIn: '10m'
+      })
+    }
   }
 }
