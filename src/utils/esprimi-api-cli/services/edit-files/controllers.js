@@ -39,7 +39,7 @@ const updateController = (path, module) => {
  */
 const updateControllers = (path) => {
   console.info('\nWorking in Controllers');
-  for (let index = 0; index < esprimiConfig['modules'].length; index++) {
+  for (const index of esprimiConfig['modules']) {
     const module = esprimiConfig['modules'][index];
     updateController(path, module)
   }

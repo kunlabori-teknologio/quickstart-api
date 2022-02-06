@@ -37,7 +37,7 @@ const updateRepository = (path, module) => {
  */
 const updateRepositories = (path) => {
   console.info('\nWorking in Repositories');
-  for (let index = 0; index < esprimiConfig['modules'].length; index++) {
+  for (const index of esprimiConfig['modules']) {
     const module = esprimiConfig['modules'][index];
     updateRepository(path, module)
   }

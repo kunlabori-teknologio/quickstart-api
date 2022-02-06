@@ -3,10 +3,10 @@ import {appendFileSync, existsSync, mkdir} from 'fs'
 import {JwtPayload, verify} from 'jsonwebtoken'
 import {ILogObject, Logger} from 'tslog'
 import {URL, URLSearchParams} from 'url'
-import {IHttp, IHttpResponseData, IHttpResponseDataWithHttpCode} from '../interfaces/http.interface'
+import {IAddtionalPropertiesResponseSchema, IFilters, IHttp, IHttpResponseData, IHttpResponseDataWithHttpCode, IRequestSchema, IResponseSchema, IWhereFilterCondition} from '../interfaces/http.interface'
 import {localeMessage, serverMessages} from '../utils/server-messages'
 
-enum httpResponseTypeEnum {
+enum HttpResponseTypeEnum {
   ok = 'ok',
   created = 'created',
   noContent = 'noContent',
@@ -41,7 +41,7 @@ export class HttpClass {
     );
   }
 
-  public requestSchema(model: any, partial?: boolean): any {
+  public requestSchema(model: Function, partial?: boolean): IRequestSchema {
     return {
       'application/json': {
         schema: getModelSchemaRef(model, {
@@ -52,20 +52,20 @@ export class HttpClass {
     }
   }
 
-  private responseSchema(additionalProperty: any): any {
+  private responseSchema(additionalProperty: IAddtionalPropertiesResponseSchema): IResponseSchema {
     return {
       'statusCode': {type: 'number', default: 200}, 'message': {type: 'string'},
       ...(additionalProperty ?? {}),
     }
   }
 
-  public findOneSchema(responseModel: any, includeRelations?: boolean): any {
+  public findOneSchema(responseModel: Function, includeRelations?: boolean): IResponseSchema {
     return this.responseSchema({
       'data': getModelSchemaRef(responseModel, {includeRelations: includeRelations ?? true})
     })
   }
 
-  public findAllResponseSchema(responseModel: any, includeRelations?: boolean): any {
+  public findAllResponseSchema(responseModel: Function, includeRelations?: boolean): IResponseSchema {
     return this.responseSchema({
       'data': {
         type: 'object',
@@ -80,15 +80,15 @@ export class HttpClass {
     })
   }
 
-  public createFilterRequestParams(urlString: string, whereAdditional?: any[]): any {
+  public createFilterRequestParams(urlString: string, whereAdditional?: IWhereFilterCondition[]): IFilters {
     const paramsFromUrl = new URL(`${process.env.SERVER_ROOT_URI}${urlString}`).searchParams
-    let where = [...this.extractConditionalParamsFromUrl(paramsFromUrl), ...(whereAdditional ?? [])]
+    const where: IWhereFilterCondition[] = [...this.extractConditionalParamsFromUrl(paramsFromUrl), ...(whereAdditional ?? [])]
     const filters = this.createFilters(paramsFromUrl, where)
     return filters
   }
 
-  private extractConditionalParamsFromUrl(paramsFromUrl: URLSearchParams): any[] {
-    let whereArray: any[] = [];
+  private extractConditionalParamsFromUrl(paramsFromUrl: URLSearchParams): IWhereFilterCondition[] {
+    const whereArray: IWhereFilterCondition[] = [];
     paramsFromUrl.forEach((paramValue, paramKey) => {
       if (!['limit', 'page', 'order_by'].includes(paramKey))
         whereArray.push({[paramKey]: {like: new RegExp('.*' + paramValue + '.*', "i")}})
@@ -96,11 +96,11 @@ export class HttpClass {
     return whereArray
   }
 
-  private createFilters(paramsFromUrl: URLSearchParams, whereConditions: any[]) {
+  private createFilters(paramsFromUrl: URLSearchParams, whereConditions: IWhereFilterCondition[]): IFilters {
     return {
       limit: (paramsFromUrl.get('limit') ?? 100) as number,
       skip: ((paramsFromUrl.get('limit') ?? 100) as number) * ((paramsFromUrl.get('page') ?? 0) as number),
-      order: [(paramsFromUrl.get('order_by') || '')],
+      order: [(paramsFromUrl.get('order_by') ?? '')],
       where: whereConditions.length ? {'and': whereConditions} : {},
     }
   }
@@ -121,46 +121,46 @@ export class HttpClass {
     const fileName = new Date().toISOString().substring(0, 10)
     const path = './src/logs/'
     if (!existsSync(path)) mkdir('./src/logs/', () => { })
-    appendFileSync(`./src/logs/${fileName}.log`, JSON.stringify(logObject) + "\n")
+    appendFileSync(`./src/logs/[${logObject.logLevel}] ${fileName}.log`, JSON.stringify(logObject) + "\n")
   }
 
   private httpResponse(httpResponseData: IHttpResponseDataWithHttpCode): void {
     this.response?.status(httpResponseData.httpCode!);
     this.response?.send({
-      statusCode: httpResponseData.statusCode || httpResponseData.httpCode,
+      statusCode: httpResponseData.statusCode ?? httpResponseData.httpCode,
       message: httpResponseData.message,
       data: httpResponseData.data,
     });
   }
 
-  public getMessage(httpResponseType: httpResponseTypeEnum) {
+  public getMessage(httpResponseType: HttpResponseTypeEnum) {
     return serverMessages['httpResponse'][httpResponseType][localeMessage]
   }
 
   public okResponse(httpResponseData?: IHttpResponseData): void {
-    this.log.info(httpResponseData?.message || this.getMessage(httpResponseTypeEnum.ok), this.loggerJson(this.request!))
+    this.log.info(httpResponseData?.message ?? this.getMessage(HttpResponseTypeEnum.ok), this.loggerJson(this.request!))
     this.httpResponse({
       ...httpResponseData,
       httpCode: 200,
-      message: httpResponseData?.message || this.getMessage(httpResponseTypeEnum.ok),
+      message: httpResponseData?.message ?? this.getMessage(HttpResponseTypeEnum.ok),
     });
   }
 
   public createResponse(httpResponseData?: IHttpResponseData): void {
-    this.log.info(httpResponseData?.message || this.getMessage(httpResponseTypeEnum.created), this.loggerJson(this.request!))
+    this.log.info(httpResponseData?.message ?? this.getMessage(HttpResponseTypeEnum.created), this.loggerJson(this.request!))
     this.httpResponse({
       ...httpResponseData,
       httpCode: 201,
-      message: httpResponseData?.message || this.getMessage(httpResponseTypeEnum.created),
+      message: httpResponseData?.message ?? this.getMessage(HttpResponseTypeEnum.created),
     });
   }
 
   public noContentResponse(httpResponseData?: IHttpResponseData): void {
-    this.log.info(httpResponseData?.message || this.getMessage(httpResponseTypeEnum.noContent), this.loggerJson(this.request!))
+    this.log.info(httpResponseData?.message ?? this.getMessage(HttpResponseTypeEnum.noContent), this.loggerJson(this.request!))
     this.httpResponse({
       ...httpResponseData,
       httpCode: 204,
-      message: httpResponseData?.message || this.getMessage(httpResponseTypeEnum.noContent),
+      message: httpResponseData?.message ?? this.getMessage(HttpResponseTypeEnum.noContent),
     });
   }
 
@@ -169,7 +169,7 @@ export class HttpClass {
     this.httpResponse({
       ...httpResponseData,
       httpCode: 400,
-      message: httpResponseData?.message || this.getMessage(httpResponseTypeEnum.badRequest),
+      message: httpResponseData?.message ?? this.getMessage(HttpResponseTypeEnum.badRequest),
     });
   }
 
@@ -178,7 +178,7 @@ export class HttpClass {
     this.httpResponse({
       ...httpResponseData,
       httpCode: 401,
-      message: httpResponseData?.message || this.getMessage(httpResponseTypeEnum.unauthorized),
+      message: httpResponseData?.message ?? this.getMessage(HttpResponseTypeEnum.unauthorized),
     });
   }
 
@@ -187,7 +187,7 @@ export class HttpClass {
     this.httpResponse({
       ...httpResponseData,
       httpCode: 404,
-      message: httpResponseData?.message || this.getMessage(httpResponseTypeEnum.notFound),
+      message: httpResponseData?.message ?? this.getMessage(HttpResponseTypeEnum.notFound),
     });
   }
 
@@ -196,14 +196,14 @@ export class HttpClass {
     this.httpResponse({
       ...httpResponseData,
       httpCode: 500,
-      message: httpResponseData?.message || this.getMessage(httpResponseTypeEnum.internalServerError),
+      message: httpResponseData?.message ?? this.getMessage(HttpResponseTypeEnum.internalServerError),
     });
   }
 
   public verifyToken(token: string, secret: string): JwtPayload | void {
     try {
       if (!token) throw new Error(serverMessages['auth']['noAuthToken'][localeMessage])
-      let authToken = token.split(' ')[1]
+      const authToken = token.split(' ')[1]
       return verify(authToken, secret) as JwtPayload
     } catch (err) {
       let message = serverMessages['httpResponse']['unauthorizedError'][localeMessage]

@@ -1,4 +1,5 @@
 import {Entity, model, property} from '@loopback/repository';
+import {IBusinessActivityCode} from '../interfaces/company.interface';
 
 @model()
 export class Company extends Entity {

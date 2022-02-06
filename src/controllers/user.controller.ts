@@ -30,10 +30,10 @@ export class UserController {
     @repository(UserRepository) public userRepository: UserRepository,
     @repository(UserHasPermissionGroupsRepository) private userHasPermissionsRepository: UserHasPermissionGroupsRepository,
 
-    @inject(RestBindings.Http.REQUEST) private request: Request,
-    @inject(RestBindings.Http.RESPONSE) private response: Response,
+    @inject(RestBindings.Http.REQUEST) private httpRequest: Request,
+    @inject(RestBindings.Http.RESPONSE) private httpResponse: Response,
   ) {
-    this.httpClass = new HttpClass({response: this.response, request: this.request})
+    this.httpClass = new HttpClass({response: this.httpResponse, request: this.httpRequest})
   }
 
   @authenticate({strategy: 'autentikigo', options: {collection: 'User'}})
@@ -95,10 +95,10 @@ export class UserController {
     @param.path.string('userId') id: string,
     @param.query.number('limit') limit: number,
     @param.query.number('page') page: number,
-    @param.query.string('order_by') order_by: string,
+    @param.query.string('order_by') orderBy: string,
   ): Promise<void> {
     try {
-      const filters = this.httpClass.createFilterRequestParams(this.request.url)
+      const filters = this.httpClass.createFilterRequestParams(this.httpRequest.url)
       const result = await this.userRepository.permissionGroups(id).find({
         ...filters,
         include: [{relation: 'permissions', scope: {include: ['permissionActions', 'module']}}]
@@ -127,11 +127,11 @@ export class UserController {
     @param.path.string('projectId') projectId: string,
     @param.query.number('limit') limit: number,
     @param.query.number('page') page: number,
-    @param.query.string('order_by') order_by: string,
+    @param.query.string('order_by') orderBy: string,
   ): Promise<void> {
     try {
       const filters = this.httpClass.createFilterRequestParams(
-        this.request.url, [{projectId}]
+        this.httpRequest.url, [{projectId}]
       )
       const permissionGroups = await this.userRepository.permissionGroups(id).find({
         ...filters,

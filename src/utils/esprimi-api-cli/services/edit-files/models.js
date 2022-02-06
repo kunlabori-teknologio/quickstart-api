@@ -37,7 +37,7 @@ const createAttrs = (attrs, file) => {
   /**
    * Create attributes
    */
-  for (let index = 0; index < attrs.length; index++) {
+  for (const index of attrs) {
     const attr = attrs[index];
     file = file.replace(/\/\/ End properties/g, addAttr(attr.name, attr.type, attr.itemType));
   }
@@ -80,7 +80,7 @@ const updateModel = (path, module) => {
  */
 const updateModels = (path) => {
   console.info('\nWorking in Models');
-  for (let index = 0; index < esprimiConfig['modules'].length; index++) {
+  for (const index of esprimiConfig['modules']) {
     const module = esprimiConfig['modules'][index];
     updateModel(path, module)
   }

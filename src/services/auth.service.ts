@@ -3,11 +3,15 @@ import {google} from 'googleapis'
 import jwt from 'jsonwebtoken'
 import {CompanyDTO} from '../dto/company.dto'
 import {PersonDTO} from '../dto/person.dto'
+import {ILoginResponse, ILoginUserInfo, IRefreshTokenResponse} from '../interfaces/auth.interface'
+import {ICompanyFromAPI} from '../interfaces/company.interface'
+import {IPersonFromAPI} from '../interfaces/person.interface'
+import {IGoogleUser} from '../interfaces/user.interface'
 import {Company} from '../models/company.model'
 import {Person} from '../models/person.model'
 import {AdditionalInfoModel} from '../models/signup.model'
 import {CompanyRepository, PersonRepository, UserRepository} from '../repositories'
-import {userTypesEnum} from '../utils/general-functions'
+import {UserTypesEnum} from '../utils/general-functions'
 import {localeMessage, serverMessages} from '../utils/server-messages'
 
 const fetch = require('node-fetch')
@@ -29,8 +33,8 @@ export class AuthService {
   public async getGoogleLoginPageURL(): Promise<string> {
     try {
       const url = this.googleOAuth2Client.generateAuthUrl({
-        access_type: "offline",
-        scope:
+        'access_type': "offline",
+        'scope':
           [
             "https://www.googleapis.com/auth/userinfo.profile",
             "https://www.googleapis.com/auth/userinfo.email",
@@ -42,19 +46,19 @@ export class AuthService {
     }
   }
 
-  public async getGoogleUser(code: string): Promise<any> {
+  public async getGoogleUser(code: string): Promise<IGoogleUser> {
     try {
       const {tokens} = await this.googleOAuth2Client.getToken(code)
       this.googleOAuth2Client.setCredentials(tokens)
-      let oauth2 = google.oauth2({version: 'v2', auth: this.googleOAuth2Client})
+      const oauth2 = google.oauth2({version: 'v2', auth: this.googleOAuth2Client})
       const googleUser = await oauth2.userinfo.v2.me.get()
-      return googleUser.data
+      return {email: googleUser.data.email, id: googleUser.data.id}
     } catch (err) {
       throw new Error(err.message)
     }
   }
 
-  public createGoogleLoginToken(googleUser: any): string {
+  public createGoogleLoginToken(googleUser: IGoogleUser): string {
     return jwt.sign({
       email: googleUser.email, googleId: googleUser.id
     },
@@ -63,7 +67,7 @@ export class AuthService {
     })
   }
 
-  public async login(userLoginInfo: any): Promise<any | null> {
+  public async login(userLoginInfo: ILoginUserInfo): Promise<ILoginResponse | null> {
     const {email, googleId} = userLoginInfo
 
     const userWithArrayOfPermissions = await this.userRepository.findOne({
@@ -82,7 +86,7 @@ export class AuthService {
       ]
     })
     if (!userWithArrayOfPermissions) return null
-    let user = {
+    const user = {
       ...userWithArrayOfPermissions,
       permissionGroup: userWithArrayOfPermissions.permissionGroups?.length ?
         userWithArrayOfPermissions.permissionGroups[0] : {}
@@ -106,7 +110,7 @@ export class AuthService {
 
   public async createProfile(
     {userType, uniqueId, additionalInfo}:
-      {userType: userTypesEnum, uniqueId: string, additionalInfo?: AdditionalInfoModel}
+      {userType: UserTypesEnum, uniqueId: string, additionalInfo?: AdditionalInfoModel}
   ): Promise<Person | Company> {
     try {
       let dataFromCpfCnpjApi = await fetch(`${process.env.API_CPF_CNPJ}/${userType === 'person' ? 2 : 6}/${uniqueId.replace(/\D/g, "")}`)
@@ -126,7 +130,7 @@ export class AuthService {
     }
   }
 
-  public async refreshToken(id: string): Promise<any> {
+  public async refreshToken(id: string): Promise<IRefreshTokenResponse> {
     return {
       authToken: jwt.sign({
         id: id,

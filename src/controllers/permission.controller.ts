@@ -19,12 +19,12 @@ export class PermissionController {
     @repository(PermissionRepository) public permissionRepository: PermissionRepository,
     @repository(PermissionHasActionsRepository) private permissionHasActionsRepository: PermissionHasActionsRepository,
 
-    @inject(RestBindings.Http.REQUEST) private request: Request,
-    @inject(RestBindings.Http.RESPONSE) private response: Response,
+    @inject(RestBindings.Http.REQUEST) private httpRequest: Request,
+    @inject(RestBindings.Http.RESPONSE) private httpResponse: Response,
 
     @inject(SecurityBindings.USER, {optional: true}) private currentUser?: UserProfile,
   ) {
-    this.httpClass = new HttpClass({response: this.response, request: this.request})
+    this.httpClass = new HttpClass({response: this.httpResponse, request: this.httpRequest})
   }
 
   @authenticate({strategy: 'autentikigo', options: {collection: 'Permission', action: 'createOne'}})
@@ -34,11 +34,11 @@ export class PermissionController {
     properties: new HttpClass().findOneSchema(Permission)
   })
   async create(
-    @requestBody({content: new HttpClass().requestSchema(Permission)}) data: any,
+    @requestBody({content: new HttpClass().requestSchema(Permission)}) data: Permission,
   ): Promise<void> {
     try {
-      const _createdBy = this.currentUser?.[securityId] as string
-      const permission = await this.permissionRepository.create({...data, _createdBy})
+      const createdBy = this.currentUser?.[securityId] as string
+      const permission = await this.permissionRepository.create({...data, _createdBy: createdBy})
       this.httpClass.createResponse({data: permission})
     } catch (err) {
       this.httpClass.badRequestErrorResponse({
@@ -57,10 +57,10 @@ export class PermissionController {
   async find(
     @param.query.number('limit') limit: number,
     @param.query.number('page') page: number,
-    @param.query.string('order_by') order_by: string,
+    @param.query.string('order_by') orderBy: string,
   ): Promise<void> {
     try {
-      const filters = this.httpClass.createFilterRequestParams(this.request.url)
+      const filters = this.httpClass.createFilterRequestParams(this.httpRequest.url)
       const result = await this.permissionRepository.find({...filters, include: ['permissionActions', 'module']})
       const total = await this.permissionRepository.count(filters['where'])
       this.httpClass.okResponse({
@@ -103,7 +103,7 @@ export class PermissionController {
   @response(200, {description: 'Permission PUT success'})
   async updateById(
     @param.path.string('permissionId') id: string,
-    @requestBody({content: new HttpClass().requestSchema(Permission)}) data: any,
+    @requestBody({content: new HttpClass().requestSchema(Permission)}) data: Permission,
   ): Promise<void> {
     try {
       await this.permissionRepository.updateById(id, data)
@@ -121,7 +121,7 @@ export class PermissionController {
   @response(200, {description: 'Permission PATCH success'})
   async partialUpdateById(
     @param.path.string('permissionId') id: string,
-    @requestBody({content: new HttpClass().requestSchema(Permission, true)}) data: any,
+    @requestBody({content: new HttpClass().requestSchema(Permission, true)}) data: Permission,
   ): Promise<void> {
     try {
       await this.permissionRepository.updateById(id, data)
@@ -190,10 +190,10 @@ export class PermissionController {
     @param.path.string('permissionId') id: string,
     @param.query.number('limit') limit: number,
     @param.query.number('page') page: number,
-    @param.query.string('order_by') order_by: string,
+    @param.query.string('order_by') orderBy: string,
   ): Promise<void> {
     try {
-      const filters = this.httpClass.createFilterRequestParams(this.request.url)
+      const filters = this.httpClass.createFilterRequestParams(this.httpRequest.url)
       const result = await this.permissionRepository.permissionActions(id).find(filters)
       const total = (await this.permissionRepository.permissionActions(id).find({where: filters['where']})).length
       this.httpClass.okResponse({

@@ -1,4 +1,5 @@
 import {AnyObject} from '@loopback/repository';
+import {IBusinessActivityCode, ICompanyFromAPI} from '../interfaces/company.interface';
 import {Company} from '../models';
 import {AdditionalInfoModel} from '../models/signup.model';
 import {convertBirthdayStringToDate} from '../utils/date-manipulation-functions';

@@ -1,6 +1,4 @@
-
-interface ILoginUserInfo {
-  email?: string;
-  googleId?: string;
-  appleId?: string;
+export interface IGoogleUser {
+  email?: string | null;
+  id?: string | null;
 }

@@ -17,12 +17,12 @@ export class PermissionGroupController {
   constructor(
     @repository(PermissionGroupRepository) public permissionGroupRepository: PermissionGroupRepository,
 
-    @inject(RestBindings.Http.REQUEST) private request: Request,
-    @inject(RestBindings.Http.RESPONSE) private response: Response,
+    @inject(RestBindings.Http.REQUEST) private httpRequest: Request,
+    @inject(RestBindings.Http.RESPONSE) private httpResponse: Response,
 
     @inject(SecurityBindings.USER, {optional: true}) private currentUser?: UserProfile,
   ) {
-    this.httpClass = new HttpClass({response: this.response, request: this.request})
+    this.httpClass = new HttpClass({response: this.httpResponse, request: this.httpRequest})
   }
 
   private getPermissionGroupRelatedPermissions = {
@@ -39,11 +39,11 @@ export class PermissionGroupController {
     properties: new HttpClass().findOneSchema(PermissionGroup)
   })
   async create(
-    @requestBody({content: new HttpClass().requestSchema(PermissionGroup)}) data: any,
+    @requestBody({content: new HttpClass().requestSchema(PermissionGroup)}) data: PermissionGroup,
   ): Promise<void> {
     try {
-      const _createdBy = this.currentUser?.[securityId] as string
-      const permission = await this.permissionGroupRepository.create({...data, _createdBy})
+      const createdBy = this.currentUser?.[securityId] as string
+      const permission = await this.permissionGroupRepository.create({...data, _createdBy: createdBy})
       this.httpClass.createResponse({data: permission})
     } catch (err) {
       this.httpClass.badRequestErrorResponse({
@@ -62,10 +62,10 @@ export class PermissionGroupController {
   async find(
     @param.query.number('limit') limit: number,
     @param.query.number('page') page: number,
-    @param.query.string('order_by') order_by: string,
+    @param.query.string('order_by') orderBy: string,
   ): Promise<void> {
     try {
-      const filters = this.httpClass.createFilterRequestParams(this.request.url)
+      const filters = this.httpClass.createFilterRequestParams(this.httpRequest.url)
       const result = await this.permissionGroupRepository.find({...filters, include: [this.getPermissionGroupRelatedPermissions]})
       const total = await this.permissionGroupRepository.count(filters['where'])
       this.httpClass.okResponse({
@@ -105,7 +105,7 @@ export class PermissionGroupController {
   @response(200, {description: 'Permission group PUT success'})
   async updateById(
     @param.path.string('permissionGroupId') id: string,
-    @requestBody({content: new HttpClass().requestSchema(PermissionGroup)}) data: any,
+    @requestBody({content: new HttpClass().requestSchema(PermissionGroup)}) data: PermissionGroup,
   ): Promise<void> {
     try {
       await this.permissionGroupRepository.updateById(id, data)
@@ -123,7 +123,7 @@ export class PermissionGroupController {
   @response(200, {description: 'Permission group PATCH success'})
   async partialUpdateById(
     @param.path.string('permissionGroupId') id: string,
-    @requestBody({content: new HttpClass().requestSchema(PermissionGroup, true)}) data: any,
+    @requestBody({content: new HttpClass().requestSchema(PermissionGroup, true)}) data: PermissionGroup,
   ): Promise<void> {
     try {
       await this.permissionGroupRepository.updateById(id, data)

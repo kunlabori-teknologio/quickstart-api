@@ -1,4 +1,4 @@
-interface IPersonFromAPI {
+export interface IPersonFromAPI {
   nome: string,
   cpf: string,
   nascimento: string,

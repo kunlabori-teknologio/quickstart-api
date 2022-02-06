@@ -17,12 +17,12 @@ export class PermissionActionController {
   constructor(
     @repository(PermissionActionRepository) public permissionActionRepository: PermissionActionRepository,
 
-    @inject(RestBindings.Http.REQUEST) private request: Request,
-    @inject(RestBindings.Http.RESPONSE) private response: Response,
+    @inject(RestBindings.Http.REQUEST) private httpRequest: Request,
+    @inject(RestBindings.Http.RESPONSE) private httpResponse: Response,
 
     @inject(SecurityBindings.USER, {optional: true}) private currentUser?: UserProfile,
   ) {
-    this.httpClass = new HttpClass({response: this.response, request: this.request})
+    this.httpClass = new HttpClass({response: this.httpResponse, request: this.httpRequest})
   }
 
   @authenticate({strategy: 'autentikigo', options: {collection: 'PermissionAction', action: 'createOne'}})
@@ -32,11 +32,11 @@ export class PermissionActionController {
     properties: new HttpClass().findOneSchema(PermissionAction)
   })
   async create(
-    @requestBody({content: new HttpClass().requestSchema(PermissionAction)}) data: any,
+    @requestBody({content: new HttpClass().requestSchema(PermissionAction)}) data: PermissionAction,
   ): Promise<void> {
     try {
-      const _createdBy = this.currentUser?.[securityId] as string
-      const permissionAction = await this.permissionActionRepository.create({...data, _createdBy})
+      const createdBy = this.currentUser?.[securityId] as string
+      const permissionAction = await this.permissionActionRepository.create({...data, _createdBy: createdBy})
       this.httpClass.createResponse({data: permissionAction})
     } catch (err) {
       this.httpClass.badRequestErrorResponse({
@@ -55,10 +55,10 @@ export class PermissionActionController {
   async find(
     @param.query.number('limit') limit: number,
     @param.query.number('page') page: number,
-    @param.query.string('order_by') order_by: string,
+    @param.query.string('order_by') orderBy: string,
   ): Promise<void> {
     try {
-      const filters = this.httpClass.createFilterRequestParams(this.request.url)
+      const filters = this.httpClass.createFilterRequestParams(this.httpRequest.url)
       const result = await this.permissionActionRepository.find(filters)
       const total = await this.permissionActionRepository.count(filters['where'])
       this.httpClass.okResponse({
@@ -101,7 +101,7 @@ export class PermissionActionController {
   @response(200, {description: 'PermissionAction PUT success'})
   async updateById(
     @param.path.string('permissionActionId') id: string,
-    @requestBody({content: new HttpClass().requestSchema(PermissionAction)}) data: any,
+    @requestBody({content: new HttpClass().requestSchema(PermissionAction)}) data: PermissionAction,
   ): Promise<void> {
     try {
       await this.permissionActionRepository.updateById(id, data)
@@ -119,7 +119,7 @@ export class PermissionActionController {
   @response(200, {description: 'PermissionAction PATCH success'})
   async partialUpdateById(
     @param.path.string('permissionActionId') id: string,
-    @requestBody({content: new HttpClass().requestSchema(PermissionAction, true)}) data: any,
+    @requestBody({content: new HttpClass().requestSchema(PermissionAction, true)}) data: PermissionAction,
   ): Promise<void> {
     try {
       await this.permissionActionRepository.updateById(id, data)

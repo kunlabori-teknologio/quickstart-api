@@ -26,7 +26,7 @@ export class Permission extends Default {
   })
   permissionGroupId?: string;
 
-  module?: any;
+  module?: Module;
 
   constructor(data?: Partial<Permission>) {
     super(data);

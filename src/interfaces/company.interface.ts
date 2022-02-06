@@ -1,4 +1,4 @@
-interface ICompanyFromAPI {
+export interface ICompanyFromAPI {
   cnpj: string,
   razao: string,
   fantasia: string,
@@ -8,7 +8,7 @@ interface ICompanyFromAPI {
   email: string,
 }
 
-interface IBusinessActivityCode {
+export interface IBusinessActivityCode {
   divisao: string,
   grupo: string,
   classe: string,

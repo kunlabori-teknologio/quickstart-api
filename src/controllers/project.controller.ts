@@ -17,12 +17,12 @@ export class ProjectController {
   constructor(
     @repository(ProjectRepository) public projectRepository: ProjectRepository,
 
-    @inject(RestBindings.Http.REQUEST) private request: Request,
-    @inject(RestBindings.Http.RESPONSE) private response: Response,
+    @inject(RestBindings.Http.REQUEST) private httpRequest: Request,
+    @inject(RestBindings.Http.RESPONSE) private httpResponse: Response,
 
     @inject(SecurityBindings.USER, {optional: true}) private currentUser?: UserProfile,
   ) {
-    this.httpClass = new HttpClass({response: this.response, request: this.request})
+    this.httpClass = new HttpClass({response: this.httpResponse, request: this.httpRequest})
   }
 
   private getProjectRelatedPermissionsAndModules = [
@@ -47,11 +47,11 @@ export class ProjectController {
     properties: new HttpClass().findOneSchema(Project)
   })
   async create(
-    @requestBody({content: new HttpClass().requestSchema(Project)}) data: any,
+    @requestBody({content: new HttpClass().requestSchema(Project)}) data: Project,
   ): Promise<void> {
     try {
-      const _createdBy = this.currentUser?.[securityId] as string
-      const project = await this.projectRepository.create({...data, _createdBy})
+      const createdBy = this.currentUser?.[securityId] as string
+      const project = await this.projectRepository.create({...data, _createdBy: createdBy})
       this.httpClass.createResponse({data: project})
     } catch (err) {
       this.httpClass.badRequestErrorResponse({
@@ -70,10 +70,10 @@ export class ProjectController {
   async find(
     @param.query.number('limit') limit: number,
     @param.query.number('page') page: number,
-    @param.query.string('order_by') order_by: string,
+    @param.query.string('order_by') orderBy: string,
   ): Promise<void> {
     try {
-      const filters = this.httpClass.createFilterRequestParams(this.request.url)
+      const filters = this.httpClass.createFilterRequestParams(this.httpRequest.url)
       const result = await this.projectRepository.find({...filters, include: this.getProjectRelatedPermissionsAndModules})
       const total = await this.projectRepository.count(filters['where'])
       this.httpClass.okResponse({
@@ -113,7 +113,7 @@ export class ProjectController {
   @response(200, {description: 'Project PUT success'})
   async updateById(
     @param.path.string('projectId') id: string,
-    @requestBody({content: new HttpClass().requestSchema(Project)}) data: any,
+    @requestBody({content: new HttpClass().requestSchema(Project)}) data: Project,
   ): Promise<void> {
     try {
       await this.projectRepository.updateById(id, data)
@@ -131,7 +131,7 @@ export class ProjectController {
   @response(200, {description: 'Project PATCH success'})
   async partialUpdateById(
     @param.path.string('projectId') id: string,
-    @requestBody({content: new HttpClass().requestSchema(Project, true)}) data: any,
+    @requestBody({content: new HttpClass().requestSchema(Project, true)}) data: Project,
   ): Promise<void> {
     try {
       await this.projectRepository.updateById(id, data)

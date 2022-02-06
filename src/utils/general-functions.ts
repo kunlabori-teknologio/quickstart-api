@@ -3,7 +3,7 @@ import {IncomingHttpHeaders} from 'http';
 import {HttpClass} from './../classes/http.class';
 import {localeMessage, serverMessages} from './server-messages';
 
-export enum userTypesEnum {
+export enum UserTypesEnum {
   person = 'person',
   company = 'company',
 }
@@ -21,16 +21,16 @@ interface IPrimaryUserInformation {
 const uniqueIdLength: Map<String, IUniqueIdInfos[]> = new Map([
   ['br',
     [
-      {type: userTypesEnum.person, length: 11},
-      {type: userTypesEnum.company, length: 14}
+      {type: UserTypesEnum.person, length: 11},
+      {type: UserTypesEnum.company, length: 14}
     ]
   ]
 ])
 
-export function getUserType(primaryUserInfo: IPrimaryUserInformation): userTypesEnum {
+export function getUserType(primaryUserInfo: IPrimaryUserInformation): UserTypesEnum {
   const type = uniqueIdLength.get(primaryUserInfo.country)?.find(el => {
     return el.length === getOnlyUniqueIdNumber(primaryUserInfo.uniqueId).length
-  })?.type as userTypesEnum
+  })?.type as UserTypesEnum
 
   if (!type)
     throw new Error(serverMessages['auth']['uniqueIdIncorrect'][localeMessage])
@@ -48,7 +48,7 @@ interface IHeaderAndResponse {
 }
 
 export function getAuthTokenFromHeader(headerAndResponse: IHeaderAndResponse) {
-  let authToken = headerAndResponse.headers.authorization!
+  const authToken = headerAndResponse.headers.authorization!
   if (!authToken)
     new HttpClass({response: headerAndResponse.response}).unauthorizedErrorResponse()
   return authToken.split(' ')[1]

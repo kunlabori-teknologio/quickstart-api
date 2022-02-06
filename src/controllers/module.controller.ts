@@ -17,12 +17,12 @@ export class ModuleController {
   constructor(
     @repository(ModuleRepository) public moduleRepository: ModuleRepository,
 
-    @inject(RestBindings.Http.REQUEST) private request: Request,
-    @inject(RestBindings.Http.RESPONSE) private response: Response,
+    @inject(RestBindings.Http.REQUEST) private httpRequest: Request,
+    @inject(RestBindings.Http.RESPONSE) private httpResponse: Response,
 
     @inject(SecurityBindings.USER, {optional: true}) private currentUser?: UserProfile,
   ) {
-    this.httpClass = new HttpClass({response: this.response, request: this.request})
+    this.httpClass = new HttpClass({response: this.httpResponse, request: this.httpRequest})
   }
 
   @authenticate({strategy: 'autentikigo', options: {collection: 'Module', action: 'createOne'}})
@@ -32,11 +32,11 @@ export class ModuleController {
     properties: new HttpClass().findOneSchema(Module)
   })
   async create(
-    @requestBody({content: new HttpClass().requestSchema(Module)}) data: any,
+    @requestBody({content: new HttpClass().requestSchema(Module)}) data: Module,
   ): Promise<void> {
     try {
-      const _createdBy = this.currentUser?.[securityId] as string
-      const module = await this.moduleRepository.create({...data, _createdBy})
+      const createdBy = this.currentUser?.[securityId] as string
+      const module = await this.moduleRepository.create({...data, _createdBy: createdBy})
       this.httpClass.createResponse({data: module})
     } catch (err) {
       this.httpClass.badRequestErrorResponse({
@@ -55,10 +55,10 @@ export class ModuleController {
   async find(
     @param.query.number('limit') limit: number,
     @param.query.number('page') page: number,
-    @param.query.string('order_by') order_by: string,
+    @param.query.string('order_by') orderBy: string,
   ): Promise<void> {
     try {
-      const filters = this.httpClass.createFilterRequestParams(this.request.url)
+      const filters = this.httpClass.createFilterRequestParams(this.httpRequest.url)
       const result = await this.moduleRepository.find(filters)
       const total = await this.moduleRepository.count(filters['where'])
       this.httpClass.okResponse({
@@ -101,7 +101,7 @@ export class ModuleController {
   @response(200, {description: 'Module PUT success'})
   async updateById(
     @param.path.string('moduleId') id: string,
-    @requestBody({content: new HttpClass().requestSchema(Module)}) data: any,
+    @requestBody({content: new HttpClass().requestSchema(Module)}) data: Module,
   ): Promise<void> {
     try {
       await this.moduleRepository.updateById(id, data)
@@ -119,7 +119,7 @@ export class ModuleController {
   @response(200, {description: 'Module PATCH success'})
   async partialUpdateById(
     @param.path.string('moduleId') id: string,
-    @requestBody({content: new HttpClass().requestSchema(Module, true)}) data: any,
+    @requestBody({content: new HttpClass().requestSchema(Module, true)}) data: Module,
   ): Promise<void> {
     try {
       await this.moduleRepository.updateById(id, data)

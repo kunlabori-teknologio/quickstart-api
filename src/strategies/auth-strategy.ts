@@ -3,9 +3,9 @@ import {Getter, inject} from '@loopback/core';
 import {model, repository} from '@loopback/repository';
 import {Request, Response, RestBindings} from '@loopback/rest';
 import {securityId, UserProfile} from '@loopback/security';
+import {localeMessage, serverMessages} from '../utils/server-messages';
 import {HttpClass} from './../classes/http.class';
 import {UserRepository} from './../repositories/user.repository';
-import {localeMessage, serverMessages} from './../utils/server-messages';
 
 @model()
 export class User implements UserProfile {
@@ -38,13 +38,14 @@ export class AutentikigoStrategy implements AuthenticationStrategy {
   async authenticate(request: Request): Promise<UserProfile | undefined> {
 
     try {
+      // Só consegui acessar as options do metadata especificando ele como any
       const metadata = await this.getMetaData() as any
       const collection = metadata['0']['options']['collection']
       const action = metadata['0']['options']['action']
 
       const token = request.headers.authorization!
       const secret = process.env.PROJECT_SECRET!
-      const payload = await this.httpClass.verifyToken(token, secret)
+      const payload = this.httpClass.verifyToken(token, secret)
 
       if (payload) {
         const permissionGroups = await this.userRepository

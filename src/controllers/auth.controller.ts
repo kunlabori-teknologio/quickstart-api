@@ -11,6 +11,7 @@ import {
   visibility
 } from '@loopback/rest';
 import {HttpClass} from '../classes/http.class';
+import {ILoginUserInfo} from '../interfaces/auth.interface';
 import {AdditionalInfoModel, Signup} from '../models/signup.model';
 import {User} from '../models/user.model';
 import {AuthService} from '../services';
@@ -27,8 +28,8 @@ export class AuthController {
   private httpClass
 
   constructor(
-    @inject(RestBindings.Http.REQUEST) private request: Request,
-    @inject(RestBindings.Http.RESPONSE) private response: Response,
+    @inject(RestBindings.Http.REQUEST) private httpRequest: Request,
+    @inject(RestBindings.Http.RESPONSE) private httpResponse: Response,
 
     @service(AuthService) private authService: AuthService,
 
@@ -36,7 +37,7 @@ export class AuthController {
     @repository(CompanyRepository) private companyRepository: CompanyRepository,
     @repository(UserRepository) private userRepository: UserRepository,
   ) {
-    this.httpClass = new HttpClass({response: this.response, request: this.request})
+    this.httpClass = new HttpClass({response: this.httpResponse, request: this.httpRequest})
   }
 
   @get('auth/google-signin')
@@ -44,7 +45,7 @@ export class AuthController {
   async redirectToGoogleLoginPage(): Promise<void> {
     try {
       const url = await this.authService.getGoogleLoginPageURL()
-      this.response.redirect(url)
+      this.httpResponse.redirect(url)
     } catch (err) {
       this.httpClass.badRequestErrorResponse({
         message: serverMessages['auth']['getGoogleUrl'][localeMessage],
@@ -61,7 +62,7 @@ export class AuthController {
     try {
       const googleUser = await this.authService.getGoogleUser(code)
       const token = this.authService.createGoogleLoginToken(googleUser)
-      this.response.redirect(`${process.env.CLIENT_URI}?token=${token}`)
+      this.httpResponse.redirect(`${process.env.CLIENT_URI}?token=${token}`)
     } catch (err) {
       this.httpClass.badRequestErrorResponse({
         message: serverMessages['auth']['getGoogleUser'][localeMessage],
@@ -87,10 +88,10 @@ export class AuthController {
   })
   async login(): Promise<void> {
     try {
-      const payload = this.httpClass.verifyToken(this.request.headers.authorization!, process.env.PROJECT_SECRET!)
-      const tokenAndUser = await this.authService.login(payload)
+      const payload = this.httpClass.verifyToken(this.httpRequest.headers.authorization!, process.env.PROJECT_SECRET!)
+      const tokenAndUser = await this.authService.login(payload as ILoginUserInfo)
       this.httpClass.okResponse({
-        data: tokenAndUser,
+        data: {...tokenAndUser},
         message: serverMessages['auth'][tokenAndUser?.authToken ? 'loginSuccess' : 'unregisteredUser'][localeMessage],
         statusCode: tokenAndUser?.authToken ? 200 : 601
       })
@@ -105,10 +106,10 @@ export class AuthController {
     properties: new HttpClass().findOneSchema(User, true)
   })
   async signup(
-    @requestBody({content: new HttpClass().requestSchema(Signup)}) data: any,
+    @requestBody({content: new HttpClass().requestSchema(Signup)}) data: Signup,
   ): Promise<void> {
     try {
-      const payload = this.httpClass.verifyToken(this.request.headers.authorization!, process.env.PROJECT_SECRET!)
+      const payload = this.httpClass.verifyToken(this.httpRequest.headers.authorization!, process.env.PROJECT_SECRET!)
 
       const userType = getUserType(data)
 
@@ -167,7 +168,7 @@ export class AuthController {
   })
   async refreshToken(): Promise<void> {
     try {
-      const payload = this.httpClass.verifyToken(this.request.headers.authorization!, process.env.PROJECT_SECRET!)
+      const payload = this.httpClass.verifyToken(this.httpRequest.headers.authorization!, process.env.PROJECT_SECRET!)
       const authToken = await this.authService.refreshToken(payload?.id);
       this.httpClass.okResponse({
         data: authToken,

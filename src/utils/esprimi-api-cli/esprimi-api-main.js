@@ -7,7 +7,7 @@ const { updateModels } = require('./services/edit-files/models');
 const { updatePackageJson } = require('./services/edit-files/package-json');
 const { updateRepositories } = require('./services/edit-files/repositories');
 
-async function main() {
+function main() {
   try {
     /**
      * Checking names
