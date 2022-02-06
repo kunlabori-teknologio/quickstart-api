@@ -1,6 +1,7 @@
 import {getModelSchemaRef, Request, Response} from '@loopback/rest'
+import {appendFileSync, existsSync, mkdir} from 'fs'
 import {JwtPayload, verify} from 'jsonwebtoken'
-import {Logger} from 'tslog'
+import {ILogObject, Logger} from 'tslog'
 import {URL, URLSearchParams} from 'url'
 import {IHttp, IHttpResponseData, IHttpResponseDataWithHttpCode} from '../interfaces/http.interface'
 import {localeMessage, serverMessages} from '../utils/server-messages'
@@ -26,6 +27,18 @@ export class HttpClass {
     this.response = http?.response
     this.request = http?.request
     this.log = new Logger()
+    this.log.attachTransport(
+      {
+        silly: this.logToTransport,
+        debug: this.logToTransport,
+        trace: this.logToTransport,
+        info: this.logToTransport,
+        warn: this.logToTransport,
+        error: this.logToTransport,
+        fatal: this.logToTransport,
+      },
+      "debug"
+    );
   }
 
   public requestSchema(model: any, partial?: boolean): any {
@@ -102,6 +115,13 @@ export class HttpClass {
       method: request.method,
       body: request.body || {}
     }
+  }
+
+  private logToTransport(logObject: ILogObject) {
+    const fileName = new Date().toISOString().substring(0, 10)
+    const path = './src/logs/'
+    if (!existsSync(path)) mkdir('./src/logs/', () => { })
+    appendFileSync(`./src/logs/${fileName}.log`, JSON.stringify(logObject) + "\n")
   }
 
   private httpResponse(httpResponseData: IHttpResponseDataWithHttpCode): void {
