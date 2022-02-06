@@ -1,5 +1,6 @@
-import {getModelSchemaRef, Response} from '@loopback/rest'
-import jwt, {JwtPayload} from 'jsonwebtoken'
+import {getModelSchemaRef, Request, Response} from '@loopback/rest'
+import {JwtPayload, verify} from 'jsonwebtoken'
+import {Logger} from 'tslog'
 import {URL, URLSearchParams} from 'url'
 import {IHttp, IHttpResponseData, IHttpResponseDataWithHttpCode} from '../interfaces/http.interface'
 import {localeMessage, serverMessages} from '../utils/server-messages'
@@ -16,9 +17,15 @@ enum httpResponseTypeEnum {
 
 export class HttpClass {
   private response: Response | undefined
+  private request: Request | undefined
+  private log: Logger
 
-  constructor(http?: IHttp) {
+  constructor(
+    http?: IHttp
+  ) {
     this.response = http?.response
+    this.request = http?.request
+    this.log = new Logger()
   }
 
   public requestSchema(model: any, partial?: boolean): any {
@@ -89,6 +96,14 @@ export class HttpClass {
     return ['_createdAt', '_createdBy', '_id', '_ownerId', ...(additionalParams ?? [])]
   }
 
+  private loggerJson(request: Request) {
+    return {
+      route: request.url,
+      method: request.method,
+      body: request.body || {}
+    }
+  }
+
   private httpResponse(httpResponseData: IHttpResponseDataWithHttpCode): void {
     this.response?.status(httpResponseData.httpCode!);
     this.response?.send({
@@ -103,7 +118,7 @@ export class HttpClass {
   }
 
   public okResponse(httpResponseData?: IHttpResponseData): void {
-    console.info(httpResponseData?.message || this.getMessage(httpResponseTypeEnum.ok))
+    this.log.info(httpResponseData?.message || this.getMessage(httpResponseTypeEnum.ok), this.loggerJson(this.request!))
     this.httpResponse({
       ...httpResponseData,
       httpCode: 200,
@@ -112,7 +127,7 @@ export class HttpClass {
   }
 
   public createResponse(httpResponseData?: IHttpResponseData): void {
-    console.info(httpResponseData?.message || this.getMessage(httpResponseTypeEnum.created))
+    this.log.info(httpResponseData?.message || this.getMessage(httpResponseTypeEnum.created), this.loggerJson(this.request!))
     this.httpResponse({
       ...httpResponseData,
       httpCode: 201,
@@ -121,7 +136,7 @@ export class HttpClass {
   }
 
   public noContentResponse(httpResponseData?: IHttpResponseData): void {
-    console.info(httpResponseData?.message || this.getMessage(httpResponseTypeEnum.noContent))
+    this.log.info(httpResponseData?.message || this.getMessage(httpResponseTypeEnum.noContent), this.loggerJson(this.request!))
     this.httpResponse({
       ...httpResponseData,
       httpCode: 204,
@@ -130,7 +145,7 @@ export class HttpClass {
   }
 
   public badRequestErrorResponse(httpResponseData?: IHttpResponseData): void {
-    console.error(httpResponseData?.logMessage)
+    this.log.error(httpResponseData?.logMessage, this.loggerJson(this.request!))
     this.httpResponse({
       ...httpResponseData,
       httpCode: 400,
@@ -139,7 +154,7 @@ export class HttpClass {
   }
 
   public unauthorizedErrorResponse(httpResponseData?: IHttpResponseData): void {
-    console.error(httpResponseData?.logMessage)
+    this.log.error(httpResponseData?.logMessage, this.loggerJson(this.request!))
     this.httpResponse({
       ...httpResponseData,
       httpCode: 401,
@@ -148,7 +163,7 @@ export class HttpClass {
   }
 
   public notFoundErrorResponse(httpResponseData?: IHttpResponseData): void {
-    console.error(httpResponseData?.logMessage)
+    this.log.error(httpResponseData?.logMessage, this.loggerJson(this.request!))
     this.httpResponse({
       ...httpResponseData,
       httpCode: 404,
@@ -157,7 +172,7 @@ export class HttpClass {
   }
 
   public internalServerErrorResponse(httpResponseData?: IHttpResponseData): void {
-    console.error(httpResponseData?.logMessage)
+    this.log.error(httpResponseData?.logMessage, this.loggerJson(this.request!))
     this.httpResponse({
       ...httpResponseData,
       httpCode: 500,
@@ -167,8 +182,9 @@ export class HttpClass {
 
   public verifyToken(token: string, secret: string): JwtPayload | void {
     try {
+      if (!token) throw new Error(serverMessages['auth']['noAuthToken'][localeMessage])
       let authToken = token.split(' ')[1]
-      return jwt.verify(authToken, secret) as JwtPayload
+      return verify(authToken, secret) as JwtPayload
     } catch (err) {
       let message = serverMessages['httpResponse']['unauthorizedError'][localeMessage]
       let statusCode = 401

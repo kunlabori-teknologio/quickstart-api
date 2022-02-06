@@ -22,7 +22,7 @@ export class ProjectController {
 
     @inject(SecurityBindings.USER, {optional: true}) private currentUser?: UserProfile,
   ) {
-    this.httpClass = new HttpClass({response: this.response})
+    this.httpClass = new HttpClass({response: this.response, request: this.request})
   }
 
   private getProjectRelatedPermissionsAndModules = [

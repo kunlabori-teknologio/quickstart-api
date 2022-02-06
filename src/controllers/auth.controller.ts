@@ -36,7 +36,7 @@ export class AuthController {
     @repository(CompanyRepository) private companyRepository: CompanyRepository,
     @repository(UserRepository) private userRepository: UserRepository,
   ) {
-    this.httpClass = new HttpClass({response: this.response})
+    this.httpClass = new HttpClass({response: this.response, request: this.request})
   }
 
   @get('auth/google-signin')

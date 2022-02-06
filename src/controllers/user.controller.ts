@@ -33,7 +33,7 @@ export class UserController {
     @inject(RestBindings.Http.REQUEST) private request: Request,
     @inject(RestBindings.Http.RESPONSE) private response: Response,
   ) {
-    this.httpClass = new HttpClass({response: this.response})
+    this.httpClass = new HttpClass({response: this.response, request: this.request})
   }
 
   @authenticate({strategy: 'autentikigo', options: {collection: 'User'}})

@@ -28,10 +28,11 @@ export class AutentikigoStrategy implements AuthenticationStrategy {
   constructor(
     @inject.getter(AuthenticationBindings.METADATA) readonly getMetaData: Getter<AuthenticationMetadata>,
     @inject(RestBindings.Http.RESPONSE) private response: Response,
+    @inject(RestBindings.Http.REQUEST) private request: Request,
 
     @repository(UserRepository) private userRepository: UserRepository,
   ) {
-    this.httpClass = new HttpClass({response: this.response})
+    this.httpClass = new HttpClass({response: this.response, request: this.request})
   }
 
   async authenticate(request: Request): Promise<UserProfile | undefined> {
@@ -43,33 +44,35 @@ export class AutentikigoStrategy implements AuthenticationStrategy {
 
       const token = request.headers.authorization!
       const secret = process.env.PROJECT_SECRET!
-      const payload = this.httpClass.verifyToken(token, secret)
+      const payload = await this.httpClass.verifyToken(token, secret)
 
-      const permissionGroups = await this.userRepository
-        .permissionGroups(payload?.id)
-        .find({
-          where: {projectId: process.env.PROJECT_ID},
-          include: [{
-            relation: 'permissions', scope: {
-              include: [
-                {relation: 'permissionActions', scope: {where: {name: action}}},
-                {relation: 'module', scope: {where: {collection}}}
-              ]
-            }
-          }]
-        })
-      const permissionGroup = permissionGroups[0]
-      if ((permissionGroup && permissionGroup.name !== 'Kunlatek - Admin') && action) {
-        let userHasPermission = false;
-        permissionGroup.permissions?.forEach(permission => {
-          if (permission.module && permission.permissionActions.length)
-            userHasPermission = true
-        })
-        if (!userHasPermission) throw new Error(serverMessages['httpResponse']['unauthorizedError'][localeMessage])
+      if (payload) {
+        const permissionGroups = await this.userRepository
+          .permissionGroups(payload?.id)
+          .find({
+            where: {projectId: process.env.PROJECT_ID},
+            include: [{
+              relation: 'permissions', scope: {
+                include: [
+                  {relation: 'permissionActions', scope: {where: {name: action}}},
+                  {relation: 'module', scope: {where: {collection}}}
+                ]
+              }
+            }]
+          })
+        const permissionGroup = permissionGroups[0]
+        if ((permissionGroup && permissionGroup.name !== 'Kunlatek - Admin') && action) {
+          let userHasPermission = false;
+          permissionGroup.permissions?.forEach(permission => {
+            if (permission.module && permission.permissionActions.length)
+              userHasPermission = true
+          })
+          if (!userHasPermission) throw new Error(serverMessages['httpResponse']['unauthorizedError'][localeMessage])
+        }
+
+        const userProfile = this.convertIdToUserProfile(payload?.id);
+        return userProfile;
       }
-
-      const userProfile = this.convertIdToUserProfile(payload?.id);
-      return userProfile;
 
     } catch (err) {
       this.httpClass.unauthorizedErrorResponse({logMessage: err.message})

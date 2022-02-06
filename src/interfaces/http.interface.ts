@@ -1,7 +1,8 @@
-import {Response} from '@loopback/rest';
+import {Request, Response} from '@loopback/rest';
 
 export interface IHttp {
   response?: Response
+  request?: Request
 }
 
 export interface IHttpResponseData {

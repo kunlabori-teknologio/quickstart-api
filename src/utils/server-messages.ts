@@ -125,6 +125,10 @@ export const serverMessages = {
       'pt-BR': 'Refresh token gerado com sucesso',
       'en-US': 'Refresh token generated successfully',
     },
+    'noAuthToken': {
+      'pt-BR': 'Token não informado',
+      'en-US': 'Token not provided',
+    },
     'invalidAuthToken': {
       'pt-BR': 'Token invalido',
       'en-US': 'Invalid token',

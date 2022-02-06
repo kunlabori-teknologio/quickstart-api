@@ -22,7 +22,7 @@ export class ModuleController {
 
     @inject(SecurityBindings.USER, {optional: true}) private currentUser?: UserProfile,
   ) {
-    this.httpClass = new HttpClass({response: this.response})
+    this.httpClass = new HttpClass({response: this.response, request: this.request})
   }
 
   @authenticate({strategy: 'autentikigo', options: {collection: 'Module', action: 'createOne'}})
