@@ -136,6 +136,10 @@ export const serverMessages = {
     'expiredAuthToken': {
       'pt-BR': 'Token expirado',
       'en-US': 'Token expired',
+    },
+    'emailInvitationIncorrect': {
+      'pt-BR': 'Convite invalido. Utilize o e-mail do usuário convidado',
+      'en-US': 'Invalid invitation. Use correct invited user e-mail',
     }
   },
   'user': {
@@ -146,6 +150,16 @@ export const serverMessages = {
     'companyNotFound': {
       'pt-BR': 'Usuário incorreto! Verifique  os parâmetros e tente novamente',
       'en-US': 'User incorrect! Check parameters and try again',
+    }
+  },
+  'invitation': {
+    'invitationSent': {
+      'pt-BR': 'Convite enviado com sucesso',
+      'en-US': 'Invitation sent successfuly',
+    },
+    'invitationSentFailed': {
+      'pt-BR': 'Erro ao enviar o convite',
+      'en-US': 'Invitation sent error',
     }
   }
 }

@@ -1,6 +1,6 @@
 import {repository} from '@loopback/repository'
 import {google} from 'googleapis'
-import jwt from 'jsonwebtoken'
+import jwt, {JwtPayload} from 'jsonwebtoken'
 import {CompanyDTO} from '../dto/company.dto'
 import {PersonDTO} from '../dto/person.dto'
 import {ILoginResponse, ILoginUserInfo, IRefreshTokenResponse} from '../interfaces/auth.interface'
@@ -9,10 +9,13 @@ import {IPersonFromAPI} from '../interfaces/person.interface'
 import {IGoogleUser} from '../interfaces/user.interface'
 import {Company} from '../models/company.model'
 import {Person} from '../models/person.model'
-import {AdditionalInfoModel} from '../models/signup.model'
-import {CompanyRepository, PersonRepository, UserRepository} from '../repositories'
-import {UserTypesEnum} from '../utils/general-functions'
+import {AdditionalInfoModel, Signup} from '../models/signup.model'
+import {User} from '../models/user.model'
+import {CompanyRepository, InvitationRepository, PersonRepository, UserHasPermissionGroupsRepository, UserRepository} from '../repositories'
+import {theDatesMatch} from '../utils/date-manipulation-functions'
+import {getUserType, UserTypesEnum} from '../utils/general-functions'
 import {localeMessage, serverMessages} from '../utils/server-messages'
+import {hideEmailString} from '../utils/string-manipulation-functions'
 
 const fetch = require('node-fetch')
 
@@ -21,6 +24,8 @@ export class AuthService {
     @repository(UserRepository) private userRepository: UserRepository,
     @repository(PersonRepository) private personRepository: PersonRepository,
     @repository(CompanyRepository) private companyRepository: CompanyRepository,
+    @repository(InvitationRepository) private invitationRepository: InvitationRepository,
+    @repository(UserHasPermissionGroupsRepository) private userHasPermissionGroupRepository: UserHasPermissionGroupsRepository,
   ) { }
 
   // Google OAuth configurations
@@ -30,7 +35,7 @@ export class AuthService {
     `${process.env.GOOGLE_REDIRECT_URI}/auth/google`
   );
 
-  public async getGoogleLoginPageURL(): Promise<string> {
+  public async getGoogleLoginPageURL(params?: string): Promise<string> {
     try {
       const url = this.googleOAuth2Client.generateAuthUrl({
         'access_type': "offline",
@@ -39,6 +44,7 @@ export class AuthService {
             "https://www.googleapis.com/auth/userinfo.profile",
             "https://www.googleapis.com/auth/userinfo.email",
           ],
+        'state': params ?? ''
       });
       return url;
     } catch (err) {
@@ -58,9 +64,9 @@ export class AuthService {
     }
   }
 
-  public createGoogleLoginToken(googleUser: IGoogleUser): string {
+  public createGoogleLoginToken(googleUser: IGoogleUser, invitationId?: string | null): string {
     return jwt.sign({
-      email: googleUser.email, googleId: googleUser.id
+      email: googleUser.email, googleId: googleUser.id, invitationId
     },
       process.env.PROJECT_SECRET!, {
       expiresIn: '5m'
@@ -68,30 +74,21 @@ export class AuthService {
   }
 
   public async login(userLoginInfo: ILoginUserInfo): Promise<ILoginResponse | null> {
-    const {email, googleId} = userLoginInfo
+    const {email, googleId, invitationId} = userLoginInfo
 
-    const userWithArrayOfPermissions = await this.userRepository.findOne({
-      where: {and: [{email}, {googleId}]}, include: [
-        'person', 'company',
-        {
-          relation: 'permissionGroups', scope: {
-            where: {projectId: process.env.PROJECT_ID},
-            include: [{
-              relation: 'permissions', scope: {
-                include: ['module', 'permissionActions']
-              }
-            }]
-          }
-        }
-      ]
-    })
-    if (!userWithArrayOfPermissions) return null
-    const user = {
-      ...userWithArrayOfPermissions,
-      permissionGroup: userWithArrayOfPermissions.permissionGroups?.length ?
-        userWithArrayOfPermissions.permissionGroups[0] : {}
+    const permissionGroupId = invitationId ?
+      await this.getPermissionGroupIdFromInvitation(invitationId, email!) : null
+
+    let user = await this.findUserWithPermissions(email!, googleId!)
+    if (!user) return null
+
+    if (invitationId) {
+      const userHasPermissionGroup = user.permissionGroups?.find(permissionGroup => permissionGroup._id === permissionGroupId)
+      if (!userHasPermissionGroup) {
+        await this.giveTheUserPermission(permissionGroupId!, user._id!)
+        user = await this.findUserWithPermissions(email!, googleId!)
+      }
     }
-    delete user['permissionGroups']
 
     return {
       authToken: jwt.sign({
@@ -106,6 +103,70 @@ export class AuthService {
       }),
       userData: user
     }
+  }
+
+  private async findUserWithPermissions(email: string, googleId: string, appleId?: string): Promise<User | null> {
+    return await this.userRepository.findOne({
+      where: {and: [{email}, {googleId}]}, include: [
+        'person', 'company',
+        {
+          relation: 'permissionGroups', scope: {
+            where: {projectId: process.env.PROJECT_ID},
+            include: [{
+              relation: 'permissions', scope: {
+                include: ['module', 'permissionActions']
+              }
+            }]
+          }
+        }
+      ]
+    })
+  }
+
+  public async getPermissionGroupIdFromInvitation(invitationId: string, email: string): Promise<string> {
+    const invitation = await this.invitationRepository.findById(invitationId, {include: ['permissionGroup']})
+    if (invitation.email !== email) throw new Error(serverMessages['auth']['emailInvitationIncorrect'][localeMessage])
+    else return invitation.permissionGroupId
+  }
+
+  public async giveTheUserPermission(permissionGroupId: string, userId: string) {
+    await this.userHasPermissionGroupRepository.create({userId, permissionGroupId})
+  }
+
+  public async signup(data: Signup, payload: JwtPayload): Promise<User> {
+    const userType = getUserType(data)
+
+    const profile =
+      await this[`${userType}Repository`].findOne({where: {uniqueId: data.uniqueId}}) ??
+      await this.createProfile({userType, ...data});
+
+    if (!theDatesMatch(profile.birthday, data.birthday))
+      throw new Error(serverMessages['auth']['birthdayIncorrect'][localeMessage])
+
+    if (profile.userId) {
+      const userWithSameProfile = await this.userRepository.findOne({where: {_id: profile.userId}})
+      if (userWithSameProfile) throw new Error(`${serverMessages['auth']['uniqueIdInUse'][localeMessage]} ${hideEmailString(userWithSameProfile.email as string)}`)
+    }
+
+    const newUser = await this.userRepository.create({
+      googleId: payload?.googleId,
+      appleId: payload?.appleId,
+      email: payload?.email,
+    })
+
+    await this[`${userType}Repository`].updateById(profile._id as string,
+      {
+        ...(data.additionalInfo ? (data.additionalInfo as AdditionalInfoModel)[`${userType}Info`] : {}),
+        userId: newUser?._id as string,
+      }
+    )
+
+    if (payload?.invitationId) {
+      const permissionGroupId = await this.getPermissionGroupIdFromInvitation(payload?.invitationId, payload?.email)
+      await this.giveTheUserPermission(permissionGroupId, newUser._id!)
+    }
+
+    return await this.userRepository.findById(newUser?._id, {include: ['person', 'company']})
   }
 
   public async createProfile(

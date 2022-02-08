@@ -1,5 +1,4 @@
 import {inject, service} from '@loopback/core';
-import {repository} from '@loopback/repository';
 import {
   get,
   getModelSchemaRef,
@@ -10,17 +9,12 @@ import {
   RestBindings,
   visibility
 } from '@loopback/rest';
+import {URLSearchParams} from 'url';
 import {HttpClass} from '../classes/http.class';
 import {ILoginUserInfo} from '../interfaces/auth.interface';
-import {AdditionalInfoModel, Signup} from '../models/signup.model';
+import {Signup} from '../models/signup.model';
 import {User} from '../models/user.model';
 import {AuthService} from '../services';
-import {theDatesMatch} from '../utils/date-manipulation-functions';
-import {getUserType} from '../utils/general-functions';
-import {hideEmailString} from '../utils/string-manipulation-functions';
-import {CompanyRepository} from './../repositories/company.repository';
-import {PersonRepository} from './../repositories/person.repository';
-import {UserRepository} from './../repositories/user.repository';
 import {localeMessage, serverMessages} from './../utils/server-messages';
 
 export class AuthController {
@@ -32,19 +26,18 @@ export class AuthController {
     @inject(RestBindings.Http.RESPONSE) private httpResponse: Response,
 
     @service(AuthService) private authService: AuthService,
-
-    @repository(PersonRepository) private personRepository: PersonRepository,
-    @repository(CompanyRepository) private companyRepository: CompanyRepository,
-    @repository(UserRepository) private userRepository: UserRepository,
   ) {
     this.httpClass = new HttpClass({response: this.httpResponse, request: this.httpRequest})
   }
 
   @get('auth/google-signin')
   @response(200, {description: 'Redirect to Google login page'})
-  async redirectToGoogleLoginPage(): Promise<void> {
+  async redirectToGoogleLoginPage(
+    @param.query.string('invitationId') invitationId?: string,
+  ): Promise<void> {
     try {
-      const url = await this.authService.getGoogleLoginPageURL()
+      const invitationParam = invitationId ? `invitationId=${invitationId}` : ''
+      const url = await this.authService.getGoogleLoginPageURL(invitationParam)
       this.httpResponse.redirect(url)
     } catch (err) {
       this.httpClass.badRequestErrorResponse({
@@ -58,10 +51,12 @@ export class AuthController {
   @get('auth/google')
   async handleGoogleCodeAndReturnToken(
     @param.query.string('code') code: string,
+    @param.query.string('state') state?: string,
   ): Promise<void> {
     try {
       const googleUser = await this.authService.getGoogleUser(code)
-      const token = this.authService.createGoogleLoginToken(googleUser)
+      const invitationId = new URLSearchParams(state).get('invitationId')
+      const token = this.authService.createGoogleLoginToken(googleUser, invitationId)
       this.httpResponse.redirect(`${process.env.CLIENT_URI}?token=${token}`)
     } catch (err) {
       this.httpClass.badRequestErrorResponse({
@@ -110,35 +105,7 @@ export class AuthController {
   ): Promise<void> {
     try {
       const payload = this.httpClass.verifyToken(this.httpRequest.headers.authorization!, process.env.PROJECT_SECRET!)
-
-      const userType = getUserType(data)
-
-      const profile =
-        await this[`${userType}Repository`].findOne({where: {uniqueId: data.uniqueId}}) ??
-        await this.authService.createProfile({userType, ...data});
-
-      if (!theDatesMatch(profile.birthday, data.birthday))
-        throw new Error(serverMessages['auth']['birthdayIncorrect'][localeMessage])
-
-      if (profile.userId) {
-        const userWithSameProfile = await this.userRepository.findOne({where: {_id: profile.userId}})
-        if (userWithSameProfile) throw new Error(`${serverMessages['auth']['uniqueIdInUse'][localeMessage]} ${hideEmailString(userWithSameProfile.email as string)}`)
-      }
-
-      const newUser = await this.userRepository.create({
-        googleId: payload?.googleId,
-        appleId: payload?.appleId,
-        email: payload?.email,
-      })
-
-      await this[`${userType}Repository`].updateById(profile._id as string,
-        {
-          ...(data.additionalInfo ? (data.additionalInfo as AdditionalInfoModel)[`${userType}Info`] : {}),
-          userId: newUser?._id as string,
-        }
-      )
-
-      const userWithProfile = await this.userRepository.findById(newUser?._id, {include: ['person', 'company']})
+      const userWithProfile = await this.authService.signup(data, payload!)
 
       this.httpClass.okResponse({
         message: serverMessages['auth']['signupSuccess'][localeMessage],

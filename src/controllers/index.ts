@@ -1,4 +1,5 @@
 export * from './auth.controller';
+export * from './invitation.controller';
 export * from './module.controller';
 export * from './permission-action.controller';
 export * from './permission-group.controller';

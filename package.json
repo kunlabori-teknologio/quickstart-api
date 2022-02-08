@@ -33,7 +33,8 @@
     "start": "node -r source-map-support/register .",
     "clean": "lb-clean dist *.tsbuildinfo .eslintcache",
     "rebuild": "npm run clean && npm run build",
-    "esprimi": "node ./src/utils/esprimi-api-cli/esprimi-api-main.js"
+    "esprimi": "node ./src/utils/esprimi-api-cli/esprimi-api-main.js",
+    "test": "mocha --recursive \"dist/__tests__\""
   },
   "repository": {
     "type": "git",
@@ -65,6 +66,7 @@
     "loopback-boot": "^3.3.1",
     "loopback-connector-mongodb": "^6.1.0",
     "node-fetch": "^2.6.6",
+    "nodemailer": "^6.7.2",
     "query-string": "^7.0.1",
     "tslib": "^2.0.0",
     "tslog": "^3.3.1"
@@ -74,10 +76,13 @@
     "@loopback/eslint-config": "^12.0.1",
     "@loopback/testlab": "^4.0.1",
     "@supercharge/strings": "^1.25.0",
+    "@types/mocha": "^9.1.0",
     "@types/node": "^10.17.60",
+    "@types/nodemailer": "^6.4.4",
     "eslint": "^8.6.0",
     "fs-extra": "^10.0.0",
     "lodash": "^4.17.21",
+    "mocha": "^9.2.0",
     "source-map-support": "^0.5.21",
     "typescript": "~4.5.4"
   }

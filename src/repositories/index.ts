@@ -10,3 +10,4 @@ export * from './user-has-permission-groups.repository';
 export * from './user.repository';
 // End repositories
 export * from './project.repository';
+export * from './invitation.repository';

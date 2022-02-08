@@ -12,3 +12,4 @@ export * from './user.model';
 
 // End models
 export * from './project.model';
+export * from './invitation.model';
