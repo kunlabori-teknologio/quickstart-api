@@ -126,21 +126,27 @@ export class AuthService {
       ]
     })
 
-    user!.permissionGroups = await this.getOwnerNamesOfPermissionGroups(user!)
+    if (user)
+      user!.permissionGroups = await this.getOwnerNamesOfPermissionGroups(user!)
 
     return user
   }
 
   private async getOwnerNamesOfPermissionGroups(user: User): Promise<PermissionGroup[] | undefined> {
     const permissionGroupsOwnerIds = user?.permissionGroups?.map(permissioGroup => permissioGroup._ownerId)
-    const permissionsGroupsOwners = await this.userRepository.find({
-      where: {
-        or: (permissionGroupsOwnerIds ?? []).map((permissionGroupOwnerId) => {
-          return {_id: permissionGroupOwnerId}
-        })
-      },
-      include: ['person', 'company']
-    })
+
+    const whereCondition = permissionGroupsOwnerIds ?
+      {
+        where: {
+          or: (permissionGroupsOwnerIds ?? []).map((permissionGroupOwnerId) => {
+            return {_id: permissionGroupOwnerId}
+          })
+        },
+        include: ['person', 'company']
+      } : {}
+
+    const permissionsGroupsOwners = await this.userRepository.find(whereCondition)
+
     return user?.permissionGroups?.map(permissioGroup => {
       const owner = permissionsGroupsOwners.find((permissionGroupOwner) =>
         permissionGroupOwner._id?.toString() === permissioGroup._ownerId?.toString()
