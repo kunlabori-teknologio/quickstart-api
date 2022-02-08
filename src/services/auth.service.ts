@@ -8,10 +8,11 @@ import {ICompanyFromAPI} from '../interfaces/company.interface'
 import {IPersonFromAPI} from '../interfaces/person.interface'
 import {IGoogleUser} from '../interfaces/user.interface'
 import {Company} from '../models/company.model'
+import {PermissionGroup} from '../models/permission-group.model'
 import {Person} from '../models/person.model'
 import {AdditionalInfoModel, Signup} from '../models/signup.model'
 import {User} from '../models/user.model'
-import {CompanyRepository, InvitationRepository, PersonRepository, UserHasPermissionGroupsRepository, UserRepository} from '../repositories'
+import {CompanyRepository, InvitationRepository, PermissionGroupRepository, PersonRepository, UserHasPermissionGroupsRepository, UserRepository} from '../repositories'
 import {theDatesMatch} from '../utils/date-manipulation-functions'
 import {getUserType, UserTypesEnum} from '../utils/general-functions'
 import {localeMessage, serverMessages} from '../utils/server-messages'
@@ -25,6 +26,7 @@ export class AuthService {
     @repository(PersonRepository) private personRepository: PersonRepository,
     @repository(CompanyRepository) private companyRepository: CompanyRepository,
     @repository(InvitationRepository) private invitationRepository: InvitationRepository,
+    @repository(PermissionGroupRepository) private permissionGroupRepository: PermissionGroupRepository,
     @repository(UserHasPermissionGroupsRepository) private userHasPermissionGroupRepository: UserHasPermissionGroupsRepository,
   ) { }
 
@@ -89,7 +91,7 @@ export class AuthService {
         user = await this.findUserWithPermissions(email!, googleId!)
       }
     }
-
+    console.log(user)
     return {
       authToken: jwt.sign({
         id: user?._id,
@@ -106,7 +108,7 @@ export class AuthService {
   }
 
   private async findUserWithPermissions(email: string, googleId: string, appleId?: string): Promise<User | null> {
-    return await this.userRepository.findOne({
+    const user = await this.userRepository.findOne({
       where: {and: [{email}, {googleId}]}, include: [
         'person', 'company',
         {
@@ -120,6 +122,32 @@ export class AuthService {
           }
         }
       ]
+    })
+
+    user!.permissionGroups = await this.getOwnerNamesOfPermissionGroups(user!)
+
+    return user
+  }
+
+  private async getOwnerNamesOfPermissionGroups(user: User): Promise<PermissionGroup[] | undefined> {
+    const permissionGroupsOwnerIds = user?.permissionGroups?.map(permissioGroup => permissioGroup._ownerId)
+    const permissionsGroupsOwners = await this.userRepository.find({
+      where: {
+        or: (permissionGroupsOwnerIds ?? []).map((permissionGroupOwnerId) => {
+          return {_id: permissionGroupOwnerId}
+        })
+      },
+      include: ['person', 'company']
+    })
+    return user?.permissionGroups?.map(permissioGroup => {
+      const owner = permissionsGroupsOwners.find((permissionGroupOwner) =>
+        permissionGroupOwner._id?.toString() === permissioGroup._ownerId?.toString()
+      )
+      permissioGroup.owner = {
+        _id: owner?._id,
+        name: owner?.person.name ?? owner?.company.tradeName,
+      }
+      return permissioGroup
     })
   }
 
@@ -206,3 +234,7 @@ export class AuthService {
     }
   }
 }
+function PermissionGroupsRepository(PermissionGroupsRepository: any) {
+  throw new Error('Function not implemented.')
+}
+

@@ -50,6 +50,9 @@ export class PermissionGroup extends Default {
   @hasMany(() => Permission)
   permissions: Permission[];
 
+  @property()
+  owner?: {};
+
   constructor(data?: Partial<PermissionGroup>) {
     super(data);
   }
