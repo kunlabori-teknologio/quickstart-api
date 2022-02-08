@@ -139,7 +139,8 @@ export class PermissionActionController {
     @param.path.string('permissionActionId') id: string
   ): Promise<void> {
     try {
-      await this.permissionActionRepository.deleteById(id)
+      const permissionActionToDelete = await this.permissionActionRepository.findById(id)
+      await this.permissionActionRepository.updateById(id, {...permissionActionToDelete, _deletedAt: Date.now()})
       this.httpClass.noContentResponse()
     } catch (err) {
       this.httpClass.badRequestErrorResponse({

@@ -139,7 +139,8 @@ export class ModuleController {
     @param.path.string('moduleId') id: string
   ): Promise<void> {
     try {
-      await this.moduleRepository.deleteById(id)
+      const moduleToDelete = await this.moduleRepository.findById(id)
+      await this.moduleRepository.updateById(id, {...moduleToDelete, _deletedAt: Date.now()})
       this.httpClass.noContentResponse()
     } catch (err) {
       this.httpClass.badRequestErrorResponse({

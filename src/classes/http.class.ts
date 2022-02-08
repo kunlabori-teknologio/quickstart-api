@@ -54,7 +54,7 @@ export class HttpClass {
 
   private responseSchema(additionalProperty: IAddtionalPropertiesResponseSchema): IResponseSchema {
     return {
-      'statusCode': {type: 'number', default: 200}, 'message': {type: 'string'},
+      'statusCode': {type: 'number', default: 200}, 'message': {type: 'string'}, 'logMessage': {type: 'string'},
       ...(additionalProperty ?? {}),
     }
   }
@@ -129,6 +129,7 @@ export class HttpClass {
     this.response?.send({
       statusCode: httpResponseData.statusCode ?? httpResponseData.httpCode,
       message: httpResponseData.message,
+      logMessage: httpResponseData.logMessage,
       data: httpResponseData.data,
     });
   }

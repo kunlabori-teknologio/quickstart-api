@@ -143,7 +143,8 @@ export class PermissionGroupController {
     @param.path.string('permissionGroupId') id: string
   ): Promise<void> {
     try {
-      await this.permissionGroupRepository.deleteById(id)
+      const permissionGroupToDelete = await this.permissionGroupRepository.findById(id)
+      await this.permissionGroupRepository.updateById(id, {...permissionGroupToDelete, _deletedAt: Date.now()})
       this.httpClass.noContentResponse()
     } catch (err) {
       this.httpClass.badRequestErrorResponse({
