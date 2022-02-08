@@ -12,7 +12,7 @@ import {PermissionGroup} from '../models/permission-group.model'
 import {Person} from '../models/person.model'
 import {AdditionalInfoModel, Signup} from '../models/signup.model'
 import {User} from '../models/user.model'
-import {CompanyRepository, InvitationRepository, PermissionGroupRepository, PersonRepository, UserHasPermissionGroupsRepository, UserRepository} from '../repositories'
+import {CompanyRepository, InvitationRepository, PersonRepository, UserHasPermissionGroupsRepository, UserRepository} from '../repositories'
 import {theDatesMatch} from '../utils/date-manipulation-functions'
 import {getUserType, UserTypesEnum} from '../utils/general-functions'
 import {localeMessage, serverMessages} from '../utils/server-messages'
@@ -26,7 +26,6 @@ export class AuthService {
     @repository(PersonRepository) private personRepository: PersonRepository,
     @repository(CompanyRepository) private companyRepository: CompanyRepository,
     @repository(InvitationRepository) private invitationRepository: InvitationRepository,
-    @repository(PermissionGroupRepository) private permissionGroupRepository: PermissionGroupRepository,
     @repository(UserHasPermissionGroupsRepository) private userHasPermissionGroupRepository: UserHasPermissionGroupsRepository,
   ) { }
 
@@ -89,9 +88,12 @@ export class AuthService {
       if (!userHasPermissionGroup) {
         await this.giveTheUserPermission(permissionGroupId!, user._id!)
         user = await this.findUserWithPermissions(email!, googleId!)
+        await this.invitationRepository.updateById(invitationId, {
+          email, permissionGroupId: permissionGroupId!, _deletedAt: Date.now()
+        })
       }
     }
-    console.log(user)
+
     return {
       authToken: jwt.sign({
         id: user?._id,

@@ -17,6 +17,12 @@ export class Default extends Entity {
   _createdAt?: Date;
 
   @property({
+    type: 'date',
+    hidden: true,
+  })
+  _deletedAt?: Date;
+
+  @property({
     hidden: true,
     type: 'string',
   })
