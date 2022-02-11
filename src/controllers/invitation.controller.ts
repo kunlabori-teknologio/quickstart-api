@@ -143,7 +143,7 @@ export class InvitationController {
   ): Promise<void> {
     try {
       const invitationToDelete = await this.invitationRepository.findById(id)
-      await this.invitationRepository.updateById(id, {...invitationToDelete, _deletedAt: Date.now()})
+      await this.invitationRepository.updateById(id, {...invitationToDelete, _deletedAt: new Date()})
       this.httpClass.noContentResponse()
     } catch (err) {
       this.httpClass.badRequestErrorResponse({

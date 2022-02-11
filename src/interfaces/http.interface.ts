@@ -44,5 +44,5 @@ export interface IFilters {
 }
 
 export interface IWhereFilterCondition {
-  [x: string]: string | {like: RegExp;}
+  [x: string]: (string | null | Boolean) | {like: RegExp;} | {[x: string]: string | null | Boolean}
 }

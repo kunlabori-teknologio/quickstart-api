@@ -1,14 +1,14 @@
-import {authenticate} from '@loopback/authentication'
-import {inject} from '@loopback/core'
+import {authenticate} from '@loopback/authentication';
+import {inject} from '@loopback/core';
 import {
   repository
-} from '@loopback/repository'
-import {del, get, param, patch, post, put, Request, requestBody, response, Response, RestBindings} from '@loopback/rest'
-import {SecurityBindings, securityId, UserProfile} from '@loopback/security'
-import {HttpClass} from '../classes/http.class'
-import {Module} from '../models/module.model'
-import {ModuleRepository} from '../repositories/module.repository'
-import {localeMessage, serverMessages} from '../utils/server-messages'
+} from '@loopback/repository';
+import {del, get, param, patch, post, put, Request, requestBody, response, Response, RestBindings} from '@loopback/rest';
+import {SecurityBindings, securityId, UserProfile} from '@loopback/security';
+import {HttpClass} from '../classes/http.class';
+import {Module} from '../models/module.model';
+import {ModuleRepository} from '../repositories/module.repository';
+import {localeMessage, serverMessages} from '../utils/server-messages';
 
 export class ModuleController {
 
@@ -140,7 +140,7 @@ export class ModuleController {
   ): Promise<void> {
     try {
       const moduleToDelete = await this.moduleRepository.findById(id)
-      await this.moduleRepository.updateById(id, {...moduleToDelete, _deletedAt: Date.now()})
+      await this.moduleRepository.updateById(id, {...moduleToDelete, _deletedAt: new Date()})
       this.httpClass.noContentResponse()
     } catch (err) {
       this.httpClass.badRequestErrorResponse({

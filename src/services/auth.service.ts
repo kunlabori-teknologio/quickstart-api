@@ -89,7 +89,7 @@ export class AuthService {
         await this.giveTheUserPermission(permissionGroupId!, user._id!)
         user = await this.findUserWithPermissions(email!, googleId!)
         await this.invitationRepository.updateById(invitationId, {
-          email, permissionGroupId: permissionGroupId!, _deletedAt: Date.now()
+          email, permissionGroupId: permissionGroupId!, _deletedAt: new Date()
         })
       }
     }

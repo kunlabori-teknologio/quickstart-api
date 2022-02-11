@@ -152,7 +152,7 @@ export class ProjectController {
   ): Promise<void> {
     try {
       const projectToDelete = await this.projectRepository.findById(id)
-      await this.projectRepository.updateById(id, {...projectToDelete, _deletedAt: Date.now()})
+      await this.projectRepository.updateById(id, {...projectToDelete, _deletedAt: new Date()})
       this.httpClass.noContentResponse()
     } catch (err) {
       this.httpClass.badRequestErrorResponse({

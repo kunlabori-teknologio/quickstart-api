@@ -82,7 +82,11 @@ export class HttpClass {
 
   public createFilterRequestParams(urlString: string, whereAdditional?: IWhereFilterCondition[]): IFilters {
     const paramsFromUrl = new URL(`${process.env.SERVER_ROOT_URI}${urlString}`).searchParams
-    const where: IWhereFilterCondition[] = [...this.extractConditionalParamsFromUrl(paramsFromUrl), ...(whereAdditional ?? [])]
+    const where: IWhereFilterCondition[] = [
+      ...this.extractConditionalParamsFromUrl(paramsFromUrl),
+      ...(whereAdditional ?? []),
+      {_deletedAt: {eq: null}},
+    ]
     const filters = this.createFilters(paramsFromUrl, where)
     return filters
   }
