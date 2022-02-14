@@ -16,7 +16,7 @@ enum HttpResponseTypeEnum {
   internalServerError = 'internalServerError'
 }
 
-export class HttpClass {
+export class Http {
   private response: Response | undefined
   private request: Request | undefined
   private log: Logger
@@ -24,7 +24,6 @@ export class HttpClass {
   constructor(
     http?: IHttp
   ) {
-    this.response = http?.response
     this.request = http?.request
     this.log = new Logger()
     this.log.attachTransport(
@@ -110,7 +109,7 @@ export class HttpClass {
   }
 
   public excludeDefaultParamsFromRequestSchema(additionalParams?: string[]): string[] {
-    return ['_createdAt', '_createdBy', '_id', '_ownerId', ...(additionalParams ?? [])]
+    return ['_createdAt', '_createdBy', '_deletedAt', '_id', '_ownerId', ...(additionalParams ?? [])]
   }
 
   private loggerJson(request: Request) {

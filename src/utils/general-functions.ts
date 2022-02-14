@@ -1,6 +1,6 @@
 import {Response} from '@loopback/rest';
 import {IncomingHttpHeaders} from 'http';
-import {HttpClass} from './../classes/http.class';
+import {Http} from '../entities/http.entity';
 import {localeMessage, serverMessages} from './server-messages';
 
 export enum UserTypesEnum {
@@ -50,7 +50,7 @@ interface IHeaderAndResponse {
 export function getAuthTokenFromHeader(headerAndResponse: IHeaderAndResponse) {
   const authToken = headerAndResponse.headers.authorization!
   if (!authToken)
-    new HttpClass({response: headerAndResponse.response}).unauthorizedErrorResponse()
+    new Http({response: headerAndResponse.response}).unauthorizedErrorResponse()
   return authToken.split(' ')[1]
 }
 

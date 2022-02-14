@@ -1,8 +1,8 @@
-import {authenticate} from '@loopback/authentication'
-import {inject} from '@loopback/core'
+import {authenticate} from '@loopback/authentication';
+import {inject} from '@loopback/core';
 import {
   repository
-} from '@loopback/repository'
+} from '@loopback/repository';
 import {
   del,
   get,
@@ -13,14 +13,14 @@ import {
   response,
   Response,
   RestBindings
-} from '@loopback/rest'
-import {HttpClass} from '../classes/http.class'
-import {PermissionGroup} from '../models'
-import {User} from '../models/user.model'
-import {UserRepository} from '../repositories'
-import {UserHasPermissionGroupsRepository} from '../repositories/user-has-permission-groups.repository'
-import {localeMessage} from '../utils/server-messages'
-import {serverMessages} from './../utils/server-messages'
+} from '@loopback/rest';
+import {Http} from '../entities/http.entity';
+import {PermissionGroup} from '../models';
+import {User} from '../models/user.model';
+import {UserRepository} from '../repositories';
+import {UserHasPermissionGroupsRepository} from '../repositories/user-has-permission-groups.repository';
+import {localeMessage} from '../utils/server-messages';
+import {serverMessages} from './../utils/server-messages';
 
 export class UserController {
 
@@ -33,14 +33,14 @@ export class UserController {
     @inject(RestBindings.Http.REQUEST) private httpRequest: Request,
     @inject(RestBindings.Http.RESPONSE) private httpResponse: Response,
   ) {
-    this.httpClass = new HttpClass({response: this.httpResponse, request: this.httpRequest})
+    this.httpClass = new Http({response: this.httpResponse, request: this.httpRequest})
   }
 
   @authenticate({strategy: 'autentikigo', options: {collection: 'User'}})
   @get('/users/{userId}')
   @response(200, {
     description: 'User model instance',
-    properties: new HttpClass().findOneSchema(User, false)
+    properties: new Http().findOneSchema(User, false)
   })
   async findById(
     @param.path.string('userId') id: string,
@@ -60,7 +60,7 @@ export class UserController {
   @post('/users/{userId}/permission-groups')
   @response(200, {
     description: 'Give permissions',
-    properties: new HttpClass().findOneSchema(User, true)
+    properties: new Http().findOneSchema(User, true)
   })
   async createPermissionGroupRelated(
     @param.path.string('userId') userId: string,
@@ -89,7 +89,7 @@ export class UserController {
   @get('/users/{userId}/permission-groups')
   @response(200, {
     description: 'Array of permission groups',
-    properties: new HttpClass().findAllResponseSchema(PermissionGroup)
+    properties: new Http().findAllResponseSchema(PermissionGroup)
   })
   async findPermissionsRelated(
     @param.path.string('userId') id: string,
@@ -120,7 +120,7 @@ export class UserController {
   @get('/users/{userId}/permission-groups/{projectId}')
   @response(200, {
     description: 'Array of permission groups by project',
-    properties: new HttpClass().findOneSchema(PermissionGroup)
+    properties: new Http().findOneSchema(PermissionGroup)
   })
   async findProjectPermissionsRelated(
     @param.path.string('userId') id: string,

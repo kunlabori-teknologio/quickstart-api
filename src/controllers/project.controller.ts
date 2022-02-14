@@ -5,7 +5,7 @@ import {
 } from '@loopback/repository'
 import {del, get, param, patch, post, put, Request, requestBody, response, Response, RestBindings} from '@loopback/rest'
 import {SecurityBindings, securityId, UserProfile} from '@loopback/security'
-import {HttpClass} from '../classes/http.class'
+import {Http} from '../entities/http.entity'
 import {Project} from '../models/project.model'
 import {ProjectRepository} from '../repositories/project.repository'
 import {localeMessage, serverMessages} from '../utils/server-messages'
@@ -22,7 +22,7 @@ export class ProjectController {
 
     @inject(SecurityBindings.USER, {optional: true}) private currentUser?: UserProfile,
   ) {
-    this.httpClass = new HttpClass({response: this.httpResponse, request: this.httpRequest})
+    this.httpClass = new Http({response: this.httpResponse, request: this.httpRequest})
   }
 
   private getProjectRelatedPermissionsAndModules = [
@@ -44,10 +44,10 @@ export class ProjectController {
   @post('/projects')
   @response(200, {
     description: 'Project model instance',
-    properties: new HttpClass().findOneSchema(Project)
+    properties: new Http().findOneSchema(Project)
   })
   async create(
-    @requestBody({content: new HttpClass().requestSchema(Project)}) data: Project,
+    @requestBody({content: new Http().requestSchema(Project)}) data: Project,
   ): Promise<void> {
     try {
       const createdBy = this.currentUser?.[securityId] as string
@@ -65,7 +65,7 @@ export class ProjectController {
   @get('/projects')
   @response(200, {
     description: 'Array of Project model instances',
-    properties: new HttpClass().findAllResponseSchema(Project)
+    properties: new Http().findAllResponseSchema(Project)
   })
   async find(
     @param.query.number('limit') limit: number,
@@ -92,7 +92,7 @@ export class ProjectController {
   @get('/projects/{projectId}')
   @response(200, {
     description: 'Project model instance',
-    properties: new HttpClass().findOneSchema(Project)
+    properties: new Http().findOneSchema(Project)
   })
   async findById(
     @param.path.string('projectId') id: string,
@@ -113,7 +113,7 @@ export class ProjectController {
   @response(200, {description: 'Project PUT success'})
   async updateById(
     @param.path.string('projectId') id: string,
-    @requestBody({content: new HttpClass().requestSchema(Project)}) data: Project,
+    @requestBody({content: new Http().requestSchema(Project)}) data: Project,
   ): Promise<void> {
     try {
       await this.projectRepository.updateById(id, data)
@@ -131,7 +131,7 @@ export class ProjectController {
   @response(200, {description: 'Project PATCH success'})
   async partialUpdateById(
     @param.path.string('projectId') id: string,
-    @requestBody({content: new HttpClass().requestSchema(Project, true)}) data: Project,
+    @requestBody({content: new Http().requestSchema(Project, true)}) data: Project,
   ): Promise<void> {
     try {
       await this.projectRepository.updateById(id, data)

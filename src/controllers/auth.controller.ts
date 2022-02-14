@@ -10,7 +10,7 @@ import {
   visibility
 } from '@loopback/rest';
 import {URLSearchParams} from 'url';
-import {HttpClass} from '../classes/http.class';
+import {Http} from '../entities/http.entity';
 import {ILoginUserInfo} from '../interfaces/auth.interface';
 import {Signup} from '../models/signup.model';
 import {User} from '../models/user.model';
@@ -27,7 +27,7 @@ export class AuthController {
 
     @service(AuthService) private authService: AuthService,
   ) {
-    this.httpClass = new HttpClass({response: this.httpResponse, request: this.httpRequest})
+    this.httpClass = new Http({response: this.httpResponse, request: this.httpRequest})
   }
 
   @get('auth/google-signin')
@@ -98,10 +98,10 @@ export class AuthController {
   @post('auth/signup')
   @response(200, {
     description: 'User registered',
-    properties: new HttpClass().findOneSchema(User, true)
+    properties: new Http().findOneSchema(User, true)
   })
   async signup(
-    @requestBody({content: new HttpClass().requestSchema(Signup)}) data: Signup,
+    @requestBody({content: new Http().requestSchema(Signup)}) data: Signup,
   ): Promise<void> {
     try {
       const payload = this.httpClass.verifyToken(this.httpRequest.headers.authorization!, process.env.PROJECT_SECRET!)

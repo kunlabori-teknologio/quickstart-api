@@ -5,7 +5,7 @@ import {
 } from '@loopback/repository';
 import {del, get, param, patch, post, put, Request, requestBody, response, Response, RestBindings} from '@loopback/rest';
 import {SecurityBindings, securityId, UserProfile} from '@loopback/security';
-import {HttpClass} from '../classes/http.class';
+import {Http} from '../entities/http.entity';
 import {Module} from '../models/module.model';
 import {ModuleRepository} from '../repositories/module.repository';
 import {localeMessage, serverMessages} from '../utils/server-messages';
@@ -22,17 +22,17 @@ export class ModuleController {
 
     @inject(SecurityBindings.USER, {optional: true}) private currentUser?: UserProfile,
   ) {
-    this.httpClass = new HttpClass({response: this.httpResponse, request: this.httpRequest})
+    this.httpClass = new Http({response: this.httpResponse, request: this.httpRequest})
   }
 
   @authenticate({strategy: 'autentikigo', options: {collection: 'Module', action: 'createOne'}})
   @post('/modules')
   @response(200, {
     description: 'Module model instance',
-    properties: new HttpClass().findOneSchema(Module)
+    properties: new Http().findOneSchema(Module)
   })
   async create(
-    @requestBody({content: new HttpClass().requestSchema(Module)}) data: Module,
+    @requestBody({content: new Http().requestSchema(Module)}) data: Module,
   ): Promise<void> {
     try {
       const createdBy = this.currentUser?.[securityId] as string
@@ -50,7 +50,7 @@ export class ModuleController {
   @get('/modules')
   @response(200, {
     description: 'Array of Module model instances',
-    properties: new HttpClass().findAllResponseSchema(Module)
+    properties: new Http().findAllResponseSchema(Module)
   })
   async find(
     @param.query.number('limit') limit: number,
@@ -77,7 +77,7 @@ export class ModuleController {
   @get('/modules/{moduleId}')
   @response(200, {
     description: 'Module model instance',
-    properties: new HttpClass().findOneSchema(Module)
+    properties: new Http().findOneSchema(Module)
   })
   async findById(
     @param.path.string('moduleId') id: string,
@@ -101,7 +101,7 @@ export class ModuleController {
   @response(200, {description: 'Module PUT success'})
   async updateById(
     @param.path.string('moduleId') id: string,
-    @requestBody({content: new HttpClass().requestSchema(Module)}) data: Module,
+    @requestBody({content: new Http().requestSchema(Module)}) data: Module,
   ): Promise<void> {
     try {
       await this.moduleRepository.updateById(id, data)
@@ -119,7 +119,7 @@ export class ModuleController {
   @response(200, {description: 'Module PATCH success'})
   async partialUpdateById(
     @param.path.string('moduleId') id: string,
-    @requestBody({content: new HttpClass().requestSchema(Module, true)}) data: Module,
+    @requestBody({content: new Http().requestSchema(Module, true)}) data: Module,
   ): Promise<void> {
     try {
       await this.moduleRepository.updateById(id, data)

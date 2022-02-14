@@ -5,7 +5,7 @@ import {
 } from '@loopback/repository'
 import {del, get, param, patch, post, put, Request, requestBody, response, Response, RestBindings} from '@loopback/rest'
 import {SecurityBindings, securityId, UserProfile} from '@loopback/security'
-import {HttpClass} from '../classes/http.class'
+import {Http} from '../entities/http.entity'
 import {Invitation} from '../models'
 import {InvitationRepository} from '../repositories'
 import {InvitationService} from '../services'
@@ -25,17 +25,17 @@ export class InvitationController {
 
     @inject(SecurityBindings.USER, {optional: true}) private currentUser?: UserProfile,
   ) {
-    this.httpClass = new HttpClass({response: this.httpResponse, request: this.httpRequest})
+    this.httpClass = new Http({response: this.httpResponse, request: this.httpRequest})
   }
 
   @authenticate({strategy: 'autentikigo', options: {collection: 'Invitation', action: 'createOne'}})
   @post('/invitations')
   @response(200, {
     description: 'Invitation model instance',
-    properties: new HttpClass().findOneSchema(Invitation)
+    properties: new Http().findOneSchema(Invitation)
   })
   async create(
-    @requestBody({content: new HttpClass().requestSchema(Invitation)}) data: Invitation,
+    @requestBody({content: new Http().requestSchema(Invitation)}) data: Invitation,
   ): Promise<void> {
     try {
       const createdBy = this.currentUser?.[securityId] as string
@@ -53,7 +53,7 @@ export class InvitationController {
   @get('/invitations')
   @response(200, {
     description: 'Array of Invitation model instances',
-    properties: new HttpClass().findAllResponseSchema(Invitation)
+    properties: new Http().findAllResponseSchema(Invitation)
   })
   async find(
     @param.query.number('limit') limit: number,
@@ -80,7 +80,7 @@ export class InvitationController {
   @get('/invitations/{invitationId}')
   @response(200, {
     description: 'Invitation model instance',
-    properties: new HttpClass().findOneSchema(Invitation)
+    properties: new Http().findOneSchema(Invitation)
   })
   async findById(
     @param.path.string('invitationId') id: string,
@@ -104,7 +104,7 @@ export class InvitationController {
   @response(200, {description: 'Invitation PUT success'})
   async updateById(
     @param.path.string('invitationId') id: string,
-    @requestBody({content: new HttpClass().requestSchema(Invitation)}) data: Invitation,
+    @requestBody({content: new Http().requestSchema(Invitation)}) data: Invitation,
   ): Promise<void> {
     try {
       await this.invitationRepository.updateById(id, data)
@@ -122,7 +122,7 @@ export class InvitationController {
   @response(200, {description: 'Invitation PATCH success'})
   async partialUpdateById(
     @param.path.string('invitationId') id: string,
-    @requestBody({content: new HttpClass().requestSchema(Invitation, true)}) data: Invitation,
+    @requestBody({content: new Http().requestSchema(Invitation, true)}) data: Invitation,
   ): Promise<void> {
     try {
       await this.invitationRepository.updateById(id, data)

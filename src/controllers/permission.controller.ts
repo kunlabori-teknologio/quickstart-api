@@ -5,7 +5,7 @@ import {
 } from '@loopback/repository'
 import {del, get, param, patch, post, put, Request, requestBody, response, Response, RestBindings} from '@loopback/rest'
 import {SecurityBindings, securityId, UserProfile} from '@loopback/security'
-import {HttpClass} from '../classes/http.class'
+import {Http} from '../entities/http.entity'
 import {Permission, PermissionAction} from '../models'
 import {PermissionRepository} from '../repositories'
 import {PermissionHasActionsRepository} from '../repositories/permission-has-actions.repository'
@@ -24,17 +24,17 @@ export class PermissionController {
 
     @inject(SecurityBindings.USER, {optional: true}) private currentUser?: UserProfile,
   ) {
-    this.httpClass = new HttpClass({response: this.httpResponse, request: this.httpRequest})
+    this.httpClass = new Http({response: this.httpResponse, request: this.httpRequest})
   }
 
   @authenticate({strategy: 'autentikigo', options: {collection: 'Permission', action: 'createOne'}})
   @post('/permissions')
   @response(200, {
     description: 'Permission model instance',
-    properties: new HttpClass().findOneSchema(Permission)
+    properties: new Http().findOneSchema(Permission)
   })
   async create(
-    @requestBody({content: new HttpClass().requestSchema(Permission)}) data: Permission,
+    @requestBody({content: new Http().requestSchema(Permission)}) data: Permission,
   ): Promise<void> {
     try {
       const createdBy = this.currentUser?.[securityId] as string
@@ -52,7 +52,7 @@ export class PermissionController {
   @get('/permissions')
   @response(200, {
     description: 'Array of Permission model instances',
-    properties: new HttpClass().findAllResponseSchema(Permission)
+    properties: new Http().findAllResponseSchema(Permission)
   })
   async find(
     @param.query.number('limit') limit: number,
@@ -79,7 +79,7 @@ export class PermissionController {
   @get('/permissions/{permissionId}')
   @response(200, {
     description: 'Permission model instance',
-    properties: new HttpClass().findOneSchema(Permission)
+    properties: new Http().findOneSchema(Permission)
   })
   async findById(
     @param.path.string('permissionId') id: string,
@@ -103,7 +103,7 @@ export class PermissionController {
   @response(200, {description: 'Permission PUT success'})
   async updateById(
     @param.path.string('permissionId') id: string,
-    @requestBody({content: new HttpClass().requestSchema(Permission)}) data: Permission,
+    @requestBody({content: new Http().requestSchema(Permission)}) data: Permission,
   ): Promise<void> {
     try {
       await this.permissionRepository.updateById(id, data)
@@ -121,7 +121,7 @@ export class PermissionController {
   @response(200, {description: 'Permission PATCH success'})
   async partialUpdateById(
     @param.path.string('permissionId') id: string,
-    @requestBody({content: new HttpClass().requestSchema(Permission, true)}) data: Permission,
+    @requestBody({content: new Http().requestSchema(Permission, true)}) data: Permission,
   ): Promise<void> {
     try {
       await this.permissionRepository.updateById(id, data)
@@ -156,7 +156,7 @@ export class PermissionController {
   @post('/permissions/{permissionId}/permission-actions')
   @response(200, {
     description: 'create a PermissionAction model instance',
-    properties: new HttpClass().findOneSchema(Permission)
+    properties: new Http().findOneSchema(Permission)
   })
   async createPermissionActionsRelated(
     @param.path.string('permissionId') permissionId: string,
@@ -185,7 +185,7 @@ export class PermissionController {
   @get('/permissions/{permissionId}/permission-actions')
   @response(200, {
     description: 'Array of Permission has many PermissionAction through PermissionHasActions',
-    properties: new HttpClass().findAllResponseSchema(PermissionAction)
+    properties: new Http().findAllResponseSchema(PermissionAction)
   })
   async findPermissionActionsRelated(
     @param.path.string('permissionId') id: string,
@@ -213,7 +213,7 @@ export class PermissionController {
   @del('/permissions/{permissionId}/permission-actions')
   @response(200, {
     description: 'delete a PermissionAction model instance',
-    properties: new HttpClass().findOneSchema(Permission)
+    properties: new Http().findOneSchema(Permission)
   })
   async deletePermissionActionsRelated(
     @param.path.string('permissionId') permissionId: string,

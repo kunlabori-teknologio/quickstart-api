@@ -5,7 +5,7 @@ import {
 } from '@loopback/repository'
 import {del, get, param, patch, post, put, Request, requestBody, response, Response, RestBindings} from '@loopback/rest'
 import {SecurityBindings, securityId, UserProfile} from '@loopback/security'
-import {HttpClass} from '../classes/http.class'
+import {Http} from '../entities/http.entity'
 import {PermissionAction} from '../models/permission-action.model'
 import {PermissionActionRepository} from '../repositories'
 import {localeMessage, serverMessages} from '../utils/server-messages'
@@ -22,17 +22,17 @@ export class PermissionActionController {
 
     @inject(SecurityBindings.USER, {optional: true}) private currentUser?: UserProfile,
   ) {
-    this.httpClass = new HttpClass({response: this.httpResponse, request: this.httpRequest})
+    this.httpClass = new Http({response: this.httpResponse, request: this.httpRequest})
   }
 
   @authenticate({strategy: 'autentikigo', options: {collection: 'PermissionAction', action: 'createOne'}})
   @post('/permission-actions')
   @response(200, {
     description: 'PermissionAction model instance',
-    properties: new HttpClass().findOneSchema(PermissionAction)
+    properties: new Http().findOneSchema(PermissionAction)
   })
   async create(
-    @requestBody({content: new HttpClass().requestSchema(PermissionAction)}) data: PermissionAction,
+    @requestBody({content: new Http().requestSchema(PermissionAction)}) data: PermissionAction,
   ): Promise<void> {
     try {
       const createdBy = this.currentUser?.[securityId] as string
@@ -50,7 +50,7 @@ export class PermissionActionController {
   @get('/permission-actions')
   @response(200, {
     description: 'Array of PermissionAction model instances',
-    properties: new HttpClass().findAllResponseSchema(PermissionAction)
+    properties: new Http().findAllResponseSchema(PermissionAction)
   })
   async find(
     @param.query.number('limit') limit: number,
@@ -77,7 +77,7 @@ export class PermissionActionController {
   @get('/permission-actions/{permissionActionId}')
   @response(200, {
     description: 'PermissionAction model instance',
-    properties: new HttpClass().findOneSchema(PermissionAction)
+    properties: new Http().findOneSchema(PermissionAction)
   })
   async findById(
     @param.path.string('permissionActionId') id: string,
@@ -101,7 +101,7 @@ export class PermissionActionController {
   @response(200, {description: 'PermissionAction PUT success'})
   async updateById(
     @param.path.string('permissionActionId') id: string,
-    @requestBody({content: new HttpClass().requestSchema(PermissionAction)}) data: PermissionAction,
+    @requestBody({content: new Http().requestSchema(PermissionAction)}) data: PermissionAction,
   ): Promise<void> {
     try {
       await this.permissionActionRepository.updateById(id, data)
@@ -119,7 +119,7 @@ export class PermissionActionController {
   @response(200, {description: 'PermissionAction PATCH success'})
   async partialUpdateById(
     @param.path.string('permissionActionId') id: string,
-    @requestBody({content: new HttpClass().requestSchema(PermissionAction, true)}) data: PermissionAction,
+    @requestBody({content: new Http().requestSchema(PermissionAction, true)}) data: PermissionAction,
   ): Promise<void> {
     try {
       await this.permissionActionRepository.updateById(id, data)
