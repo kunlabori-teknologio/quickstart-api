@@ -1,4 +1,5 @@
 import {Request, Response} from '@loopback/rest';
+import {LocaleEnum} from '../enums/locale.enum';
 
 export interface IRequestSchema {
   [x: string]: {
@@ -18,21 +19,21 @@ export interface IAddtionalPropertiesResponseSchema {
   [x: string]: {}
 }
 
-export interface IHttp {
-  response?: Response
-  request?: Request
-}
-
 export interface IHttpResponseData {
   statusCode?: number,
   message?: string,
   logMessage?: string,
   data?: {},
-  request?: Request,
+  request: Request,
+  response: Response,
+  locale?: LocaleEnum,
 }
 
-export interface IHttpResponseDataWithHttpCode extends IHttpResponseData {
-  httpCode: number,
+export interface IHttpResponse {
+  statusCode?: number,
+  message?: string,
+  logMessage?: string,
+  data?: {},
 }
 
 export interface IFilters {
@@ -55,11 +56,11 @@ export interface IHttpRequestResponse {
   createDocResponseSchemaForFindOneResult(model: string | Function, includeRelations?: boolean): IResponseSchema;
   createFilterRequestParams(urlString: string, whereAdditional?: IWhereFilterCondition[]): IFilters;
 
-  okHttpResponse(httpResponseData?: IHttpResponseData): IHttpResponseDataWithHttpCode;
-  createHttpResponse(httpResponseData?: IHttpResponseData): IHttpResponseDataWithHttpCode;
-  noContentHttpResponse(httpResponseData?: IHttpResponseData): IHttpResponseDataWithHttpCode;
-  badRequestErrorHttpResponse(httpResponseData?: IHttpResponseData): IHttpResponseDataWithHttpCode;
-  unauthorizedErrorHttpResponse(httpResponseData?: IHttpResponseData): IHttpResponseDataWithHttpCode;
-  notFoundErrorHttpResponse(httpResponseData?: IHttpResponseData): IHttpResponseDataWithHttpCode;
-  internalServerErrorHttpResponse(httpResponseData?: IHttpResponseData): IHttpResponseDataWithHttpCode;
+  okHttpResponse(httpResponseData?: IHttpResponseData): IHttpResponse;
+  createHttpResponse(httpResponseData?: IHttpResponseData): IHttpResponse;
+  noContentHttpResponse(httpResponseData?: IHttpResponseData): IHttpResponse;
+  badRequestErrorHttpResponse(httpResponseData?: IHttpResponseData): IHttpResponse;
+  unauthorizedErrorHttpResponse(httpResponseData?: IHttpResponseData): IHttpResponse;
+  notFoundErrorHttpResponse(httpResponseData?: IHttpResponseData): IHttpResponse;
+  internalServerErrorHttpResponse(httpResponseData?: IHttpResponseData): IHttpResponse;
 }

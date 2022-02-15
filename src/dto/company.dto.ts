@@ -1,7 +1,7 @@
 import {AnyObject} from '@loopback/repository';
+import {AdditionalInfoModel} from '../entities/signup.entity';
 import {IBusinessActivityCode, ICompanyFromAPI} from '../interfaces/company.interface';
 import {Company} from '../models';
-import {AdditionalInfoModel} from '../models/signup.model';
 import {convertBirthdayStringToDate} from '../utils/date-manipulation-functions';
 
 export class CompanyDTO implements Company {

@@ -5,15 +5,14 @@ import {
 } from '@loopback/repository'
 import {del, get, param, patch, post, put, Request, requestBody, response, Response, RestBindings} from '@loopback/rest'
 import {SecurityBindings, securityId, UserProfile} from '@loopback/security'
-import {Http} from '../entities/http.entity'
+import {LocaleEnum} from '../enums/locale.enum'
+import {Http} from '../implementations/index'
+import {IHttpResponse} from '../interfaces/http.interface'
 import {Permission, PermissionAction} from '../models'
 import {PermissionRepository} from '../repositories'
 import {PermissionHasActionsRepository} from '../repositories/permission-has-actions.repository'
-import {localeMessage, serverMessages} from '../utils/server-messages'
 
 export class PermissionController {
-
-  private httpClass
 
   constructor(
     @repository(PermissionRepository) public permissionRepository: PermissionRepository,
@@ -23,28 +22,42 @@ export class PermissionController {
     @inject(RestBindings.Http.RESPONSE) private httpResponse: Response,
 
     @inject(SecurityBindings.USER, {optional: true}) private currentUser?: UserProfile,
-  ) {
-    this.httpClass = new Http({response: this.httpResponse, request: this.httpRequest})
-  }
+  ) { }
 
   @authenticate({strategy: 'autentikigo', options: {collection: 'Permission', action: 'createOne'}})
   @post('/permissions')
   @response(200, {
     description: 'Permission model instance',
-    properties: new Http().findOneSchema(Permission)
+    properties: Http.createDocResponseSchemaForFindOneResult(Permission)
   })
   async create(
-    @requestBody({content: new Http().requestSchema(Permission)}) data: Permission,
-  ): Promise<void> {
+    @requestBody({
+      content: Http.createDocRequestSchema(Permission)
+    }) data: Permission,
+    @param.query.string('locale') locale?: LocaleEnum,
+  ): Promise<IHttpResponse> {
     try {
+
       const createdBy = this.currentUser?.[securityId] as string
+
       const permission = await this.permissionRepository.create({...data, _createdBy: createdBy})
-      this.httpClass.createResponse({data: permission})
-    } catch (err) {
-      this.httpClass.badRequestErrorResponse({
-        message: serverMessages['crudError']['create'][localeMessage],
-        logMessage: err.message
+
+      return Http.createHttpResponse({
+        data: permission,
+        locale,
+        request: this.httpRequest,
+        response: this.httpResponse,
       })
+
+    } catch (err) {
+
+      return Http.badRequestErrorHttpResponse({
+        logMessage: err.message,
+        locale,
+        request: this.httpRequest,
+        response: this.httpResponse,
+      })
+
     }
   }
 
@@ -52,26 +65,38 @@ export class PermissionController {
   @get('/permissions')
   @response(200, {
     description: 'Array of Permission model instances',
-    properties: new Http().findAllResponseSchema(Permission)
+    properties: Http.createDocResponseSchemaForFindManyResults(Permission)
   })
   async find(
-    @param.query.number('limit') limit: number,
-    @param.query.number('page') page: number,
-    @param.query.string('order_by') orderBy: string,
-  ): Promise<void> {
+    @param.query.number('limit') limit?: number,
+    @param.query.number('page') page?: number,
+    @param.query.string('order_by') orderBy?: string,
+    @param.query.string('locale') locale?: LocaleEnum,
+  ): Promise<IHttpResponse> {
     try {
-      const filters = this.httpClass.createFilterRequestParams(this.httpRequest.url)
+
+      const filters = Http.createFilterRequestParams(this.httpRequest.url)
+
       const result = await this.permissionRepository.find({...filters, include: ['permissionActions', 'module']})
+
       const total = await this.permissionRepository.count(filters['where'])
-      this.httpClass.okResponse({
+
+      return Http.okHttpResponse({
         data: {total: total?.count, result},
-        message: serverMessages['crudSuccess']['read'][localeMessage],
+        locale,
+        request: this.httpRequest,
+        response: this.httpResponse,
       })
+
     } catch (err) {
-      this.httpClass.badRequestErrorResponse({
-        message: serverMessages['crudError']['read'][localeMessage],
-        logMessage: err.message
+
+      return Http.badRequestErrorHttpResponse({
+        logMessage: err.message,
+        locale,
+        request: this.httpRequest,
+        response: this.httpResponse,
       })
+
     }
   }
 
@@ -79,22 +104,32 @@ export class PermissionController {
   @get('/permissions/{permissionId}')
   @response(200, {
     description: 'Permission model instance',
-    properties: new Http().findOneSchema(Permission)
+    properties: Http.createDocResponseSchemaForFindOneResult(Permission)
   })
   async findById(
     @param.path.string('permissionId') id: string,
-  ): Promise<void> {
+    @param.query.string('locale') locale?: LocaleEnum,
+  ): Promise<IHttpResponse> {
     try {
+
       const data = await this.permissionRepository.findById(id, {include: ['permissionActions', 'module']})
-      this.httpClass.okResponse({
+
+      return Http.okHttpResponse({
         data,
-        message: serverMessages['crudSuccess']['read'][localeMessage]
+        locale,
+        request: this.httpRequest,
+        response: this.httpResponse,
       })
+
     } catch (err) {
-      this.httpClass.badRequestErrorResponse({
-        message: serverMessages['crudError']['read'][localeMessage],
-        logMessage: err.message
+
+      return Http.badRequestErrorHttpResponse({
+        logMessage: err.message,
+        locale,
+        request: this.httpRequest,
+        response: this.httpResponse,
       })
+
     }
   }
 
@@ -103,16 +138,30 @@ export class PermissionController {
   @response(200, {description: 'Permission PUT success'})
   async updateById(
     @param.path.string('permissionId') id: string,
-    @requestBody({content: new Http().requestSchema(Permission)}) data: Permission,
-  ): Promise<void> {
+    @requestBody({
+      content: Http.createDocRequestSchema(Permission)
+    }) data: Permission,
+    @param.query.string('locale') locale?: LocaleEnum,
+  ): Promise<IHttpResponse> {
     try {
+
       await this.permissionRepository.updateById(id, data)
-      this.httpClass.noContentResponse()
-    } catch (err) {
-      this.httpClass.badRequestErrorResponse({
-        message: serverMessages['crudError']['update'][localeMessage],
-        logMessage: err.message,
+
+      return Http.noContentHttpResponse({
+        locale,
+        request: this.httpRequest,
+        response: this.httpResponse
       })
+
+    } catch (err) {
+
+      return Http.badRequestErrorHttpResponse({
+        logMessage: err.message,
+        locale,
+        request: this.httpRequest,
+        response: this.httpResponse,
+      })
+
     }
   }
 
@@ -121,16 +170,30 @@ export class PermissionController {
   @response(200, {description: 'Permission PATCH success'})
   async partialUpdateById(
     @param.path.string('permissionId') id: string,
-    @requestBody({content: new Http().requestSchema(Permission, true)}) data: Permission,
-  ): Promise<void> {
+    @requestBody({
+      content: Http.createDocRequestSchema(Permission)
+    }) data: Permission,
+    @param.query.string('locale') locale?: LocaleEnum,
+  ): Promise<IHttpResponse> {
     try {
+
       await this.permissionRepository.updateById(id, data)
-      this.httpClass.noContentResponse()
-    } catch (err) {
-      this.httpClass.badRequestErrorResponse({
-        message: serverMessages['crudError']['update'][localeMessage],
-        logMessage: err.message,
+
+      return Http.noContentHttpResponse({
+        locale,
+        request: this.httpRequest,
+        response: this.httpResponse,
       })
+
+    } catch (err) {
+
+      return Http.badRequestErrorHttpResponse({
+        logMessage: err.message,
+        locale,
+        request: this.httpRequest,
+        response: this.httpResponse,
+      })
+
     }
   }
 
@@ -138,17 +201,30 @@ export class PermissionController {
   @del('/permissions/{permissionId}')
   @response(204, {description: 'Permission DELETE success'})
   async deleteById(
-    @param.path.string('permissionId') id: string
-  ): Promise<void> {
+    @param.path.string('permissionId') id: string,
+    @param.query.string('locale') locale?: LocaleEnum,
+  ): Promise<IHttpResponse> {
     try {
+
       const permissionToDelete = await this.permissionRepository.findById(id)
+
       await this.permissionRepository.updateById(id, {...permissionToDelete, _deletedAt: new Date()})
-      this.httpClass.noContentResponse()
-    } catch (err) {
-      this.httpClass.badRequestErrorResponse({
-        message: serverMessages['crudError']['delete'][localeMessage],
-        logMessage: err.message,
+
+      return Http.noContentHttpResponse({
+        locale,
+        request: this.httpRequest,
+        response: this.httpResponse,
       })
+
+    } catch (err) {
+
+      return Http.badRequestErrorHttpResponse({
+        logMessage: err.message,
+        locale,
+        request: this.httpRequest,
+        response: this.httpResponse,
+      })
+
     }
   }
 
@@ -156,7 +232,7 @@ export class PermissionController {
   @post('/permissions/{permissionId}/permission-actions')
   @response(200, {
     description: 'create a PermissionAction model instance',
-    properties: new Http().findOneSchema(Permission)
+    properties: Http.createDocResponseSchemaForFindOneResult(Permission)
   })
   async createPermissionActionsRelated(
     @param.path.string('permissionId') permissionId: string,
@@ -166,18 +242,32 @@ export class PermissionController {
       }
     })
     permissionActionIds: string[],
-  ): Promise<void> {
+    @param.query.string('locale') locale?: LocaleEnum,
+  ): Promise<IHttpResponse> {
     try {
+
       await this.permissionHasActionsRepository.createAll(permissionActionIds.map((permissionActionId) => {
         return {permissionId, permissionActionId}
       }))
+
       const data = await this.permissionRepository.findById(permissionId, {include: ['permissionActions', 'module']})
-      this.httpClass.createResponse({data})
-    } catch (err) {
-      this.httpClass.badRequestErrorResponse({
-        message: serverMessages['crudError']['create'][localeMessage],
-        logMessage: err.message
+
+      return Http.okHttpResponse({
+        data,
+        locale,
+        request: this.httpRequest,
+        response: this.httpResponse,
       })
+
+    } catch (err) {
+
+      return Http.badRequestErrorHttpResponse({
+        logMessage: err.message,
+        locale,
+        request: this.httpRequest,
+        response: this.httpResponse
+      })
+
     }
   }
 
@@ -185,27 +275,39 @@ export class PermissionController {
   @get('/permissions/{permissionId}/permission-actions')
   @response(200, {
     description: 'Array of Permission has many PermissionAction through PermissionHasActions',
-    properties: new Http().findAllResponseSchema(PermissionAction)
+    properties: Http.createDocResponseSchemaForFindManyResults(PermissionAction)
   })
   async findPermissionActionsRelated(
-    @param.path.string('permissionId') id: string,
-    @param.query.number('limit') limit: number,
-    @param.query.number('page') page: number,
-    @param.query.string('order_by') orderBy: string,
-  ): Promise<void> {
+    @param.path.string('permissionId') id?: string,
+    @param.query.number('limit') limit?: number,
+    @param.query.number('page') page?: number,
+    @param.query.string('order_by') orderBy?: string,
+    @param.query.string('locale') locale?: LocaleEnum,
+  ): Promise<IHttpResponse> {
     try {
-      const filters = this.httpClass.createFilterRequestParams(this.httpRequest.url)
+
+      const filters = Http.createFilterRequestParams(this.httpRequest.url)
+
       const result = await this.permissionRepository.permissionActions(id).find(filters)
+
       const total = (await this.permissionRepository.permissionActions(id).find({where: filters['where']})).length
-      this.httpClass.okResponse({
+
+      return Http.okHttpResponse({
         data: {total: total, result},
-        message: serverMessages['crudSuccess']['read'][localeMessage],
+        locale,
+        request: this.httpRequest,
+        response: this.httpResponse,
       })
+
     } catch (err) {
-      this.httpClass.badRequestErrorResponse({
-        message: serverMessages['crudError']['read'][localeMessage],
-        logMessage: err.message
+
+      return Http.badRequestErrorHttpResponse({
+        logMessage: err.message,
+        locale,
+        request: this.httpRequest,
+        response: this.httpResponse,
       })
+
     }
   }
 
@@ -213,7 +315,7 @@ export class PermissionController {
   @del('/permissions/{permissionId}/permission-actions')
   @response(200, {
     description: 'delete a PermissionAction model instance',
-    properties: new Http().findOneSchema(Permission)
+    properties: Http.createDocResponseSchemaForFindOneResult(Permission)
   })
   async deletePermissionActionsRelated(
     @param.path.string('permissionId') permissionId: string,
@@ -223,22 +325,33 @@ export class PermissionController {
       }
     })
     permissionActionIds: string[],
-  ): Promise<void> {
+    @param.query.string('locale') locale?: LocaleEnum,
+  ): Promise<IHttpResponse> {
     try {
+
       await this.permissionHasActionsRepository.deleteAll({
         or:
           (permissionActionIds.map((permissionActionId) => {return {and: [{permissionId}, {permissionActionId}]}}))
       })
+
       const data = await this.permissionRepository.findById(permissionId, {include: ['permissionActions', 'module']})
-      this.httpClass.okResponse({
-        message: serverMessages['crudSuccess']['delete'][localeMessage],
-        data
+
+      return Http.okHttpResponse({
+        data,
+        locale,
+        request: this.httpRequest,
+        response: this.httpResponse,
       })
+
     } catch (err) {
-      this.httpClass.badRequestErrorResponse({
-        message: serverMessages['crudError']['delete'][localeMessage],
-        logMessage: err.message
+
+      return Http.badRequestErrorHttpResponse({
+        logMessage: err.message,
+        locale,
+        request: this.httpRequest,
+        response: this.httpResponse,
       })
+
     }
   }
 }

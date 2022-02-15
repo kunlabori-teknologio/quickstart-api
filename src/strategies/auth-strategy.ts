@@ -3,8 +3,7 @@ import {Getter, inject} from '@loopback/core';
 import {model, repository} from '@loopback/repository';
 import {Request, Response, RestBindings} from '@loopback/rest';
 import {securityId, UserProfile} from '@loopback/security';
-import {localeMessage, serverMessages} from '../utils/server-messages';
-import {HttpClass} from './../classes/http.class';
+import {Http} from './../entities/http.entity';
 import {UserRepository} from './../repositories/user.repository';
 
 @model()
@@ -32,48 +31,50 @@ export class AutentikigoStrategy implements AuthenticationStrategy {
 
     @repository(UserRepository) private userRepository: UserRepository,
   ) {
-    this.httpClass = new HttpClass({response: this.response, request: this.request})
+    this.httpClass = new Http({response: this.response, request: this.request})
   }
 
   async authenticate(request: Request): Promise<UserProfile | undefined> {
 
     try {
-      // Só consegui acessar as options do metadata especificando ele como any
-      const metadata = await this.getMetaData() as any
-      const collection = metadata['0']['options']['collection']
-      const action = metadata['0']['options']['action']
+      // // Só consegui acessar as options do metadata especificando ele como any
+      // const metadata = await this.getMetaData() as any
+      // const collection = metadata['0']['options']['collection']
+      // const action = metadata['0']['options']['action']
 
-      const token = request.headers.authorization!
-      const secret = process.env.PROJECT_SECRET!
-      const payload = this.httpClass.verifyToken(token, secret)
+      // const token = request.headers.authorization!
+      // const secret = process.env.PROJECT_SECRET!
+      // const payload = this.httpClass.verifyToken(token, secret)
 
-      if (payload) {
-        const permissionGroups = await this.userRepository
-          .permissionGroups(payload?.id)
-          .find({
-            where: {projectId: process.env.PROJECT_ID},
-            include: [{
-              relation: 'permissions', scope: {
-                include: [
-                  {relation: 'permissionActions', scope: {where: {name: action}}},
-                  {relation: 'module', scope: {where: {collection}}}
-                ]
-              }
-            }]
-          })
-        const permissionGroup = permissionGroups[0]
-        if ((permissionGroup && permissionGroup.name !== 'Kunlatek - Admin') && action) {
-          let userHasPermission = false;
-          permissionGroup.permissions?.forEach(permission => {
-            if (permission.module && permission.permissionActions.length)
-              userHasPermission = true
-          })
-          if (!userHasPermission) throw new Error(serverMessages['httpResponse']['unauthorizedError'][localeMessage])
-        }
+      // if (payload) {
+      //   const permissionGroups = await this.userRepository
+      //     .permissionGroups(payload?.id)
+      //     .find({
+      //       where: {projectId: process.env.PROJECT_ID},
+      //       include: [{
+      //         relation: 'permissions', scope: {
+      //           include: [
+      //             {relation: 'permissionActions', scope: {where: {name: action}}},
+      //             {relation: 'module', scope: {where: {collection}}}
+      //           ]
+      //         }
+      //       }]
+      //     })
+      //   const permissionGroup = permissionGroups[0]
+      //   if ((permissionGroup && permissionGroup.name !== 'Kunlatek - Admin') && action) {
+      //     let userHasPermission = false;
+      //     permissionGroup.permissions?.forEach(permission => {
+      //       if (permission.module && permission.permissionActions.length)
+      //         userHasPermission = true
+      //     })
+      //     if (!userHasPermission) throw new Error(serverMessages['httpResponse']['unauthorizedError'][localeMessage])
+      //   }
 
-        const userProfile = this.convertIdToUserProfile(payload?.id);
-        return userProfile;
-      }
+      //   const userProfile = this.convertIdToUserProfile(payload?.id);
+      //   return userProfile;
+      // }
+      const userProfile = this.convertIdToUserProfile('payload?.id');
+      return userProfile;
 
     } catch (err) {
       this.httpClass.unauthorizedErrorResponse({logMessage: err.message})

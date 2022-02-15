@@ -5,14 +5,13 @@ import {
 } from '@loopback/repository'
 import {del, get, param, patch, post, put, Request, requestBody, response, Response, RestBindings} from '@loopback/rest'
 import {SecurityBindings, securityId, UserProfile} from '@loopback/security'
-import {Http} from '../entities/http.entity'
+import {LocaleEnum} from '../enums/locale.enum'
+import {Http} from '../implementations/index'
+import {IHttpResponse} from '../interfaces/http.interface'
 import {Project} from '../models/project.model'
 import {ProjectRepository} from '../repositories/project.repository'
-import {localeMessage, serverMessages} from '../utils/server-messages'
 
 export class ProjectController {
-
-  private httpClass
 
   constructor(
     @repository(ProjectRepository) public projectRepository: ProjectRepository,
@@ -21,9 +20,7 @@ export class ProjectController {
     @inject(RestBindings.Http.RESPONSE) private httpResponse: Response,
 
     @inject(SecurityBindings.USER, {optional: true}) private currentUser?: UserProfile,
-  ) {
-    this.httpClass = new Http({response: this.httpResponse, request: this.httpRequest})
-  }
+  ) { }
 
   private getProjectRelatedPermissionsAndModules = [
     {
@@ -44,20 +41,36 @@ export class ProjectController {
   @post('/projects')
   @response(200, {
     description: 'Project model instance',
-    properties: new Http().findOneSchema(Project)
+    properties: Http.createDocResponseSchemaForFindOneResult(Project)
   })
   async create(
-    @requestBody({content: new Http().requestSchema(Project)}) data: Project,
-  ): Promise<void> {
+    @requestBody({
+      content: Http.createDocRequestSchema(Project)
+    }) data: Project,
+    @param.query.string('locale') locale?: LocaleEnum,
+  ): Promise<IHttpResponse> {
     try {
+
       const createdBy = this.currentUser?.[securityId] as string
+
       const project = await this.projectRepository.create({...data, _createdBy: createdBy})
-      this.httpClass.createResponse({data: project})
-    } catch (err) {
-      this.httpClass.badRequestErrorResponse({
-        message: serverMessages['crudError']['create'][localeMessage],
-        logMessage: err.message
+
+      return Http.createHttpResponse({
+        data: project,
+        locale,
+        request: this.httpRequest,
+        response: this.httpResponse,
       })
+
+    } catch (err) {
+
+      return Http.badRequestErrorHttpResponse({
+        logMessage: err.message,
+        locale,
+        request: this.httpRequest,
+        response: this.httpResponse,
+      })
+
     }
   }
 
@@ -65,26 +78,38 @@ export class ProjectController {
   @get('/projects')
   @response(200, {
     description: 'Array of Project model instances',
-    properties: new Http().findAllResponseSchema(Project)
+    properties: Http.createDocResponseSchemaForFindManyResults(Project)
   })
   async find(
-    @param.query.number('limit') limit: number,
-    @param.query.number('page') page: number,
-    @param.query.string('order_by') orderBy: string,
-  ): Promise<void> {
+    @param.query.number('limit') limit?: number,
+    @param.query.number('page') page?: number,
+    @param.query.string('order_by') orderBy?: string,
+    @param.query.string('locale') locale?: LocaleEnum,
+  ): Promise<IHttpResponse> {
     try {
-      const filters = this.httpClass.createFilterRequestParams(this.httpRequest.url)
+
+      const filters = Http.createFilterRequestParams(this.httpRequest.url)
+
       const result = await this.projectRepository.find({...filters, include: this.getProjectRelatedPermissionsAndModules})
+
       const total = await this.projectRepository.count(filters['where'])
-      this.httpClass.okResponse({
+
+      return Http.okHttpResponse({
         data: {total: total?.count, result},
-        message: serverMessages['crudSuccess']['read'][localeMessage],
+        locale,
+        request: this.httpRequest,
+        response: this.httpResponse,
       })
+
     } catch (err) {
-      this.httpClass.badRequestErrorResponse({
-        message: serverMessages['crudError']['read'][localeMessage],
-        logMessage: err.message
+
+      return Http.badRequestErrorHttpResponse({
+        logMessage: err.message,
+        locale,
+        request: this.httpRequest,
+        response: this.httpResponse,
       })
+
     }
   }
 
@@ -92,19 +117,32 @@ export class ProjectController {
   @get('/projects/{projectId}')
   @response(200, {
     description: 'Project model instance',
-    properties: new Http().findOneSchema(Project)
+    properties: Http.createDocResponseSchemaForFindOneResult(Project)
   })
   async findById(
     @param.path.string('projectId') id: string,
-  ): Promise<void> {
+    @param.query.string('locale') locale?: LocaleEnum,
+  ): Promise<IHttpResponse> {
     try {
+
       const data = await this.projectRepository.findById(id, {include: this.getProjectRelatedPermissionsAndModules})
-      this.httpClass.okResponse({data, message: serverMessages['crudSuccess']['read'][localeMessage]})
-    } catch (err) {
-      this.httpClass.badRequestErrorResponse({
-        message: serverMessages['crudError']['read'][localeMessage],
-        logMessage: err.message
+
+      return Http.okHttpResponse({
+        data,
+        locale,
+        request: this.httpRequest,
+        response: this.httpResponse,
       })
+
+    } catch (err) {
+
+      return Http.badRequestErrorHttpResponse({
+        logMessage: err.message,
+        locale,
+        request: this.httpRequest,
+        response: this.httpResponse,
+      })
+
     }
   }
 
@@ -113,16 +151,30 @@ export class ProjectController {
   @response(200, {description: 'Project PUT success'})
   async updateById(
     @param.path.string('projectId') id: string,
-    @requestBody({content: new Http().requestSchema(Project)}) data: Project,
-  ): Promise<void> {
+    @requestBody({
+      content: Http.createDocRequestSchema(Project)
+    }) data: Project,
+    @param.query.string('locale') locale?: LocaleEnum,
+  ): Promise<IHttpResponse> {
     try {
+
       await this.projectRepository.updateById(id, data)
-      this.httpClass.noContentResponse()
-    } catch (err) {
-      this.httpClass.badRequestErrorResponse({
-        message: serverMessages['crudError']['update'][localeMessage],
-        logMessage: err.message,
+
+      return Http.noContentHttpResponse({
+        locale,
+        request: this.httpRequest,
+        response: this.httpResponse,
       })
+
+    } catch (err) {
+
+      return Http.badRequestErrorHttpResponse({
+        logMessage: err.message,
+        locale,
+        request: this.httpRequest,
+        response: this.httpResponse,
+      })
+
     }
   }
 
@@ -131,16 +183,30 @@ export class ProjectController {
   @response(200, {description: 'Project PATCH success'})
   async partialUpdateById(
     @param.path.string('projectId') id: string,
-    @requestBody({content: new Http().requestSchema(Project, true)}) data: Project,
-  ): Promise<void> {
+    @requestBody({
+      content: Http.createDocRequestSchema(Project)
+    }) data: Project,
+    @param.query.string('locale') locale?: LocaleEnum,
+  ): Promise<IHttpResponse> {
     try {
+
       await this.projectRepository.updateById(id, data)
-      this.httpClass.noContentResponse()
-    } catch (err) {
-      this.httpClass.badRequestErrorResponse({
-        message: serverMessages['crudError']['update'][localeMessage],
-        logMessage: err.message,
+
+      return Http.noContentHttpResponse({
+        locale,
+        request: this.httpRequest,
+        response: this.httpResponse,
       })
+
+    } catch (err) {
+
+      return Http.badRequestErrorHttpResponse({
+        logMessage: err.message,
+        locale,
+        request: this.httpRequest,
+        response: this.httpResponse,
+      })
+
     }
   }
 
@@ -148,17 +214,30 @@ export class ProjectController {
   @del('/projects/{projectId}')
   @response(204, {description: 'Project DELETE success'})
   async deleteById(
-    @param.path.string('projectId') id: string
-  ): Promise<void> {
+    @param.path.string('projectId') id: string,
+    @param.query.string('locale') locale?: LocaleEnum,
+  ): Promise<IHttpResponse> {
     try {
+
       const projectToDelete = await this.projectRepository.findById(id)
+
       await this.projectRepository.updateById(id, {...projectToDelete, _deletedAt: new Date()})
-      this.httpClass.noContentResponse()
-    } catch (err) {
-      this.httpClass.badRequestErrorResponse({
-        message: serverMessages['crudError']['delete'][localeMessage],
-        logMessage: err.message,
+
+      return Http.noContentHttpResponse({
+        locale,
+        request: this.httpRequest,
+        response: this.httpResponse,
       })
+
+    } catch (err) {
+
+      return Http.badRequestErrorHttpResponse({
+        logMessage: err.message,
+        locale,
+        request: this.httpRequest,
+        response: this.httpResponse,
+      })
+
     }
   }
 }
