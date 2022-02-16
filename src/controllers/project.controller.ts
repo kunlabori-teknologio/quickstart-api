@@ -6,7 +6,7 @@ import {
 import {del, get, param, patch, post, put, Request, requestBody, response, Response, RestBindings} from '@loopback/rest'
 import {SecurityBindings, securityId, UserProfile} from '@loopback/security'
 import {LocaleEnum} from '../enums/locale.enum'
-import {Http} from '../implementations/index'
+import {HttpDocumentation, HttpResponseToClient} from '../implementations/index'
 import {IHttpResponse} from '../interfaces/http.interface'
 import {Project} from '../models/project.model'
 import {ProjectRepository} from '../repositories/project.repository'
@@ -42,11 +42,11 @@ export class ProjectController {
   @post('/projects')
   @response(200, {
     description: 'Project model instance',
-    properties: Http.createDocResponseSchemaForFindOneResult(Project)
+    properties: HttpDocumentation.createDocResponseSchemaForFindOneResult(Project)
   })
   async create(
     @requestBody({
-      content: Http.createDocRequestSchema(Project)
+      content: HttpDocumentation.createDocRequestSchema(Project)
     }) data: Project,
     @param.query.string('locale') locale?: LocaleEnum,
   ): Promise<IHttpResponse> {
@@ -57,7 +57,7 @@ export class ProjectController {
 
       const project = await this.projectRepository.create({...data, _createdBy: createdBy, _ownerId: ownerId})
 
-      return Http.createHttpResponse({
+      return HttpResponseToClient.createHttpResponse({
         data: project,
         locale,
         request: this.httpRequest,
@@ -66,7 +66,7 @@ export class ProjectController {
 
     } catch (err) {
 
-      return Http.badRequestErrorHttpResponse({
+      return HttpResponseToClient.badRequestErrorHttpResponse({
         logMessage: err.message,
         locale,
         request: this.httpRequest,
@@ -80,7 +80,7 @@ export class ProjectController {
   @get('/projects')
   @response(200, {
     description: 'Array of Project model instances',
-    properties: Http.createDocResponseSchemaForFindManyResults(Project)
+    properties: HttpDocumentation.createDocResponseSchemaForFindManyResults(Project)
   })
   async find(
     @param.query.number('limit') limit?: number,
@@ -90,13 +90,13 @@ export class ProjectController {
   ): Promise<IHttpResponse> {
     try {
 
-      const filters = Http.createFilterRequestParams(this.httpRequest.url)
+      const filters = HttpDocumentation.createFilterRequestParams(this.httpRequest.url)
 
       const result = await this.projectRepository.find({...filters, include: this.getProjectRelatedPermissionsAndModules})
 
       const total = await this.projectRepository.count(filters['where'])
 
-      return Http.okHttpResponse({
+      return HttpResponseToClient.okHttpResponse({
         data: {total: total?.count, result},
         locale,
         request: this.httpRequest,
@@ -105,7 +105,7 @@ export class ProjectController {
 
     } catch (err) {
 
-      return Http.badRequestErrorHttpResponse({
+      return HttpResponseToClient.badRequestErrorHttpResponse({
         logMessage: err.message,
         locale,
         request: this.httpRequest,
@@ -119,7 +119,7 @@ export class ProjectController {
   @get('/projects/{projectId}')
   @response(200, {
     description: 'Project model instance',
-    properties: Http.createDocResponseSchemaForFindOneResult(Project)
+    properties: HttpDocumentation.createDocResponseSchemaForFindOneResult(Project)
   })
   async findById(
     @param.path.string('projectId') id: string,
@@ -133,7 +133,7 @@ export class ProjectController {
       })
       if (!data) throw new Error(serverMessages['httpResponse']['notFoundError'][locale ?? LocaleEnum['pt-BR']])
 
-      return Http.okHttpResponse({
+      return HttpResponseToClient.okHttpResponse({
         data,
         locale,
         request: this.httpRequest,
@@ -142,7 +142,7 @@ export class ProjectController {
 
     } catch (err) {
 
-      return Http.badRequestErrorHttpResponse({
+      return HttpResponseToClient.badRequestErrorHttpResponse({
         logMessage: err.message,
         locale,
         request: this.httpRequest,
@@ -158,7 +158,7 @@ export class ProjectController {
   async updateById(
     @param.path.string('projectId') id: string,
     @requestBody({
-      content: Http.createDocRequestSchema(Project)
+      content: HttpDocumentation.createDocRequestSchema(Project)
     }) data: Project,
     @param.query.string('locale') locale?: LocaleEnum,
   ): Promise<IHttpResponse> {
@@ -166,7 +166,7 @@ export class ProjectController {
 
       await this.projectRepository.updateById(id, data)
 
-      return Http.noContentHttpResponse({
+      return HttpResponseToClient.noContentHttpResponse({
         locale,
         request: this.httpRequest,
         response: this.httpResponse,
@@ -174,7 +174,7 @@ export class ProjectController {
 
     } catch (err) {
 
-      return Http.badRequestErrorHttpResponse({
+      return HttpResponseToClient.badRequestErrorHttpResponse({
         logMessage: err.message,
         locale,
         request: this.httpRequest,
@@ -190,7 +190,7 @@ export class ProjectController {
   async partialUpdateById(
     @param.path.string('projectId') id: string,
     @requestBody({
-      content: Http.createDocRequestSchema(Project)
+      content: HttpDocumentation.createDocRequestSchema(Project)
     }) data: Project,
     @param.query.string('locale') locale?: LocaleEnum,
   ): Promise<IHttpResponse> {
@@ -198,7 +198,7 @@ export class ProjectController {
 
       await this.projectRepository.updateById(id, data)
 
-      return Http.noContentHttpResponse({
+      return HttpResponseToClient.noContentHttpResponse({
         locale,
         request: this.httpRequest,
         response: this.httpResponse,
@@ -206,7 +206,7 @@ export class ProjectController {
 
     } catch (err) {
 
-      return Http.badRequestErrorHttpResponse({
+      return HttpResponseToClient.badRequestErrorHttpResponse({
         logMessage: err.message,
         locale,
         request: this.httpRequest,
@@ -229,7 +229,7 @@ export class ProjectController {
 
       await this.projectRepository.updateById(id, {...projectToDelete, _deletedAt: new Date()})
 
-      return Http.noContentHttpResponse({
+      return HttpResponseToClient.noContentHttpResponse({
         locale,
         request: this.httpRequest,
         response: this.httpResponse,
@@ -237,7 +237,7 @@ export class ProjectController {
 
     } catch (err) {
 
-      return Http.badRequestErrorHttpResponse({
+      return HttpResponseToClient.badRequestErrorHttpResponse({
         logMessage: err.message,
         locale,
         request: this.httpRequest,

@@ -1,6 +1,6 @@
 import {Request, Response} from '@loopback/rest';
 import {decode, JwtPayload, verify} from 'jsonwebtoken';
-import {Http} from '.';
+import {HttpResponseToClient} from '.';
 import {LocaleEnum} from '../enums/locale.enum';
 import {IAuthToken, ILoginUserInfo} from '../interfaces/auth.interface';
 import {IHttpResponse} from '../interfaces/http.interface';
@@ -19,7 +19,7 @@ export class JwtTokenImplementation implements IAuthToken {
 
       verify(authToken, secret)
 
-      return Http.okHttpResponse({locale, request, response})
+      return HttpResponseToClient.okHttpResponse({locale, request, response})
 
     } catch (err) {
 
@@ -41,7 +41,7 @@ export class JwtTokenImplementation implements IAuthToken {
           break
 
       }
-      return Http.unauthorizedErrorHttpResponse({
+      return HttpResponseToClient.unauthorizedErrorHttpResponse({
         logMessage: err.message, message, statusCode, request, response, locale
       })
     }

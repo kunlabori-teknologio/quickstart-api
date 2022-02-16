@@ -1,13 +1,12 @@
-import {getModelSchemaRef, Request} from '@loopback/rest';
+import {Request} from '@loopback/rest';
 import {appendFileSync, existsSync, mkdir} from 'fs';
 import {ILogObject, Logger} from 'tslog';
-import {URL, URLSearchParams} from 'url';
 import {HttpResponseTypeEnum} from '../enums/http.enum';
 import {LocaleEnum} from '../enums/locale.enum';
-import {IAddtionalPropertiesResponseSchema, IFilters, IHttpRequestResponse, IHttpResponse, IHttpResponseData, IRequestSchema, IResponseSchema, IWhereFilterCondition} from '../interfaces/http.interface';
+import {IHttpResponse, IHttpResponseData, IHttpResponseToClient} from '../interfaces/http.interface';
 import {serverMessages} from '../utils/server-messages';
 
-export class HttpImplementation implements IHttpRequestResponse {
+export class HttpLb4ResponseImplementation implements IHttpResponseToClient {
 
   private log: Logger
 
@@ -24,88 +23,6 @@ export class HttpImplementation implements IHttpRequestResponse {
       error: this.logToTransport,
       fatal: this.logToTransport,
     }, "debug")
-
-  }
-
-  private excludeDefaultParamsFromRequestSchema(additionalParams?: string[]): string[] {
-    return ['_createdAt', '_createdBy', '_deletedAt', '_id', '_ownerId', ...(additionalParams ?? [])]
-  }
-
-  public createDocRequestSchema(model: string | Function): IRequestSchema {
-    return {
-      'application/json': {
-        schema: getModelSchemaRef(model as Function, {
-          exclude: this.excludeDefaultParamsFromRequestSchema(),
-          partial: true
-        })
-      }
-    }
-  }
-
-  private responseSchema(additionalProperty: IAddtionalPropertiesResponseSchema): IResponseSchema {
-    return {
-      'statusCode': {type: 'number', default: 200},
-      'message': {type: 'string'},
-      ...(additionalProperty ?? {}),
-    }
-  }
-
-  public createDocResponseSchemaForFindManyResults(model: string | Function, includeRelations?: boolean): IResponseSchema {
-    return this.responseSchema({
-      'data': {
-        type: 'object',
-        properties: {
-          'total': {type: 'number'},
-          'result': {
-            type: 'array',
-            items: getModelSchemaRef(model as Function, {includeRelations: includeRelations ?? true}),
-          }
-        }
-      }
-    })
-  }
-
-  public createDocResponseSchemaForFindOneResult(model: string | Function, includeRelations?: boolean): IResponseSchema {
-    return this.responseSchema({
-      'data': getModelSchemaRef(model as Function, {includeRelations: includeRelations ?? true})
-    })
-  }
-
-  private extractConditionalParamsFromUrl(paramsFromUrl: URLSearchParams): IWhereFilterCondition[] {
-
-    const whereArray: IWhereFilterCondition[] = [];
-
-    paramsFromUrl.forEach((paramValue, paramKey) => {
-      if (!['limit', 'page', 'order_by'].includes(paramKey))
-        whereArray.push({[paramKey]: {like: new RegExp('.*' + paramValue + '.*', "i")}})
-    })
-
-    return whereArray
-
-  }
-
-  private createFilters(paramsFromUrl: URLSearchParams, whereConditions: IWhereFilterCondition[]): IFilters {
-    return {
-      limit: (paramsFromUrl.get('limit') ?? 100) as number,
-      skip: ((paramsFromUrl.get('limit') ?? 100) as number) * ((paramsFromUrl.get('page') ?? 0) as number),
-      order: [(paramsFromUrl.get('order_by') ?? '')],
-      where: whereConditions.length ? {'and': whereConditions} : {},
-    }
-  }
-
-  createFilterRequestParams(urlString: string, whereAdditional?: IWhereFilterCondition[]): IFilters {
-
-    const paramsFromUrl = new URL(`${process.env.SERVER_ROOT_URI}${urlString}`).searchParams
-
-    const where: IWhereFilterCondition[] = [
-      ...this.extractConditionalParamsFromUrl(paramsFromUrl),
-      ...(whereAdditional ?? []),
-      {_deletedAt: {eq: null}},
-    ]
-
-    const filters = this.createFilters(paramsFromUrl, where)
-
-    return filters
 
   }
 

@@ -6,7 +6,7 @@ import {
 import {del, get, param, patch, post, put, Request, requestBody, response, Response, RestBindings} from '@loopback/rest';
 import {SecurityBindings, securityId, UserProfile} from '@loopback/security';
 import {LocaleEnum} from '../enums/locale.enum';
-import {Http} from '../implementations/index';
+import {HttpDocumentation, HttpResponseToClient} from '../implementations/index';
 import {IHttpResponse} from '../interfaces/http.interface';
 import {Module} from '../models/module.model';
 import {ModuleRepository} from '../repositories/module.repository';
@@ -27,11 +27,11 @@ export class ModuleController {
   @post('/modules')
   @response(200, {
     description: 'Module model instance',
-    properties: Http.createDocResponseSchemaForFindOneResult(Module)
+    properties: HttpDocumentation.createDocResponseSchemaForFindOneResult(Module)
   })
   async create(
     @requestBody({
-      content: Http.createDocRequestSchema(Module)
+      content: HttpDocumentation.createDocRequestSchema(Module)
     }) data: Module,
     @param.query.string('locale') locale?: LocaleEnum,
   ): Promise<IHttpResponse> {
@@ -42,7 +42,7 @@ export class ModuleController {
 
       const module = await this.moduleRepository.create({...data, _createdBy: createdBy, _ownerId: ownerId})
 
-      return Http.createHttpResponse({
+      return HttpResponseToClient.createHttpResponse({
         data: module,
         locale,
         request: this.httpRequest,
@@ -51,7 +51,7 @@ export class ModuleController {
 
     } catch (err) {
 
-      return Http.badRequestErrorHttpResponse({
+      return HttpResponseToClient.badRequestErrorHttpResponse({
         logMessage: err.message,
         locale,
         request: this.httpRequest,
@@ -64,7 +64,7 @@ export class ModuleController {
   @get('/modules')
   @response(200, {
     description: 'Array of Module model instances',
-    properties: Http.createDocResponseSchemaForFindManyResults(Module)
+    properties: HttpDocumentation.createDocResponseSchemaForFindManyResults(Module)
   })
   async find(
     @param.query.number('limit') limit?: number,
@@ -74,13 +74,13 @@ export class ModuleController {
   ): Promise<IHttpResponse> {
     try {
 
-      const filters = Http.createFilterRequestParams(this.httpRequest.url)
+      const filters = HttpDocumentation.createFilterRequestParams(this.httpRequest.url)
 
       const result = await this.moduleRepository.find(filters)
 
       const total = await this.moduleRepository.count(filters['where'])
 
-      return Http.okHttpResponse({
+      return HttpResponseToClient.okHttpResponse({
         data: {total: total?.count, result},
         locale,
         request: this.httpRequest,
@@ -89,7 +89,7 @@ export class ModuleController {
 
     } catch (err) {
 
-      return Http.badRequestErrorHttpResponse({
+      return HttpResponseToClient.badRequestErrorHttpResponse({
         logMessage: err.message,
         locale,
         request: this.httpRequest,
@@ -103,7 +103,7 @@ export class ModuleController {
   @get('/modules/{moduleId}')
   @response(200, {
     description: 'Module model instance',
-    properties: Http.createDocResponseSchemaForFindOneResult(Module)
+    properties: HttpDocumentation.createDocResponseSchemaForFindOneResult(Module)
   })
   async findById(
     @param.path.string('moduleId') id: string,
@@ -114,7 +114,7 @@ export class ModuleController {
       const data = await this.moduleRepository.findOne({where: {and: [{_id: id}, {_deletedAt: {eq: null}}]}})
       if (!data) throw new Error(serverMessages['httpResponse']['notFoundError'][locale ?? LocaleEnum['pt-BR']])
 
-      return Http.okHttpResponse({
+      return HttpResponseToClient.okHttpResponse({
         data,
         locale,
         request: this.httpRequest,
@@ -123,7 +123,7 @@ export class ModuleController {
 
     } catch (err) {
 
-      return Http.badRequestErrorHttpResponse({
+      return HttpResponseToClient.badRequestErrorHttpResponse({
         logMessage: err.message,
         locale,
         request: this.httpRequest,
@@ -139,7 +139,7 @@ export class ModuleController {
   async updateById(
     @param.path.string('moduleId') id: string,
     @requestBody({
-      content: Http.createDocRequestSchema(Module)
+      content: HttpDocumentation.createDocRequestSchema(Module)
     }) data: Module,
     @param.query.string('locale') locale?: LocaleEnum,
   ): Promise<IHttpResponse> {
@@ -147,7 +147,7 @@ export class ModuleController {
 
       await this.moduleRepository.updateById(id, data)
 
-      return Http.noContentHttpResponse({
+      return HttpResponseToClient.noContentHttpResponse({
         locale,
         request: this.httpRequest,
         response: this.httpResponse,
@@ -155,7 +155,7 @@ export class ModuleController {
 
     } catch (err) {
 
-      return Http.badRequestErrorHttpResponse({
+      return HttpResponseToClient.badRequestErrorHttpResponse({
         logMessage: err.message,
         request: this.httpRequest,
         response: this.httpResponse,
@@ -170,7 +170,7 @@ export class ModuleController {
   async partialUpdateById(
     @param.path.string('moduleId') id: string,
     @requestBody({
-      content: Http.createDocRequestSchema(Module)
+      content: HttpDocumentation.createDocRequestSchema(Module)
     }) data: Module,
     @param.query.string('locale') locale?: LocaleEnum,
   ): Promise<IHttpResponse> {
@@ -178,7 +178,7 @@ export class ModuleController {
 
       await this.moduleRepository.updateById(id, data)
 
-      return Http.noContentHttpResponse({
+      return HttpResponseToClient.noContentHttpResponse({
         locale,
         request: this.httpRequest,
         response: this.httpResponse,
@@ -186,7 +186,7 @@ export class ModuleController {
 
     } catch (err) {
 
-      return Http.badRequestErrorHttpResponse({
+      return HttpResponseToClient.badRequestErrorHttpResponse({
         logMessage: err.message,
         locale,
         request: this.httpRequest,
@@ -209,7 +209,7 @@ export class ModuleController {
 
       await this.moduleRepository.updateById(id, {...moduleToDelete, _deletedAt: new Date()})
 
-      return Http.noContentHttpResponse({
+      return HttpResponseToClient.noContentHttpResponse({
         locale,
         request: this.httpRequest,
         response: this.httpResponse,
@@ -217,7 +217,7 @@ export class ModuleController {
 
     } catch (err) {
 
-      return Http.badRequestErrorHttpResponse({
+      return HttpResponseToClient.badRequestErrorHttpResponse({
         logMessage: err.message,
         locale,
         request: this.httpRequest,

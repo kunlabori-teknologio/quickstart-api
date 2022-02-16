@@ -15,7 +15,7 @@ import {
   RestBindings
 } from '@loopback/rest';
 import {LocaleEnum} from '../enums/locale.enum';
-import {Http} from '../implementations/index';
+import {HttpDocumentation, HttpResponseToClient} from '../implementations/index';
 import {IHttpResponse} from '../interfaces/http.interface';
 import {PermissionGroup} from '../models';
 import {User} from '../models/user.model';
@@ -36,7 +36,7 @@ export class UserController {
   @get('/users/{userId}')
   @response(200, {
     description: 'User model instance',
-    properties: Http.createDocResponseSchemaForFindOneResult(User)
+    properties: HttpDocumentation.createDocResponseSchemaForFindOneResult(User)
   })
   async findById(
     @param.path.string('userId') id: string,
@@ -46,7 +46,7 @@ export class UserController {
 
       const data = await this.userRepository.findById(id, {include: ['person', 'company']})
 
-      return Http.okHttpResponse({
+      return HttpResponseToClient.okHttpResponse({
         data,
         locale,
         request: this.httpRequest,
@@ -55,7 +55,7 @@ export class UserController {
 
     } catch (err) {
 
-      return Http.badRequestErrorHttpResponse({
+      return HttpResponseToClient.badRequestErrorHttpResponse({
         logMessage: err.message,
         locale,
         request: this.httpRequest,
@@ -69,7 +69,7 @@ export class UserController {
   @post('/users/{userId}/permission-groups')
   @response(200, {
     description: 'Give permissions',
-    properties: Http.createDocResponseSchemaForFindOneResult(User)
+    properties: HttpDocumentation.createDocResponseSchemaForFindOneResult(User)
   })
   async createPermissionGroupRelated(
     @param.path.string('userId') userId: string,
@@ -89,7 +89,7 @@ export class UserController {
 
       const data = await this.userRepository.findById(userId, {include: ['person', 'company', 'permissionGroups']})
 
-      return Http.okHttpResponse({
+      return HttpResponseToClient.okHttpResponse({
         data,
         locale,
         request: this.httpRequest,
@@ -98,7 +98,7 @@ export class UserController {
 
     } catch (err) {
 
-      return Http.badRequestErrorHttpResponse({
+      return HttpResponseToClient.badRequestErrorHttpResponse({
         logMessage: err.message,
         locale,
         request: this.httpRequest,
@@ -112,7 +112,7 @@ export class UserController {
   @get('/users/{userId}/permission-groups')
   @response(200, {
     description: 'Array of permission groups',
-    properties: Http.createDocResponseSchemaForFindManyResults(PermissionGroup)
+    properties: HttpDocumentation.createDocResponseSchemaForFindManyResults(PermissionGroup)
   })
   async findPermissionsRelated(
     @param.path.string('userId') id: string,
@@ -123,7 +123,7 @@ export class UserController {
   ): Promise<IHttpResponse> {
     try {
 
-      const filters = Http.createFilterRequestParams(this.httpRequest.url)
+      const filters = HttpDocumentation.createFilterRequestParams(this.httpRequest.url)
 
       const result = await this.userRepository.permissionGroups(id).find({
         ...filters,
@@ -132,7 +132,7 @@ export class UserController {
 
       const total = (await this.userRepository.permissionGroups(id).find({where: filters['where']})).length
 
-      return Http.okHttpResponse({
+      return HttpResponseToClient.okHttpResponse({
         data: {total: total, result},
         locale,
         request: this.httpRequest,
@@ -141,7 +141,7 @@ export class UserController {
 
     } catch (err) {
 
-      return Http.badRequestErrorHttpResponse({
+      return HttpResponseToClient.badRequestErrorHttpResponse({
         logMessage: err.message,
         locale,
         request: this.httpRequest,
@@ -155,7 +155,7 @@ export class UserController {
   @get('/users/{userId}/permission-groups/{projectId}')
   @response(200, {
     description: 'Array of permission groups by project',
-    properties: Http.createDocResponseSchemaForFindOneResult(PermissionGroup)
+    properties: HttpDocumentation.createDocResponseSchemaForFindOneResult(PermissionGroup)
   })
   async findProjectPermissionsRelated(
     @param.path.string('userId') id: string,
@@ -167,7 +167,7 @@ export class UserController {
   ): Promise<IHttpResponse> {
     try {
 
-      const filters = Http.createFilterRequestParams(
+      const filters = HttpDocumentation.createFilterRequestParams(
         this.httpRequest.url, [{projectId}]
       )
 
@@ -176,7 +176,7 @@ export class UserController {
         include: [{relation: 'permissions', scope: {include: ['permissionActions', 'module']}}]
       })
 
-      return Http.okHttpResponse({
+      return HttpResponseToClient.okHttpResponse({
         data: permissionGroups.length ? permissionGroups[0] : {},
         locale,
         request: this.httpRequest,
@@ -185,7 +185,7 @@ export class UserController {
 
     } catch (err) {
 
-      return Http.badRequestErrorHttpResponse({
+      return HttpResponseToClient.badRequestErrorHttpResponse({
         logMessage: err.message,
         locale,
         request: this.httpRequest,
@@ -215,7 +215,7 @@ export class UserController {
           (permissionGroupIds.map((permissionGroupId) => {return {and: [{userId}, {permissionGroupId}]}}))
       })
 
-      return Http.noContentHttpResponse({
+      return HttpResponseToClient.noContentHttpResponse({
         locale,
         request: this.httpRequest,
         response: this.httpResponse,
@@ -223,7 +223,7 @@ export class UserController {
 
     } catch (err) {
 
-      return Http.badRequestErrorHttpResponse({
+      return HttpResponseToClient.badRequestErrorHttpResponse({
         logMessage: err.message,
         locale,
         request: this.httpRequest,

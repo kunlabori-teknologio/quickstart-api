@@ -1,19 +1,14 @@
-import {GoogleOAuthImplementation} from './google-oauth.implementation';
-import {HttpImplementation} from './http.implementation';
+import {IHttpDocumentation, IHttpResponseToClient} from '../interfaces/http.interface';
+import {HttpLb4DocImplementation} from './http-lb4-doc.implementation';
+import {HttpLb4ResponseImplementation} from './http-lb4-response.implementation';
 import {JwtTokenImplementation} from './jwt-token.implementation';
-import {ProfileFromAPIImplementation} from './profile-from-api.implementation';
-import {SendNodemailerMailImplementation} from './send-nodemailer-mail.implementation';
 
-const Http = new HttpImplementation()
-const JwtToken = new JwtTokenImplementation()
-const SendNodemailerMail = new SendNodemailerMailImplementation()
-const ProfileFromAPI = new ProfileFromAPIImplementation()
-const GoogleOAuth = new GoogleOAuthImplementation()
+const HttpDocumentation: IHttpDocumentation = new HttpLb4DocImplementation()
+const HttpResponseToClient: IHttpResponseToClient = new HttpLb4ResponseImplementation()
+const JwtToken: JwtTokenImplementation = new JwtTokenImplementation()
 
 export {
-  Http,
+  HttpDocumentation,
+  HttpResponseToClient,
   JwtToken,
-  SendNodemailerMail,
-  ProfileFromAPI,
-  GoogleOAuth,
 };

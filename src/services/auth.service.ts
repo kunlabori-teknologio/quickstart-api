@@ -2,8 +2,7 @@ import {repository} from '@loopback/repository'
 import jwt from 'jsonwebtoken'
 import {AdditionalInfoModel, Signup} from '../entities/signup.entity'
 import {LocaleEnum} from '../enums/locale.enum'
-import {GoogleOAuth, ProfileFromAPI} from '../implementations'
-import {ILoginResponse, ILoginUserInfo, IRefreshTokenResponse} from '../interfaces/auth.interface'
+import {IGetProfile, ILoginResponse, ILoginUserInfo, IOAuthLogin, IRefreshTokenResponse} from '../interfaces/auth.interface'
 import {IOAuthUser} from '../interfaces/user.interface'
 import {Company} from '../models/company.model'
 import {PermissionGroup} from '../models/permission-group.model'
@@ -16,6 +15,7 @@ import {serverMessages} from '../utils/server-messages'
 import {hideEmailString} from '../utils/string-manipulation-functions'
 
 export class AuthService {
+
   constructor(
     @repository(UserRepository) private userRepository: UserRepository,
     @repository(PersonRepository) private personRepository: PersonRepository,
@@ -24,16 +24,16 @@ export class AuthService {
     @repository(UserHasPermissionGroupsRepository) private userHasPermissionGroupRepository: UserHasPermissionGroupsRepository,
   ) { }
 
-  public async getGoogleLoginPageURL(params?: string): Promise<string> {
-    return GoogleOAuth.getOAuthLoginPageUrl(params)
+  public async getOAuthLoginPageURL(oAuth: IOAuthLogin, params?: string): Promise<string> {
+    return oAuth.getOAuthLoginPageUrl(params)
   }
 
-  public async getGoogleUser(code: string): Promise<IOAuthUser> {
-    return GoogleOAuth.getOAuthUser(code)
+  public async getOAuthUser(oAuth: IOAuthLogin, code: string): Promise<IOAuthUser> {
+    return oAuth.getOAuthUser(code)
   }
 
-  public createGoogleLoginToken(googleUser: IOAuthUser, invitationId?: string | null): string {
-    return GoogleOAuth.createOAuthToken(googleUser, invitationId)
+  public createOAuthToken(oAuth: IOAuthLogin, oAuthUser: IOAuthUser, invitationId?: string | null): string {
+    return oAuth.createOAuthToken(oAuthUser, invitationId)
   }
 
   public async login(userLoginInfo: ILoginUserInfo): Promise<ILoginResponse | null> {
@@ -142,13 +142,13 @@ export class AuthService {
 
   }
 
-  public async signup(data: Signup, userInfo: ILoginUserInfo, locale?: LocaleEnum): Promise<User> {
+  public async signup(data: Signup, userInfo: ILoginUserInfo, getProfile: IGetProfile, locale?: LocaleEnum): Promise<User> {
 
     const userType = getUserType(data, locale)
 
     const profile =
       await this[`${userType}Repository`].findOne({where: {uniqueId: data.uniqueId}}) ??
-      await this.createProfile({userType, ...data}, locale);
+      await this.createProfile({userType, ...data}, getProfile, locale);
 
     if (!theDatesMatch(profile.birthday, data.birthday))
       throw new Error(serverMessages['auth']['birthdayIncorrect'][locale ?? LocaleEnum['pt-BR']])
@@ -182,11 +182,12 @@ export class AuthService {
   public async createProfile(
     {userType, uniqueId, additionalInfo}:
       {userType: UserTypesEnum, uniqueId: string, additionalInfo?: AdditionalInfoModel},
+    getProfile: IGetProfile,
     locale?: LocaleEnum
   ): Promise<Person | Company> {
     try {
 
-      const profileDTO = await ProfileFromAPI.getFullProfileInfo(uniqueId, userType, additionalInfo)
+      const profileDTO = await getProfile.getFullProfileInfo(uniqueId, userType, additionalInfo)
       if (!profileDTO) throw new Error(serverMessages['auth']['uniqueIdNotFound'][locale ?? LocaleEnum['pt-BR']])
 
       const profileCreated = await this[`${userType}Repository`].create({...profileDTO})

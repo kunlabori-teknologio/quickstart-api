@@ -49,18 +49,19 @@ export interface IWhereFilterCondition {
   [x: string]: (string | null | Boolean) | {like: RegExp;} | {[x: string]: string | null | Boolean}
 }
 
-export interface IHttpRequestResponse {
+export interface IHttpDocumentation {
+  createDocRequestSchema(model: string | Function): IRequestSchema
+  createDocResponseSchemaForFindManyResults(model: string | Function, includeRelations?: boolean): IResponseSchema
+  createDocResponseSchemaForFindOneResult(model: string | Function, includeRelations?: boolean): IResponseSchema
+  createFilterRequestParams(urlString: string, whereAdditional?: IWhereFilterCondition[]): IFilters
+}
 
-  createDocRequestSchema(model: string | Function): IRequestSchema;
-  createDocResponseSchemaForFindManyResults(model: string | Function, includeRelations?: boolean): IResponseSchema;
-  createDocResponseSchemaForFindOneResult(model: string | Function, includeRelations?: boolean): IResponseSchema;
-  createFilterRequestParams(urlString: string, whereAdditional?: IWhereFilterCondition[]): IFilters;
-
-  okHttpResponse(httpResponseData?: IHttpResponseData): IHttpResponse;
-  createHttpResponse(httpResponseData?: IHttpResponseData): IHttpResponse;
-  noContentHttpResponse(httpResponseData?: IHttpResponseData): IHttpResponse;
-  badRequestErrorHttpResponse(httpResponseData?: IHttpResponseData): IHttpResponse;
-  unauthorizedErrorHttpResponse(httpResponseData?: IHttpResponseData): IHttpResponse;
-  notFoundErrorHttpResponse(httpResponseData?: IHttpResponseData): IHttpResponse;
-  internalServerErrorHttpResponse(httpResponseData?: IHttpResponseData): IHttpResponse;
+export interface IHttpResponseToClient {
+  okHttpResponse(httpResponseData?: IHttpResponseData): IHttpResponse
+  createHttpResponse(httpResponseData?: IHttpResponseData): IHttpResponse
+  noContentHttpResponse(httpResponseData?: IHttpResponseData): IHttpResponse
+  badRequestErrorHttpResponse(httpResponseData?: IHttpResponseData): IHttpResponse
+  unauthorizedErrorHttpResponse(httpResponseData?: IHttpResponseData): IHttpResponse
+  notFoundErrorHttpResponse(httpResponseData?: IHttpResponseData): IHttpResponse
+  internalServerErrorHttpResponse(httpResponseData?: IHttpResponseData): IHttpResponse
 }

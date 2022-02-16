@@ -6,7 +6,7 @@ import {
 import {del, get, param, patch, post, put, Request, requestBody, response, Response, RestBindings} from '@loopback/rest'
 import {SecurityBindings, securityId, UserProfile} from '@loopback/security'
 import {LocaleEnum} from '../enums/locale.enum'
-import {Http} from '../implementations/index'
+import {HttpDocumentation, HttpResponseToClient} from '../implementations/index'
 import {IHttpResponse} from '../interfaces/http.interface'
 import {PermissionGroup} from '../models'
 import {PermissionGroupRepository} from '../repositories'
@@ -34,11 +34,11 @@ export class PermissionGroupController {
   @post('/permission-groups')
   @response(200, {
     description: 'Permission group model instance',
-    properties: Http.createDocResponseSchemaForFindOneResult(PermissionGroup)
+    properties: HttpDocumentation.createDocResponseSchemaForFindOneResult(PermissionGroup)
   })
   async create(
     @requestBody({
-      content: Http.createDocRequestSchema(PermissionGroup)
+      content: HttpDocumentation.createDocRequestSchema(PermissionGroup)
     }) data: PermissionGroup,
     @param.query.string('locale') locale?: LocaleEnum,
   ): Promise<IHttpResponse> {
@@ -49,7 +49,7 @@ export class PermissionGroupController {
 
       const permission = await this.permissionGroupRepository.create({...data, _createdBy: createdBy, _ownerId: ownerId})
 
-      return Http.createHttpResponse({
+      return HttpResponseToClient.createHttpResponse({
         data: permission,
         locale,
         request: this.httpRequest,
@@ -58,7 +58,7 @@ export class PermissionGroupController {
 
     } catch (err) {
 
-      return Http.badRequestErrorHttpResponse({
+      return HttpResponseToClient.badRequestErrorHttpResponse({
         logMessage: err.message,
         locale,
         request: this.httpRequest,
@@ -72,7 +72,7 @@ export class PermissionGroupController {
   @get('/permission-groups')
   @response(200, {
     description: 'Array of Permission group model instances',
-    properties: Http.createDocResponseSchemaForFindManyResults(PermissionGroup)
+    properties: HttpDocumentation.createDocResponseSchemaForFindManyResults(PermissionGroup)
   })
   async find(
     @param.query.number('limit') limit?: number,
@@ -82,13 +82,13 @@ export class PermissionGroupController {
   ): Promise<IHttpResponse> {
     try {
 
-      const filters = Http.createFilterRequestParams(this.httpRequest.url)
+      const filters = HttpDocumentation.createFilterRequestParams(this.httpRequest.url)
 
       const result = await this.permissionGroupRepository.find({...filters, include: [this.getPermissionGroupRelatedPermissions]})
 
       const total = await this.permissionGroupRepository.count(filters['where'])
 
-      return Http.okHttpResponse({
+      return HttpResponseToClient.okHttpResponse({
         data: {total: total?.count, result},
         locale,
         request: this.httpRequest,
@@ -97,7 +97,7 @@ export class PermissionGroupController {
 
     } catch (err) {
 
-      return Http.badRequestErrorHttpResponse({
+      return HttpResponseToClient.badRequestErrorHttpResponse({
         logMessage: err.message,
         locale,
         request: this.httpRequest,
@@ -111,7 +111,7 @@ export class PermissionGroupController {
   @get('/permission-groups/{permissionGroupId}')
   @response(200, {
     description: 'Permission group model instance',
-    properties: Http.createDocResponseSchemaForFindOneResult(PermissionGroup)
+    properties: HttpDocumentation.createDocResponseSchemaForFindOneResult(PermissionGroup)
   })
   async findById(
     @param.path.string('permissionGroupId') id: string,
@@ -125,7 +125,7 @@ export class PermissionGroupController {
       })
       if (!data) throw new Error(serverMessages['httpResponse']['notFoundError'][locale ?? LocaleEnum['pt-BR']])
 
-      return Http.okHttpResponse({
+      return HttpResponseToClient.okHttpResponse({
         data,
         locale,
         request: this.httpRequest,
@@ -134,7 +134,7 @@ export class PermissionGroupController {
 
     } catch (err) {
 
-      return Http.badRequestErrorHttpResponse({
+      return HttpResponseToClient.badRequestErrorHttpResponse({
         logMessage: err.message,
         locale,
         request: this.httpRequest,
@@ -150,7 +150,7 @@ export class PermissionGroupController {
   async updateById(
     @param.path.string('permissionGroupId') id: string,
     @requestBody({
-      content: Http.createDocRequestSchema(PermissionGroup)
+      content: HttpDocumentation.createDocRequestSchema(PermissionGroup)
     }) data: PermissionGroup,
     @param.query.string('locale') locale?: LocaleEnum,
   ): Promise<IHttpResponse> {
@@ -158,7 +158,7 @@ export class PermissionGroupController {
 
       await this.permissionGroupRepository.updateById(id, data)
 
-      return Http.noContentHttpResponse({
+      return HttpResponseToClient.noContentHttpResponse({
         locale,
         request: this.httpRequest,
         response: this.httpResponse,
@@ -166,7 +166,7 @@ export class PermissionGroupController {
 
     } catch (err) {
 
-      return Http.badRequestErrorHttpResponse({
+      return HttpResponseToClient.badRequestErrorHttpResponse({
         logMessage: err.message,
         locale,
         request: this.httpRequest,
@@ -182,7 +182,7 @@ export class PermissionGroupController {
   async partialUpdateById(
     @param.path.string('permissionGroupId') id: string,
     @requestBody({
-      content: Http.createDocRequestSchema(PermissionGroup)
+      content: HttpDocumentation.createDocRequestSchema(PermissionGroup)
     }) data: PermissionGroup,
     @param.query.string('locale') locale?: LocaleEnum,
   ): Promise<IHttpResponse> {
@@ -190,7 +190,7 @@ export class PermissionGroupController {
 
       await this.permissionGroupRepository.updateById(id, data)
 
-      return Http.noContentHttpResponse({
+      return HttpResponseToClient.noContentHttpResponse({
         locale,
         request: this.httpRequest,
         response: this.httpResponse,
@@ -198,7 +198,7 @@ export class PermissionGroupController {
 
     } catch (err) {
 
-      return Http.badRequestErrorHttpResponse({
+      return HttpResponseToClient.badRequestErrorHttpResponse({
         logMessage: err.message,
         locale,
         request: this.httpRequest,
@@ -221,7 +221,7 @@ export class PermissionGroupController {
 
       await this.permissionGroupRepository.updateById(id, {...permissionGroupToDelete, _deletedAt: new Date()})
 
-      return Http.noContentHttpResponse({
+      return HttpResponseToClient.noContentHttpResponse({
         locale,
         request: this.httpRequest,
         response: this.httpResponse,
@@ -229,7 +229,7 @@ export class PermissionGroupController {
 
     } catch (err) {
 
-      return Http.badRequestErrorHttpResponse({
+      return HttpResponseToClient.badRequestErrorHttpResponse({
         locale,
         request: this.httpRequest,
         response: this.httpResponse,

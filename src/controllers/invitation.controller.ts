@@ -6,13 +6,17 @@ import {
 import {del, get, param, patch, post, put, Request, requestBody, response, Response, RestBindings} from '@loopback/rest'
 import {SecurityBindings, securityId, UserProfile} from '@loopback/security'
 import {LocaleEnum} from '../enums/locale.enum'
-import {Http, SendNodemailerMail} from '../implementations/index'
+import {HttpDocumentation, HttpResponseToClient} from '../implementations/index'
+import {SendNodemailerMailImplementation} from '../implementations/send-nodemailer-mail.implementation'
 import {IHttpResponse} from '../interfaces/http.interface'
+import {ISendMail} from '../interfaces/send-mail.interface'
 import {Invitation} from '../models'
 import {InvitationRepository} from '../repositories'
 import {serverMessages} from '../utils/server-messages'
 
 export class InvitationController {
+
+  private sendMail: ISendMail
 
   constructor(
     @repository(InvitationRepository) public invitationRepository: InvitationRepository,
@@ -21,17 +25,19 @@ export class InvitationController {
     @inject(RestBindings.Http.RESPONSE) private httpResponse: Response,
 
     @inject(SecurityBindings.USER, {optional: true}) private currentUser?: UserProfile,
-  ) { }
+  ) {
+    this.sendMail = new SendNodemailerMailImplementation()
+  }
 
   @authenticate({strategy: 'autentikigo', options: {collection: 'Invitation', action: 'createOne'}})
   @post('/invitations')
   @response(200, {
     description: 'Invitation model instance',
-    properties: Http.createDocResponseSchemaForFindOneResult(Invitation)
+    properties: HttpDocumentation.createDocResponseSchemaForFindOneResult(Invitation)
   })
   async create(
     @requestBody({
-      content: Http.createDocRequestSchema(Invitation)
+      content: HttpDocumentation.createDocRequestSchema(Invitation)
     }) data: Invitation,
     @param.query.string('locale') locale?: LocaleEnum,
   ): Promise<IHttpResponse> {
@@ -42,7 +48,7 @@ export class InvitationController {
 
       const invitation = await this.invitationRepository.create({...data, _createdBy: createdBy, _ownerId: ownerId})
 
-      return Http.createHttpResponse({
+      return HttpResponseToClient.createHttpResponse({
         data: invitation,
         locale,
         request: this.httpRequest,
@@ -51,7 +57,7 @@ export class InvitationController {
 
     } catch (err) {
 
-      return Http.badRequestErrorHttpResponse({
+      return HttpResponseToClient.badRequestErrorHttpResponse({
         logMessage: err.message,
         locale,
         request: this.httpRequest,
@@ -65,7 +71,7 @@ export class InvitationController {
   @get('/invitations')
   @response(200, {
     description: 'Array of Invitation model instances',
-    properties: Http.createDocResponseSchemaForFindManyResults(Invitation)
+    properties: HttpDocumentation.createDocResponseSchemaForFindManyResults(Invitation)
   })
   async find(
     @param.query.number('limit') limit?: number,
@@ -75,13 +81,13 @@ export class InvitationController {
   ): Promise<IHttpResponse> {
     try {
 
-      const filters = Http.createFilterRequestParams(this.httpRequest.url)
+      const filters = HttpDocumentation.createFilterRequestParams(this.httpRequest.url)
 
       const result = await this.invitationRepository.find({...filters, include: ['permissionGroup']})
 
       const total = await this.invitationRepository.count(filters['where'])
 
-      return Http.okHttpResponse({
+      return HttpResponseToClient.okHttpResponse({
         data: {total: total?.count, result},
         locale,
         request: this.httpRequest,
@@ -90,7 +96,7 @@ export class InvitationController {
 
     } catch (err) {
 
-      return Http.badRequestErrorHttpResponse({
+      return HttpResponseToClient.badRequestErrorHttpResponse({
         logMessage: err.message,
         locale,
         request: this.httpRequest,
@@ -104,7 +110,7 @@ export class InvitationController {
   @get('/invitations/{invitationId}')
   @response(200, {
     description: 'Invitation model instance',
-    properties: Http.createDocResponseSchemaForFindOneResult(Invitation)
+    properties: HttpDocumentation.createDocResponseSchemaForFindOneResult(Invitation)
   })
   async findById(
     @param.path.string('invitationId') id: string,
@@ -115,7 +121,7 @@ export class InvitationController {
       const data = await this.invitationRepository.findOne({where: {and: [{_id: id}, {_deletedAt: {eq: null}}]}})
       if (!data) throw new Error(serverMessages['httpResponse']['notFoundError'][locale ?? LocaleEnum['pt-BR']])
 
-      return Http.okHttpResponse({
+      return HttpResponseToClient.okHttpResponse({
         data,
         locale,
         request: this.httpRequest,
@@ -124,7 +130,7 @@ export class InvitationController {
 
     } catch (err) {
 
-      return Http.badRequestErrorHttpResponse({
+      return HttpResponseToClient.badRequestErrorHttpResponse({
         logMessage: err.message,
         locale,
         request: this.httpRequest,
@@ -140,7 +146,7 @@ export class InvitationController {
   async updateById(
     @param.path.string('invitationId') id: string,
     @requestBody({
-      content: Http.createDocRequestSchema(Invitation)
+      content: HttpDocumentation.createDocRequestSchema(Invitation)
     }) data: Invitation,
     @param.query.string('locale') locale?: LocaleEnum,
   ): Promise<IHttpResponse> {
@@ -148,7 +154,7 @@ export class InvitationController {
 
       await this.invitationRepository.updateById(id, data)
 
-      return Http.noContentHttpResponse({
+      return HttpResponseToClient.noContentHttpResponse({
         locale,
         request: this.httpRequest,
         response: this.httpResponse,
@@ -156,7 +162,7 @@ export class InvitationController {
 
     } catch (err) {
 
-      return Http.badRequestErrorHttpResponse({
+      return HttpResponseToClient.badRequestErrorHttpResponse({
         logMessage: err.message,
         locale,
         request: this.httpRequest,
@@ -172,7 +178,7 @@ export class InvitationController {
   async partialUpdateById(
     @param.path.string('invitationId') id: string,
     @requestBody({
-      content: Http.createDocRequestSchema(Invitation)
+      content: HttpDocumentation.createDocRequestSchema(Invitation)
     }) data: Invitation,
     @param.query.string('locale') locale?: LocaleEnum,
   ): Promise<IHttpResponse> {
@@ -180,7 +186,7 @@ export class InvitationController {
 
       await this.invitationRepository.updateById(id, data)
 
-      return Http.noContentHttpResponse({
+      return HttpResponseToClient.noContentHttpResponse({
         locale,
         request: this.httpRequest,
         response: this.httpResponse,
@@ -188,7 +194,7 @@ export class InvitationController {
 
     } catch (err) {
 
-      return Http.badRequestErrorHttpResponse({
+      return HttpResponseToClient.badRequestErrorHttpResponse({
         logMessage: err.message,
         locale,
         request: this.httpRequest,
@@ -211,7 +217,7 @@ export class InvitationController {
 
       await this.invitationRepository.updateById(id, {...invitationToDelete, _deletedAt: new Date()})
 
-      return Http.noContentHttpResponse({
+      return HttpResponseToClient.noContentHttpResponse({
         locale,
         request: this.httpRequest,
         response: this.httpResponse,
@@ -219,7 +225,7 @@ export class InvitationController {
 
     } catch (err) {
 
-      return Http.badRequestErrorHttpResponse({
+      return HttpResponseToClient.badRequestErrorHttpResponse({
         logMessage: err.message,
         locale,
         request: this.httpRequest,
@@ -240,10 +246,10 @@ export class InvitationController {
 
       const invitation = await this.invitationRepository.findById(id)
 
-      const emailSent = SendNodemailerMail.sendInvitationMail(id, invitation.email)
+      const emailSent = this.sendMail.sendInvitationMail(id, invitation.email)
       if (!emailSent) throw new Error(emailSent!)
 
-      return Http.okHttpResponse({
+      return HttpResponseToClient.okHttpResponse({
         message: serverMessages['invitation']['invitationSent'][locale ?? LocaleEnum['pt-BR']],
         locale,
         request: this.httpRequest,
@@ -252,7 +258,7 @@ export class InvitationController {
 
     } catch (err) {
 
-      return Http.badRequestErrorHttpResponse({
+      return HttpResponseToClient.badRequestErrorHttpResponse({
         message: serverMessages['invitation']['invitationSentFailed'][locale ?? LocaleEnum['pt-BR']],
         logMessage: err.message,
         locale,
