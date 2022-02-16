@@ -10,6 +10,7 @@ import {Http} from '../implementations/index'
 import {IHttpResponse} from '../interfaces/http.interface'
 import {PermissionGroup} from '../models'
 import {PermissionGroupRepository} from '../repositories'
+import {serverMessages} from '../utils/server-messages'
 
 export class PermissionGroupController {
 
@@ -117,7 +118,11 @@ export class PermissionGroupController {
   ): Promise<IHttpResponse> {
     try {
 
-      const data = await this.permissionGroupRepository.findById(id, {include: [this.getPermissionGroupRelatedPermissions]})
+      const data = await this.permissionGroupRepository.findOne({
+        where: {and: [{_id: id}, {_deletedAt: {eq: null}}]},
+        include: [this.getPermissionGroupRelatedPermissions]
+      })
+      if (!data) throw new Error(serverMessages['httpResponse']['notFoundError'][locale ?? LocaleEnum['pt-BR']])
 
       return Http.okHttpResponse({
         data,

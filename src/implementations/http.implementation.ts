@@ -2,10 +2,10 @@ import {getModelSchemaRef, Request} from '@loopback/rest';
 import {appendFileSync, existsSync, mkdir} from 'fs';
 import {ILogObject, Logger} from 'tslog';
 import {URL, URLSearchParams} from 'url';
-import {HttpResponseTypeEnum} from '../../enums/http.enum';
-import {LocaleEnum} from '../../enums/locale.enum';
-import {IAddtionalPropertiesResponseSchema, IFilters, IHttpRequestResponse, IHttpResponse, IHttpResponseData, IRequestSchema, IResponseSchema, IWhereFilterCondition} from '../../interfaces/http.interface';
-import {serverMessages} from '../../utils/server-messages';
+import {HttpResponseTypeEnum} from '../enums/http.enum';
+import {LocaleEnum} from '../enums/locale.enum';
+import {IAddtionalPropertiesResponseSchema, IFilters, IHttpRequestResponse, IHttpResponse, IHttpResponseData, IRequestSchema, IResponseSchema, IWhereFilterCondition} from '../interfaces/http.interface';
+import {serverMessages} from '../utils/server-messages';
 
 export class HttpImplementation implements IHttpRequestResponse {
 
@@ -46,7 +46,6 @@ export class HttpImplementation implements IHttpRequestResponse {
     return {
       'statusCode': {type: 'number', default: 200},
       'message': {type: 'string'},
-      'logMessage': {type: 'string'},
       ...(additionalProperty ?? {}),
     }
   }
@@ -143,7 +142,7 @@ export class HttpImplementation implements IHttpRequestResponse {
 
     httpResponseData?.response.status(200)
     return {
-      statusCode: httpResponseData?.statusCode,
+      statusCode: httpResponseData?.statusCode ?? 200,
       data: httpResponseData?.data,
       message: httpResponseData?.message ?? this.getMessage(HttpResponseTypeEnum.ok, httpResponseData?.locale ?? LocaleEnum['pt-BR']),
     }
@@ -159,7 +158,7 @@ export class HttpImplementation implements IHttpRequestResponse {
 
     httpResponseData?.response.status(201)
     return {
-      statusCode: httpResponseData?.statusCode,
+      statusCode: httpResponseData?.statusCode ?? 201,
       data: httpResponseData?.data,
       message: httpResponseData?.message ?? this.getMessage(HttpResponseTypeEnum.created, httpResponseData?.locale ?? LocaleEnum['pt-BR']),
     }
@@ -175,7 +174,7 @@ export class HttpImplementation implements IHttpRequestResponse {
 
     httpResponseData?.response.status(204)
     return {
-      statusCode: httpResponseData?.statusCode,
+      statusCode: httpResponseData?.statusCode ?? 204,
       data: httpResponseData?.data,
       message: httpResponseData?.message ?? this.getMessage(HttpResponseTypeEnum.noContent, httpResponseData?.locale ?? LocaleEnum['pt-BR']),
     }
@@ -191,7 +190,7 @@ export class HttpImplementation implements IHttpRequestResponse {
 
     httpResponseData?.response.status(400)
     return {
-      statusCode: httpResponseData?.statusCode,
+      statusCode: httpResponseData?.statusCode ?? 400,
       data: httpResponseData?.data,
       message: httpResponseData?.message ?? this.getMessage(HttpResponseTypeEnum.badRequest, httpResponseData?.locale ?? LocaleEnum['pt-BR']),
       logMessage: httpResponseData?.logMessage,
@@ -208,7 +207,7 @@ export class HttpImplementation implements IHttpRequestResponse {
 
     httpResponseData?.response.status(401)
     return {
-      statusCode: httpResponseData?.statusCode,
+      statusCode: httpResponseData?.statusCode ?? 401,
       data: httpResponseData?.data,
       message: httpResponseData?.message ?? this.getMessage(HttpResponseTypeEnum.unauthorized, httpResponseData?.locale ?? LocaleEnum['pt-BR']),
       logMessage: httpResponseData?.logMessage,
@@ -225,7 +224,7 @@ export class HttpImplementation implements IHttpRequestResponse {
 
     httpResponseData?.response.status(404)
     return {
-      statusCode: httpResponseData?.statusCode,
+      statusCode: httpResponseData?.statusCode ?? 404,
       data: httpResponseData?.data,
       message: httpResponseData?.message ?? this.getMessage(HttpResponseTypeEnum.notFound, httpResponseData?.locale ?? LocaleEnum['pt-BR']),
       logMessage: httpResponseData?.logMessage,
@@ -242,7 +241,7 @@ export class HttpImplementation implements IHttpRequestResponse {
 
     httpResponseData?.response.status(500)
     return {
-      statusCode: httpResponseData?.statusCode,
+      statusCode: httpResponseData?.statusCode ?? 500,
       data: httpResponseData?.data,
       message: httpResponseData?.message ?? this.getMessage(HttpResponseTypeEnum.internalServerError, httpResponseData?.locale ?? LocaleEnum['pt-BR']),
       logMessage: httpResponseData?.logMessage,

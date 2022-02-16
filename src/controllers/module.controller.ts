@@ -10,6 +10,7 @@ import {Http} from '../implementations/index';
 import {IHttpResponse} from '../interfaces/http.interface';
 import {Module} from '../models/module.model';
 import {ModuleRepository} from '../repositories/module.repository';
+import {serverMessages} from '../utils/server-messages';
 
 export class ModuleController {
 
@@ -109,7 +110,8 @@ export class ModuleController {
   ): Promise<IHttpResponse> {
     try {
 
-      const data = await this.moduleRepository.findById(id)
+      const data = await this.moduleRepository.findOne({where: {and: [{_id: id}, {_deletedAt: {eq: null}}]}})
+      if (!data) throw new Error(serverMessages['httpResponse']['notFoundError'][locale ?? LocaleEnum['pt-BR']])
 
       return Http.okHttpResponse({
         data,

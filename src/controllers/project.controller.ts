@@ -10,6 +10,7 @@ import {Http} from '../implementations/index'
 import {IHttpResponse} from '../interfaces/http.interface'
 import {Project} from '../models/project.model'
 import {ProjectRepository} from '../repositories/project.repository'
+import {serverMessages} from '../utils/server-messages'
 
 export class ProjectController {
 
@@ -125,7 +126,11 @@ export class ProjectController {
   ): Promise<IHttpResponse> {
     try {
 
-      const data = await this.projectRepository.findById(id, {include: this.getProjectRelatedPermissionsAndModules})
+      const data = await this.projectRepository.findOne({
+        where: {and: [{_id: id}, {_deletedAt: {eq: null}}]},
+        include: this.getProjectRelatedPermissionsAndModules
+      })
+      if (!data) throw new Error(serverMessages['httpResponse']['notFoundError'][locale ?? LocaleEnum['pt-BR']])
 
       return Http.okHttpResponse({
         data,

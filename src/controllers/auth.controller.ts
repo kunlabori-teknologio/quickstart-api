@@ -102,24 +102,23 @@ export class AuthController {
   ): Promise<IHttpResponse> {
     try {
 
-      const tokenVerified = JwtToken.verifyLoginUserInfoToken(
+      const tokenVerified = JwtToken.verifyAuthToken(
         this.httpRequest.headers.authorization!, process.env.PROJECT_SECRET!,
         this.httpRequest, this.httpResponse, locale
       )
-
       if (tokenVerified.statusCode !== 200) return tokenVerified
-      else {
 
-        const tokenAndUser = JwtToken.getLoginUserInfoFromToken(this.httpRequest.headers.authorization!)
+      const loginUserInfo = JwtToken.getLoginUserInfoFromToken(this.httpRequest.headers.authorization!)
 
-        return Http.okHttpResponse({
-          data: {...tokenAndUser},
-          message: serverMessages['auth'][tokenAndUser?.authToken ? 'loginSuccess' : 'unregisteredUser'][locale ?? LocaleEnum['pt-BR']],
-          statusCode: tokenAndUser?.authToken ? 200 : 601,
-          request: this.httpRequest,
-          response: this.httpResponse,
-        })
-      }
+      const tokenAndUser = await this.authService.login(loginUserInfo)
+
+      return Http.okHttpResponse({
+        data: {...tokenAndUser},
+        message: serverMessages['auth'][tokenAndUser?.authToken ? 'loginSuccess' : 'unregisteredUser'][locale ?? LocaleEnum['pt-BR']],
+        statusCode: tokenAndUser?.authToken ? 200 : 601,
+        request: this.httpRequest,
+        response: this.httpResponse,
+      })
 
 
     } catch (err) {
@@ -147,24 +146,22 @@ export class AuthController {
   ): Promise<IHttpResponse> {
     try {
 
-      const tokenVerified = JwtToken.verifyLoginUserInfoToken(
+      const tokenVerified = JwtToken.verifyAuthToken(
         this.httpRequest.headers.authorization!, process.env.PROJECT_SECRET!,
         this.httpRequest, this.httpResponse, locale
       )
-
       if (tokenVerified.statusCode !== 200) return tokenVerified
-      else {
 
-        const userWithProfile = await this.authService.signup(data, payload!)
+      const loginUserInfo = JwtToken.getLoginUserInfoFromToken(this.httpRequest.headers.authorization!)
 
-        return Http.okHttpResponse({
-          data: userWithProfile,
-          locale,
-          request: this.httpRequest,
-          response: this.httpResponse,
-        })
+      const userWithProfile = await this.authService.signup(data, loginUserInfo)
 
-      }
+      return Http.okHttpResponse({
+        data: userWithProfile,
+        locale,
+        request: this.httpRequest,
+        response: this.httpResponse,
+      })
 
     } catch (err) {
 
@@ -198,9 +195,15 @@ export class AuthController {
   ): Promise<IHttpResponse> {
     try {
 
-      const payload = this.httpClass.verifyToken(this.httpRequest.headers.authorization!, process.env.PROJECT_SECRET!)
+      const tokenVerified = JwtToken.verifyAuthToken(
+        this.httpRequest.headers.authorization!, process.env.PROJECT_SECRET!,
+        this.httpRequest, this.httpResponse, locale
+      )
+      if (tokenVerified.statusCode !== 200) return tokenVerified
 
-      const authToken = await this.authService.refreshToken(payload?.id);
+      const userId = JwtToken.getUserIdFromToken(this.httpRequest.headers.authorization!)
+
+      const authToken = await this.authService.refreshToken(userId);
 
       return Http.okHttpResponse({
         data: authToken,

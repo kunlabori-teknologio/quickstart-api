@@ -10,6 +10,7 @@ import {Http} from '../implementations'
 import {IHttpResponse} from '../interfaces/http.interface'
 import {PermissionAction} from '../models/permission-action.model'
 import {PermissionActionRepository} from '../repositories'
+import {serverMessages} from '../utils/server-messages'
 
 export class PermissionActionController {
 
@@ -110,7 +111,8 @@ export class PermissionActionController {
   ): Promise<IHttpResponse> {
     try {
 
-      const data = await this.permissionActionRepository.findById(id)
+      const data = await this.permissionActionRepository.findOne({where: {and: [{_id: id}, {_deletedAt: {eq: null}}]}})
+      if (!data) throw new Error(serverMessages['httpResponse']['notFoundError'][locale ?? LocaleEnum['pt-BR']])
 
       return Http.okHttpResponse({
         data,

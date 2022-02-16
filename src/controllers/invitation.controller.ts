@@ -1,16 +1,15 @@
 import {authenticate} from '@loopback/authentication'
-import {inject, service} from '@loopback/core'
+import {inject} from '@loopback/core'
 import {
   repository
 } from '@loopback/repository'
 import {del, get, param, patch, post, put, Request, requestBody, response, Response, RestBindings} from '@loopback/rest'
 import {SecurityBindings, securityId, UserProfile} from '@loopback/security'
 import {LocaleEnum} from '../enums/locale.enum'
-import {Http} from '../implementations/index'
+import {Http, SendNodemailerMail} from '../implementations/index'
 import {IHttpResponse} from '../interfaces/http.interface'
 import {Invitation} from '../models'
 import {InvitationRepository} from '../repositories'
-import {InvitationService} from '../services'
 import {serverMessages} from '../utils/server-messages'
 
 export class InvitationController {
@@ -20,8 +19,6 @@ export class InvitationController {
 
     @inject(RestBindings.Http.REQUEST) private httpRequest: Request,
     @inject(RestBindings.Http.RESPONSE) private httpResponse: Response,
-
-    @service(InvitationService) private invitationService: InvitationService,
 
     @inject(SecurityBindings.USER, {optional: true}) private currentUser?: UserProfile,
   ) { }
@@ -114,7 +111,8 @@ export class InvitationController {
   ): Promise<IHttpResponse> {
     try {
 
-      const data = await this.invitationRepository.findById(id, {include: ['permissionGroup']})
+      const data = await this.invitationRepository.findOne({where: {and: [{_id: id}, {_deletedAt: {eq: null}}]}})
+      if (!data) throw new Error(serverMessages['httpResponse']['notFoundError'][locale ?? LocaleEnum['pt-BR']])
 
       return Http.okHttpResponse({
         data,
@@ -240,12 +238,9 @@ export class InvitationController {
     try {
 
       const invitation = await this.invitationRepository.findById(id)
-      const mailBody = `
-        <p>
-          <a href='${process.env.SERVER_ROOT_URI}/auth/google-signin?invitationId=${id}'>Login com convite</a>
-        </p>
-      `
-      this.invitationService.sendInvitation(invitation.email, mailBody)
+
+      const emailSent = SendNodemailerMail.sendInvitationMail(id, invitation.email)
+      if (!emailSent) throw new Error(emailSent!)
 
       return Http.okHttpResponse({
         message: serverMessages['invitation']['invitationSent'][locale ?? LocaleEnum['pt-BR']],

@@ -1,13 +1,14 @@
 import {Request, Response} from '@loopback/rest';
-import {decode, verify} from 'jsonwebtoken';
-import {Http} from '..';
-import {LocaleEnum} from '../../enums/locale.enum';
-import {IAuthToken, ILoginResponse} from '../../interfaces/auth.interface';
-import {IHttpResponse} from '../../interfaces/http.interface';
-import {serverMessages} from '../../utils/server-messages';
+import {decode, JwtPayload, verify} from 'jsonwebtoken';
+import {Http} from '.';
+import {LocaleEnum} from '../enums/locale.enum';
+import {IAuthToken, ILoginUserInfo} from '../interfaces/auth.interface';
+import {IHttpResponse} from '../interfaces/http.interface';
+import {serverMessages} from '../utils/server-messages';
 
-export class AuthToken implements IAuthToken {
-  verifyLoginUserInfoToken(
+export class JwtTokenImplementation implements IAuthToken {
+
+  verifyAuthToken(
     token: string, secret: string, request: Request, response: Response, locale?: LocaleEnum
   ): IHttpResponse {
     try {
@@ -46,15 +47,19 @@ export class AuthToken implements IAuthToken {
     }
   }
 
-  getLoginUserInfoFromToken(token: string): ILoginResponse {
+  getLoginUserInfoFromToken(token: string): ILoginUserInfo {
     const authToken = token.split(' ')[1]
 
-    const payload = decode(authToken) as ILoginResponse
+    const payload = decode(authToken) as ILoginUserInfo
 
     return payload
   }
 
-  getUserIdFromToken(token: string, secret: string): string {
-    throw new Error('Method not implemented.');
+  getUserIdFromToken(token: string): string {
+    const authToken = token.split(' ')[1]
+
+    const payload = decode(authToken) as JwtPayload
+
+    return payload.id
   }
 }

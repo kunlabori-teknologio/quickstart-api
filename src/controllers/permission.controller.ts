@@ -11,6 +11,7 @@ import {IHttpResponse} from '../interfaces/http.interface'
 import {Permission, PermissionAction} from '../models'
 import {PermissionRepository} from '../repositories'
 import {PermissionHasActionsRepository} from '../repositories/permission-has-actions.repository'
+import {serverMessages} from '../utils/server-messages'
 
 export class PermissionController {
 
@@ -112,7 +113,11 @@ export class PermissionController {
   ): Promise<IHttpResponse> {
     try {
 
-      const data = await this.permissionRepository.findById(id, {include: ['permissionActions', 'module']})
+      const data = await this.permissionRepository.findOne({
+        where: {and: [{_id: id}, {_deletedAt: {eq: null}}]},
+        include: ['permissionActions', 'module']
+      })
+      if (!data) throw new Error(serverMessages['httpResponse']['notFoundError'][locale ?? LocaleEnum['pt-BR']])
 
       return Http.okHttpResponse({
         data,
