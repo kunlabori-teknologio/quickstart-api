@@ -14,6 +14,7 @@ export class User implements UserProfile {
   [securityId]: string;
 
   id: number;
+  onwerId: string;
 
   constructor(data?: Partial<User>) {
     Object.assign(this, data);
@@ -52,6 +53,8 @@ export class AutentikigoStrategy implements AuthenticationStrategy {
 
       const userId = JwtToken.getUserIdFromToken(request.headers.authorization!)
 
+      let ownerId = null
+
       const permissionGroups = await this.userRepository
         .permissionGroups(userId)
         .find({
@@ -68,11 +71,13 @@ export class AutentikigoStrategy implements AuthenticationStrategy {
       const permissionGroup = permissionGroups[0]
 
       if (action) {
-        if (permissionGroup && permissionGroup.name !== 'Kunlatek - Admin') {
+        if (permissionGroup) {//} && permissionGroup.name !== 'Kunlatek - Admin') {
           let userHasPermission = false;
           permissionGroup.permissions?.forEach(permission => {
-            if (permission.module && permission.permissionActions.length)
+            if (permission.module && permission.permissionActions.length) {
               userHasPermission = true
+              ownerId = permissionGroup._createdBy
+            }
           })
           if (!userHasPermission) {
             Object.assign(error, {statusCode: 401, message: serverMessages['httpResponse']['unauthorizedError'][LocaleEnum['pt-BR']]})
@@ -84,7 +89,7 @@ export class AutentikigoStrategy implements AuthenticationStrategy {
         }
       }
 
-      const userProfile = this.convertIdToUserProfile(userId)
+      const userProfile = this.convertIdToUserProfile(userId, ownerId)
       return userProfile
 
     } catch (err) {
@@ -92,9 +97,10 @@ export class AutentikigoStrategy implements AuthenticationStrategy {
     }
   }
 
-  convertIdToUserProfile(id: string): UserProfile {
+  convertIdToUserProfile(id: string, ownerId: string | null): UserProfile {
     return {
-      id: id,
+      id,
+      ownerId,
       [securityId]: id.toString(),
     };
   }

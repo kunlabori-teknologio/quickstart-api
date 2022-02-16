@@ -38,8 +38,9 @@ export class ModuleController {
     try {
 
       const createdBy = this.currentUser?.[securityId] as string
+      const ownerId = this.currentUser?.ownerId as string
 
-      const module = await this.moduleRepository.create({...data, _createdBy: createdBy})
+      const module = await this.moduleRepository.create({...data, _createdBy: createdBy, _ownerId: ownerId})
 
       return Http.createHttpResponse({
         data: module,

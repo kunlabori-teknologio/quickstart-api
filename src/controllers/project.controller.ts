@@ -53,8 +53,9 @@ export class ProjectController {
     try {
 
       const createdBy = this.currentUser?.[securityId] as string
+      const ownerId = this.currentUser?.ownerId as string
 
-      const project = await this.projectRepository.create({...data, _createdBy: createdBy})
+      const project = await this.projectRepository.create({...data, _createdBy: createdBy, _ownerId: ownerId})
 
       return Http.createHttpResponse({
         data: project,

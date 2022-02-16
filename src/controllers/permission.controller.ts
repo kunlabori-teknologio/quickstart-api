@@ -40,8 +40,9 @@ export class PermissionController {
     try {
 
       const createdBy = this.currentUser?.[securityId] as string
+      const ownerId = this.currentUser?.ownerId as string
 
-      const permission = await this.permissionRepository.create({...data, _createdBy: createdBy})
+      const permission = await this.permissionRepository.create({...data, _createdBy: createdBy, _ownerId: ownerId})
 
       return Http.createHttpResponse({
         data: permission,
