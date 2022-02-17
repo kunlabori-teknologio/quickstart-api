@@ -33,8 +33,6 @@ export class AutentikigoStrategy implements AuthenticationStrategy {
   ) { }
 
   async authenticate(request: Request): Promise<UserProfile | undefined> {
-    let error = new Error('Unauthorized')
-
     try {
       // Só consegui acessar as options do metadata especificando ele como any
       const metadata = await this.getMetaData() as any
@@ -46,10 +44,7 @@ export class AutentikigoStrategy implements AuthenticationStrategy {
         request.headers.authorization!, process.env.PROJECT_SECRET!,
         request, this.response, LocaleEnum['pt-BR']
       )
-      if (tokenVerified.statusCode !== 200) {
-        Object.assign(error, {statusCode: tokenVerified.statusCode, message: tokenVerified.logMessage})
-        throw error
-      }
+      if (!tokenVerified) return
 
       const userId = JwtToken.getUserIdFromToken(request.headers.authorization!)
 
@@ -79,21 +74,23 @@ export class AutentikigoStrategy implements AuthenticationStrategy {
               ownerId = permissionGroup._createdBy
             }
           })
-          if (!userHasPermission) {
-            Object.assign(error, {statusCode: 401, message: serverMessages['httpResponse']['unauthorizedError'][LocaleEnum['pt-BR']]})
-            throw error
-          }
-        } else {
-          Object.assign(error, {statusCode: 401, message: serverMessages['httpResponse']['unauthorizedError'][LocaleEnum['pt-BR']]})
-          throw error
-        }
+          if (!userHasPermission) throw serverMessages['httpResponse']['unauthorizedError'][LocaleEnum['pt-BR']]
+        } else throw serverMessages['httpResponse']['unauthorizedError'][LocaleEnum['pt-BR']]
       }
 
       const userProfile = this.convertIdToUserProfile(userId, ownerId)
       return userProfile
 
     } catch (err) {
-      throw err
+
+      this.response.status(401)
+      this.response.send({
+        statusCode: 401,
+        message: err.message,
+        logMessage: err.message
+      })
+
+      return
     }
   }
 

@@ -108,14 +108,14 @@ export class AuthController {
   })
   async login(
     @param.query.string('locale') locale?: LocaleEnum,
-  ): Promise<IHttpResponse> {
+  ): Promise<IHttpResponse | undefined> {
     try {
 
       const tokenVerified = JwtToken.verifyAuthToken(
         this.httpRequest.headers.authorization!, process.env.PROJECT_SECRET!,
         this.httpRequest, this.httpResponse, locale
       )
-      if (tokenVerified.statusCode !== 200) return tokenVerified
+      if (!tokenVerified) return
 
       const loginUserInfo = JwtToken.getLoginUserInfoFromToken(this.httpRequest.headers.authorization!)
 
@@ -152,14 +152,14 @@ export class AuthController {
       content: HttpDocumentation.createDocRequestSchema(Signup)
     }) data: Signup,
     @param.query.string('locale') locale?: LocaleEnum,
-  ): Promise<IHttpResponse> {
+  ): Promise<IHttpResponse | undefined> {
     try {
 
       const tokenVerified = JwtToken.verifyAuthToken(
         this.httpRequest.headers.authorization!, process.env.PROJECT_SECRET!,
         this.httpRequest, this.httpResponse, locale
       )
-      if (tokenVerified.statusCode !== 200) return tokenVerified
+      if (!tokenVerified) return
 
       const loginUserInfo = JwtToken.getLoginUserInfoFromToken(this.httpRequest.headers.authorization!)
 
@@ -201,14 +201,14 @@ export class AuthController {
   })
   async refreshToken(
     @param.query.string('locale') locale?: LocaleEnum,
-  ): Promise<IHttpResponse> {
+  ): Promise<IHttpResponse | undefined> {
     try {
 
       const tokenVerified = JwtToken.verifyAuthToken(
         this.httpRequest.headers.authorization!, process.env.PROJECT_SECRET!,
         this.httpRequest, this.httpResponse, locale
       )
-      if (tokenVerified.statusCode !== 200) return tokenVerified
+      if (!tokenVerified) return
 
       const userId = JwtToken.getUserIdFromToken(this.httpRequest.headers.authorization!)
 

@@ -1,16 +1,15 @@
 import {Request, Response} from '@loopback/rest';
 import {decode, JwtPayload, verify} from 'jsonwebtoken';
-import {HttpResponseToClient} from '.';
 import {LocaleEnum} from '../enums/locale.enum';
 import {IAuthToken, ILoginUserInfo} from '../interfaces/auth.interface';
-import {IHttpResponse} from '../interfaces/http.interface';
 import {serverMessages} from '../utils/server-messages';
+import {HttpResponseToClient} from './index';
 
 export class JwtTokenImplementation implements IAuthToken {
 
   verifyAuthToken(
     token: string, secret: string, request: Request, response: Response, locale?: LocaleEnum
-  ): IHttpResponse {
+  ): boolean {
     try {
 
       if (!token) throw new Error(serverMessages['auth']['noAuthToken'][locale ?? LocaleEnum['pt-BR']])
@@ -19,7 +18,7 @@ export class JwtTokenImplementation implements IAuthToken {
 
       verify(authToken, secret)
 
-      return HttpResponseToClient.okHttpResponse({locale, request, response})
+      return true
 
     } catch (err) {
 
@@ -41,9 +40,13 @@ export class JwtTokenImplementation implements IAuthToken {
           break
 
       }
-      return HttpResponseToClient.unauthorizedErrorHttpResponse({
+
+      const errorResponse = HttpResponseToClient.unauthorizedErrorHttpResponse({
         logMessage: err.message, message, statusCode, request, response, locale
       })
+      response.send(errorResponse)
+
+      return false
     }
   }
 

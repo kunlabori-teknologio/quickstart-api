@@ -4,7 +4,6 @@ import {PersonDTO} from '../dto/person.dto';
 import {AdditionalInfoModel} from '../entities/signup.entity';
 import {LocaleEnum} from '../enums/locale.enum';
 import {UserTypesEnum} from '../utils/general-functions';
-import {IHttpResponse} from './http.interface';
 import {IOAuthUser} from './user.interface';
 
 export interface ILoginUserInfo {
@@ -26,7 +25,7 @@ export interface IRefreshTokenResponse {
 }
 
 export interface IAuthToken {
-  verifyAuthToken(token: string, secret: string, request: Request, response: Response, locale?: LocaleEnum): IHttpResponse,
+  verifyAuthToken(token: string, secret: string, request: Request, response: Response, locale?: LocaleEnum): boolean,
   getLoginUserInfoFromToken(token: string): ILoginUserInfo,
   getUserIdFromToken(token: string): string,
 }
