@@ -10,16 +10,21 @@ import {
   visibility
 } from '@loopback/rest';
 import {URLSearchParams} from 'url';
-import {HttpClass} from '../classes/http.class';
-import {ILoginUserInfo} from '../interfaces/auth.interface';
-import {Signup} from '../models/signup.model';
+import {Signup} from '../entities/signup.entity';
+import {LocaleEnum} from '../enums/locale.enum';
+import {GoogleOAuthImplementation} from '../implementations/google-oauth.implementation';
+import {HttpDocumentation, HttpResponseToClient, JwtToken} from '../implementations/index';
+import {ProfileFromAPIImplementation} from '../implementations/profile-from-api.implementation';
+import {IGetProfile, IOAuthLogin} from '../interfaces/auth.interface';
+import {IHttpResponse} from '../interfaces/http.interface';
 import {User} from '../models/user.model';
 import {AuthService} from '../services';
-import {localeMessage, serverMessages} from './../utils/server-messages';
+import {serverMessages} from './../utils/server-messages';
 
 export class AuthController {
 
-  private httpClass
+  private googleOAuth: IOAuthLogin
+  private getProfile: IGetProfile
 
   constructor(
     @inject(RestBindings.Http.REQUEST) private httpRequest: Request,
@@ -27,23 +32,34 @@ export class AuthController {
 
     @service(AuthService) private authService: AuthService,
   ) {
-    this.httpClass = new HttpClass({response: this.httpResponse, request: this.httpRequest})
+    this.googleOAuth = new GoogleOAuthImplementation()
+    this.getProfile = new ProfileFromAPIImplementation()
   }
 
   @get('auth/google-signin')
   @response(200, {description: 'Redirect to Google login page'})
   async redirectToGoogleLoginPage(
     @param.query.string('invitationId') invitationId?: string,
-  ): Promise<void> {
+    @param.query.string('locale') locale?: LocaleEnum,
+  ): Promise<void | IHttpResponse> {
     try {
+
       const invitationParam = invitationId ? `invitationId=${invitationId}` : ''
-      const url = await this.authService.getGoogleLoginPageURL(invitationParam)
+
+      const url = await this.authService.getOAuthLoginPageURL(this.googleOAuth, invitationParam)
+
       this.httpResponse.redirect(url)
+
     } catch (err) {
-      this.httpClass.badRequestErrorResponse({
-        message: serverMessages['auth']['getGoogleUrl'][localeMessage],
-        logMessage: err.message
+
+      return HttpResponseToClient.badRequestErrorHttpResponse({
+        message: serverMessages['auth']['getGoogleUrl'][locale ?? LocaleEnum['pt-BR']],
+        logMessage: err.message,
+        locale,
+        request: this.httpRequest,
+        response: this.httpResponse,
       })
+
     }
   }
 
@@ -52,17 +68,26 @@ export class AuthController {
   async handleGoogleCodeAndReturnToken(
     @param.query.string('code') code: string,
     @param.query.string('state') state?: string,
-  ): Promise<void> {
+  ): Promise<void | IHttpResponse> {
     try {
-      const googleUser = await this.authService.getGoogleUser(code)
+
+      const googleUser = await this.authService.getOAuthUser(this.googleOAuth, code)
+
       const invitationId = new URLSearchParams(state).get('invitationId')
-      const token = this.authService.createGoogleLoginToken(googleUser, invitationId)
+
+      const token = this.authService.createOAuthToken(this.googleOAuth, googleUser, invitationId)
+
       this.httpResponse.redirect(`${process.env.CLIENT_URI}?token=${token}`)
+
     } catch (err) {
-      this.httpClass.badRequestErrorResponse({
-        message: serverMessages['auth']['getGoogleUser'][localeMessage],
-        logMessage: err.message
+
+      return HttpResponseToClient.badRequestErrorHttpResponse({
+        message: serverMessages['auth']['getGoogleUser'][LocaleEnum['en-US']],
+        logMessage: err.message,
+        request: this.httpRequest,
+        response: this.httpResponse,
       })
+
     }
   }
 
@@ -81,41 +106,82 @@ export class AuthController {
       }
     }
   })
-  async login(): Promise<void> {
+  async login(
+    @param.query.string('locale') locale?: LocaleEnum,
+  ): Promise<IHttpResponse | undefined> {
     try {
-      const payload = this.httpClass.verifyToken(this.httpRequest.headers.authorization!, process.env.PROJECT_SECRET!)
-      const tokenAndUser = await this.authService.login(payload as ILoginUserInfo)
-      this.httpClass.okResponse({
+
+      const tokenVerified = JwtToken.verifyAuthToken(
+        this.httpRequest.headers.authorization!, process.env.PROJECT_SECRET!,
+        this.httpRequest, this.httpResponse, locale
+      )
+      if (!tokenVerified) return
+
+      const loginUserInfo = JwtToken.getLoginUserInfoFromToken(this.httpRequest.headers.authorization!)
+
+      const tokenAndUser = await this.authService.login(loginUserInfo)
+
+      return HttpResponseToClient.okHttpResponse({
         data: {...tokenAndUser},
-        message: serverMessages['auth'][tokenAndUser?.authToken ? 'loginSuccess' : 'unregisteredUser'][localeMessage],
-        statusCode: tokenAndUser?.authToken ? 200 : 601
+        message: serverMessages['auth'][tokenAndUser?.authToken ? 'loginSuccess' : 'unregisteredUser'][locale ?? LocaleEnum['pt-BR']],
+        statusCode: tokenAndUser?.authToken ? 200 : 601,
+        request: this.httpRequest,
+        response: this.httpResponse,
       })
+
+
     } catch (err) {
-      this.httpClass.badRequestErrorResponse({logMessage: err.message})
+
+      return HttpResponseToClient.badRequestErrorHttpResponse({
+        logMessage: err.message,
+        locale,
+        request: this.httpRequest,
+        response: this.httpResponse,
+      })
+
     }
   }
 
   @post('auth/signup')
   @response(200, {
     description: 'User registered',
-    properties: new HttpClass().findOneSchema(User, true)
+    properties: HttpDocumentation.createDocResponseSchemaForFindOneResult(User)
   })
   async signup(
-    @requestBody({content: new HttpClass().requestSchema(Signup)}) data: Signup,
-  ): Promise<void> {
+    @requestBody({
+      content: HttpDocumentation.createDocRequestSchema(Signup)
+    }) data: Signup,
+    @param.query.string('locale') locale?: LocaleEnum,
+  ): Promise<IHttpResponse | undefined> {
     try {
-      const payload = this.httpClass.verifyToken(this.httpRequest.headers.authorization!, process.env.PROJECT_SECRET!)
-      const userWithProfile = await this.authService.signup(data, payload!)
 
-      this.httpClass.okResponse({
-        message: serverMessages['auth']['signupSuccess'][localeMessage],
-        data: userWithProfile
+      const tokenVerified = JwtToken.verifyAuthToken(
+        this.httpRequest.headers.authorization!, process.env.PROJECT_SECRET!,
+        this.httpRequest, this.httpResponse, locale
+      )
+      if (!tokenVerified) return
+
+      const loginUserInfo = JwtToken.getLoginUserInfoFromToken(this.httpRequest.headers.authorization!)
+
+      const userWithProfile = await this.authService.signup(data, loginUserInfo, this.getProfile)
+
+      return HttpResponseToClient.okHttpResponse({
+        data: userWithProfile,
+        locale,
+        request: this.httpRequest,
+        response: this.httpResponse,
       })
+
     } catch (err) {
-      this.httpClass.badRequestErrorResponse({
+
+      return HttpResponseToClient.badRequestErrorHttpResponse({
         message: err.message,
         logMessage: err.message,
+        locale,
+        request: this.httpRequest,
+        response: this.httpResponse,
       })
+
     }
   }
 
@@ -133,19 +199,39 @@ export class AuthController {
       }
     }
   })
-  async refreshToken(): Promise<void> {
+  async refreshToken(
+    @param.query.string('locale') locale?: LocaleEnum,
+  ): Promise<IHttpResponse | undefined> {
     try {
-      const payload = this.httpClass.verifyToken(this.httpRequest.headers.authorization!, process.env.PROJECT_SECRET!)
-      const authToken = await this.authService.refreshToken(payload?.id);
-      this.httpClass.okResponse({
+
+      const tokenVerified = JwtToken.verifyAuthToken(
+        this.httpRequest.headers.authorization!, process.env.PROJECT_SECRET!,
+        this.httpRequest, this.httpResponse, locale
+      )
+      if (!tokenVerified) return
+
+      const userId = JwtToken.getUserIdFromToken(this.httpRequest.headers.authorization!)
+
+      const authToken = await this.authService.refreshToken(userId);
+
+      return HttpResponseToClient.okHttpResponse({
         data: authToken,
-        message: serverMessages['auth']['refreshTokenSuccess'][localeMessage]
+        message: serverMessages['auth']['refreshTokenSuccess'][locale ?? LocaleEnum['pt-BR']],
+        locale,
+        request: this.httpRequest,
+        response: this.httpResponse,
       })
+
     } catch (err) {
-      this.httpClass.badRequestErrorResponse({
-        message: serverMessages['auth']['refreshTokenError'][localeMessage],
+
+      return HttpResponseToClient.badRequestErrorHttpResponse({
+        message: serverMessages['auth']['refreshTokenError'][locale ?? LocaleEnum['pt-BR']],
         logMessage: err.message,
+        locale,
+        request: this.httpRequest,
+        response: this.httpResponse,
       })
+
     }
   }
 }

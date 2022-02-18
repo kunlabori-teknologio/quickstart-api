@@ -5,14 +5,14 @@ import {
 } from '@loopback/repository'
 import {del, get, param, patch, post, put, Request, requestBody, response, Response, RestBindings} from '@loopback/rest'
 import {SecurityBindings, securityId, UserProfile} from '@loopback/security'
-import {HttpClass} from '../classes/http.class'
+import {LocaleEnum} from '../enums/locale.enum'
+import {HttpDocumentation, HttpResponseToClient} from '../implementations/index'
+import {IHttpResponse} from '../interfaces/http.interface'
 import {PermissionGroup} from '../models'
 import {PermissionGroupRepository} from '../repositories'
-import {localeMessage, serverMessages} from '../utils/server-messages'
+import {serverMessages} from '../utils/server-messages'
 
 export class PermissionGroupController {
-
-  private httpClass
 
   constructor(
     @repository(PermissionGroupRepository) public permissionGroupRepository: PermissionGroupRepository,
@@ -21,9 +21,7 @@ export class PermissionGroupController {
     @inject(RestBindings.Http.RESPONSE) private httpResponse: Response,
 
     @inject(SecurityBindings.USER, {optional: true}) private currentUser?: UserProfile,
-  ) {
-    this.httpClass = new HttpClass({response: this.httpResponse, request: this.httpRequest})
-  }
+  ) { }
 
   private getPermissionGroupRelatedPermissions = {
     relation: 'permissions',
@@ -36,20 +34,37 @@ export class PermissionGroupController {
   @post('/permission-groups')
   @response(200, {
     description: 'Permission group model instance',
-    properties: new HttpClass().findOneSchema(PermissionGroup)
+    properties: HttpDocumentation.createDocResponseSchemaForFindOneResult(PermissionGroup)
   })
   async create(
-    @requestBody({content: new HttpClass().requestSchema(PermissionGroup)}) data: PermissionGroup,
-  ): Promise<void> {
+    @requestBody({
+      content: HttpDocumentation.createDocRequestSchema(PermissionGroup)
+    }) data: PermissionGroup,
+    @param.query.string('locale') locale?: LocaleEnum,
+  ): Promise<IHttpResponse> {
     try {
+
       const createdBy = this.currentUser?.[securityId] as string
-      const permission = await this.permissionGroupRepository.create({...data, _createdBy: createdBy})
-      this.httpClass.createResponse({data: permission})
-    } catch (err) {
-      this.httpClass.badRequestErrorResponse({
-        message: serverMessages['crudError']['create'][localeMessage],
-        logMessage: err.message
+      const ownerId = this.currentUser?.ownerId as string
+
+      const permission = await this.permissionGroupRepository.create({...data, _createdBy: createdBy, _ownerId: ownerId})
+
+      return HttpResponseToClient.createHttpResponse({
+        data: permission,
+        locale,
+        request: this.httpRequest,
+        response: this.httpResponse,
       })
+
+    } catch (err) {
+
+      return HttpResponseToClient.badRequestErrorHttpResponse({
+        logMessage: err.message,
+        locale,
+        request: this.httpRequest,
+        response: this.httpResponse,
+      })
+
     }
   }
 
@@ -57,26 +72,38 @@ export class PermissionGroupController {
   @get('/permission-groups')
   @response(200, {
     description: 'Array of Permission group model instances',
-    properties: new HttpClass().findAllResponseSchema(PermissionGroup)
+    properties: HttpDocumentation.createDocResponseSchemaForFindManyResults(PermissionGroup)
   })
   async find(
-    @param.query.number('limit') limit: number,
-    @param.query.number('page') page: number,
-    @param.query.string('order_by') orderBy: string,
-  ): Promise<void> {
+    @param.query.number('limit') limit?: number,
+    @param.query.number('page') page?: number,
+    @param.query.string('order_by') orderBy?: string,
+    @param.query.string('locale') locale?: LocaleEnum,
+  ): Promise<IHttpResponse> {
     try {
-      const filters = this.httpClass.createFilterRequestParams(this.httpRequest.url)
+
+      const filters = HttpDocumentation.createFilterRequestParams(this.httpRequest.url)
+
       const result = await this.permissionGroupRepository.find({...filters, include: [this.getPermissionGroupRelatedPermissions]})
+
       const total = await this.permissionGroupRepository.count(filters['where'])
-      this.httpClass.okResponse({
+
+      return HttpResponseToClient.okHttpResponse({
         data: {total: total?.count, result},
-        message: serverMessages['crudSuccess']['read'][localeMessage],
+        locale,
+        request: this.httpRequest,
+        response: this.httpResponse,
       })
+
     } catch (err) {
-      this.httpClass.badRequestErrorResponse({
-        message: serverMessages['crudError']['read'][localeMessage],
-        logMessage: err.message
+
+      return HttpResponseToClient.badRequestErrorHttpResponse({
+        logMessage: err.message,
+        locale,
+        request: this.httpRequest,
+        response: this.httpResponse,
       })
+
     }
   }
 
@@ -84,19 +111,36 @@ export class PermissionGroupController {
   @get('/permission-groups/{permissionGroupId}')
   @response(200, {
     description: 'Permission group model instance',
-    properties: new HttpClass().findOneSchema(PermissionGroup)
+    properties: HttpDocumentation.createDocResponseSchemaForFindOneResult(PermissionGroup)
   })
   async findById(
     @param.path.string('permissionGroupId') id: string,
-  ): Promise<void> {
+    @param.query.string('locale') locale?: LocaleEnum,
+  ): Promise<IHttpResponse> {
     try {
-      const data = await this.permissionGroupRepository.findById(id, {include: [this.getPermissionGroupRelatedPermissions]})
-      this.httpClass.okResponse({data, message: serverMessages['crudSuccess']['read'][localeMessage]})
-    } catch (err) {
-      this.httpClass.badRequestErrorResponse({
-        message: serverMessages['crudError']['read'][localeMessage],
-        logMessage: err.message
+
+      const data = await this.permissionGroupRepository.findOne({
+        where: {and: [{_id: id}, {_deletedAt: {eq: null}}]},
+        include: [this.getPermissionGroupRelatedPermissions]
       })
+      if (!data) throw new Error(serverMessages['httpResponse']['notFoundError'][locale ?? LocaleEnum['pt-BR']])
+
+      return HttpResponseToClient.okHttpResponse({
+        data,
+        locale,
+        request: this.httpRequest,
+        response: this.httpResponse,
+      })
+
+    } catch (err) {
+
+      return HttpResponseToClient.badRequestErrorHttpResponse({
+        logMessage: err.message,
+        locale,
+        request: this.httpRequest,
+        response: this.httpResponse,
+      })
+
     }
   }
 
@@ -105,16 +149,30 @@ export class PermissionGroupController {
   @response(200, {description: 'Permission group PUT success'})
   async updateById(
     @param.path.string('permissionGroupId') id: string,
-    @requestBody({content: new HttpClass().requestSchema(PermissionGroup)}) data: PermissionGroup,
-  ): Promise<void> {
+    @requestBody({
+      content: HttpDocumentation.createDocRequestSchema(PermissionGroup)
+    }) data: PermissionGroup,
+    @param.query.string('locale') locale?: LocaleEnum,
+  ): Promise<IHttpResponse> {
     try {
+
       await this.permissionGroupRepository.updateById(id, data)
-      this.httpClass.noContentResponse()
-    } catch (err) {
-      this.httpClass.badRequestErrorResponse({
-        message: serverMessages['crudError']['update'][localeMessage],
-        logMessage: err.message,
+
+      return HttpResponseToClient.noContentHttpResponse({
+        locale,
+        request: this.httpRequest,
+        response: this.httpResponse,
       })
+
+    } catch (err) {
+
+      return HttpResponseToClient.badRequestErrorHttpResponse({
+        logMessage: err.message,
+        locale,
+        request: this.httpRequest,
+        response: this.httpResponse,
+      })
+
     }
   }
 
@@ -123,16 +181,30 @@ export class PermissionGroupController {
   @response(200, {description: 'Permission group PATCH success'})
   async partialUpdateById(
     @param.path.string('permissionGroupId') id: string,
-    @requestBody({content: new HttpClass().requestSchema(PermissionGroup, true)}) data: PermissionGroup,
-  ): Promise<void> {
+    @requestBody({
+      content: HttpDocumentation.createDocRequestSchema(PermissionGroup)
+    }) data: PermissionGroup,
+    @param.query.string('locale') locale?: LocaleEnum,
+  ): Promise<IHttpResponse> {
     try {
+
       await this.permissionGroupRepository.updateById(id, data)
-      this.httpClass.noContentResponse()
-    } catch (err) {
-      this.httpClass.badRequestErrorResponse({
-        message: serverMessages['crudError']['update'][localeMessage],
-        logMessage: err.message,
+
+      return HttpResponseToClient.noContentHttpResponse({
+        locale,
+        request: this.httpRequest,
+        response: this.httpResponse,
       })
+
+    } catch (err) {
+
+      return HttpResponseToClient.badRequestErrorHttpResponse({
+        logMessage: err.message,
+        locale,
+        request: this.httpRequest,
+        response: this.httpResponse,
+      })
+
     }
   }
 
@@ -140,17 +212,29 @@ export class PermissionGroupController {
   @del('/permission-groups/{permissionGroupId}')
   @response(204, {description: 'Permission group DELETE success'})
   async deleteById(
-    @param.path.string('permissionGroupId') id: string
-  ): Promise<void> {
+    @param.path.string('permissionGroupId') id: string,
+    @param.query.string('locale') locale?: LocaleEnum,
+  ): Promise<IHttpResponse> {
     try {
+
       const permissionGroupToDelete = await this.permissionGroupRepository.findById(id)
+
       await this.permissionGroupRepository.updateById(id, {...permissionGroupToDelete, _deletedAt: new Date()})
-      this.httpClass.noContentResponse()
-    } catch (err) {
-      this.httpClass.badRequestErrorResponse({
-        message: serverMessages['crudError']['delete'][localeMessage],
-        logMessage: err.message,
+
+      return HttpResponseToClient.noContentHttpResponse({
+        locale,
+        request: this.httpRequest,
+        response: this.httpResponse,
       })
+
+    } catch (err) {
+
+      return HttpResponseToClient.badRequestErrorHttpResponse({
+        locale,
+        request: this.httpRequest,
+        response: this.httpResponse,
+      })
+
     }
   }
 }

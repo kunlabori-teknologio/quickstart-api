@@ -1,26 +1,21 @@
 import {repository} from '@loopback/repository'
-import {google} from 'googleapis'
-import jwt, {JwtPayload} from 'jsonwebtoken'
-import {CompanyDTO} from '../dto/company.dto'
-import {PersonDTO} from '../dto/person.dto'
-import {ILoginResponse, ILoginUserInfo, IRefreshTokenResponse} from '../interfaces/auth.interface'
-import {ICompanyFromAPI} from '../interfaces/company.interface'
-import {IPersonFromAPI} from '../interfaces/person.interface'
-import {IGoogleUser} from '../interfaces/user.interface'
+import jwt from 'jsonwebtoken'
+import {AdditionalInfoModel, Signup} from '../entities/signup.entity'
+import {LocaleEnum} from '../enums/locale.enum'
+import {IGetProfile, ILoginResponse, ILoginUserInfo, IOAuthLogin, IRefreshTokenResponse} from '../interfaces/auth.interface'
+import {IOAuthUser} from '../interfaces/user.interface'
 import {Company} from '../models/company.model'
 import {PermissionGroup} from '../models/permission-group.model'
 import {Person} from '../models/person.model'
-import {AdditionalInfoModel, Signup} from '../models/signup.model'
 import {User} from '../models/user.model'
 import {CompanyRepository, InvitationRepository, PersonRepository, UserHasPermissionGroupsRepository, UserRepository} from '../repositories'
 import {theDatesMatch} from '../utils/date-manipulation-functions'
 import {getUserType, UserTypesEnum} from '../utils/general-functions'
-import {localeMessage, serverMessages} from '../utils/server-messages'
+import {serverMessages} from '../utils/server-messages'
 import {hideEmailString} from '../utils/string-manipulation-functions'
 
-const fetch = require('node-fetch')
-
 export class AuthService {
+
   constructor(
     @repository(UserRepository) private userRepository: UserRepository,
     @repository(PersonRepository) private personRepository: PersonRepository,
@@ -29,52 +24,20 @@ export class AuthService {
     @repository(UserHasPermissionGroupsRepository) private userHasPermissionGroupRepository: UserHasPermissionGroupsRepository,
   ) { }
 
-  // Google OAuth configurations
-  googleOAuth2Client = new google.auth.OAuth2(
-    process.env.GOOGLE_CLIENT_ID,
-    process.env.GOOGLE_CLIENT_SECRET,
-    `${process.env.GOOGLE_REDIRECT_URI}/auth/google`
-  );
-
-  public async getGoogleLoginPageURL(params?: string): Promise<string> {
-    try {
-      const url = this.googleOAuth2Client.generateAuthUrl({
-        'access_type': "offline",
-        'scope':
-          [
-            "https://www.googleapis.com/auth/userinfo.profile",
-            "https://www.googleapis.com/auth/userinfo.email",
-          ],
-        'state': params ?? ''
-      });
-      return url;
-    } catch (err) {
-      throw new Error(err.message)
-    }
+  public async getOAuthLoginPageURL(oAuth: IOAuthLogin, params?: string): Promise<string> {
+    return oAuth.getOAuthLoginPageUrl(params)
   }
 
-  public async getGoogleUser(code: string): Promise<IGoogleUser> {
-    try {
-      const {tokens} = await this.googleOAuth2Client.getToken(code)
-      this.googleOAuth2Client.setCredentials(tokens)
-      const oauth2 = google.oauth2({version: 'v2', auth: this.googleOAuth2Client})
-      const googleUser = await oauth2.userinfo.v2.me.get()
-      return {email: googleUser.data.email, id: googleUser.data.id}
-    } catch (err) {
-      throw new Error(err.message)
-    }
+  public async getOAuthUser(oAuth: IOAuthLogin, code: string): Promise<IOAuthUser> {
+    return oAuth.getOAuthUser(code)
   }
 
-  public createGoogleLoginToken(googleUser: IGoogleUser, invitationId?: string | null): string {
-    return jwt.sign({
-      email: googleUser.email, googleId: googleUser.id, invitationId
-    },
-      process.env.PROJECT_SECRET!, {
-      expiresIn: '5m'
-    })
+  public createOAuthToken(oAuth: IOAuthLogin, oAuthUser: IOAuthUser, invitationId?: string | null): string {
+    return oAuth.createOAuthToken(oAuthUser, invitationId)
   }
 
   public async login(userLoginInfo: ILoginUserInfo): Promise<ILoginResponse | null> {
+
     const {email, googleId, invitationId} = userLoginInfo
 
     const permissionGroupId = invitationId ?
@@ -107,9 +70,11 @@ export class AuthService {
       }),
       userData: user
     }
+
   }
 
   private async findUserWithPermissions(email: string, googleId: string, appleId?: string): Promise<User | null> {
+
     const user = await this.userRepository.findOne({
       where: {and: [{email}, {googleId}]}, include: [
         'person', 'company',
@@ -133,6 +98,7 @@ export class AuthService {
   }
 
   private async getOwnerNamesOfPermissionGroups(user: User): Promise<PermissionGroup[] | undefined> {
+
     const permissionGroupsOwnerIds = user?.permissionGroups?.map(permissioGroup => permissioGroup._ownerId)
 
     const whereCondition = permissionGroupsOwnerIds ?
@@ -157,37 +123,45 @@ export class AuthService {
       }
       return permissioGroup
     })
+
   }
 
-  public async getPermissionGroupIdFromInvitation(invitationId: string, email: string): Promise<string> {
+  public async getPermissionGroupIdFromInvitation(invitationId: string, email: string, locale?: LocaleEnum): Promise<string> {
+
     const invitation = await this.invitationRepository.findById(invitationId, {include: ['permissionGroup']})
-    if (invitation.email !== email) throw new Error(serverMessages['auth']['emailInvitationIncorrect'][localeMessage])
+
+    if (invitation.email !== email) throw new Error(serverMessages['auth']['emailInvitationIncorrect'][locale ?? LocaleEnum['pt-BR']])
+
     else return invitation.permissionGroupId
+
   }
 
   public async giveTheUserPermission(permissionGroupId: string, userId: string) {
+
     await this.userHasPermissionGroupRepository.create({userId, permissionGroupId})
+
   }
 
-  public async signup(data: Signup, payload: JwtPayload): Promise<User> {
-    const userType = getUserType(data)
+  public async signup(data: Signup, userInfo: ILoginUserInfo, getProfile: IGetProfile, locale?: LocaleEnum): Promise<User> {
+
+    const userType = getUserType(data, locale)
 
     const profile =
       await this[`${userType}Repository`].findOne({where: {uniqueId: data.uniqueId}}) ??
-      await this.createProfile({userType, ...data});
+      await this.createProfile({userType, ...data}, getProfile, locale);
 
     if (!theDatesMatch(profile.birthday, data.birthday))
-      throw new Error(serverMessages['auth']['birthdayIncorrect'][localeMessage])
+      throw new Error(serverMessages['auth']['birthdayIncorrect'][locale ?? LocaleEnum['pt-BR']])
 
     if (profile.userId) {
       const userWithSameProfile = await this.userRepository.findOne({where: {_id: profile.userId}})
-      if (userWithSameProfile) throw new Error(`${serverMessages['auth']['uniqueIdInUse'][localeMessage]} ${hideEmailString(userWithSameProfile.email as string)}`)
+      if (userWithSameProfile) throw new Error(`${serverMessages['auth']['uniqueIdInUse'][locale ?? LocaleEnum['pt-BR']]} ${hideEmailString(userWithSameProfile.email as string)}`)
     }
 
     const newUser = await this.userRepository.create({
-      googleId: payload?.googleId,
-      appleId: payload?.appleId,
-      email: payload?.email,
+      googleId: userInfo?.googleId,
+      appleId: userInfo?.appleId,
+      email: userInfo?.email,
     })
 
     await this[`${userType}Repository`].updateById(profile._id as string,
@@ -197,8 +171,8 @@ export class AuthService {
       }
     )
 
-    if (payload?.invitationId) {
-      const permissionGroupId = await this.getPermissionGroupIdFromInvitation(payload?.invitationId, payload?.email)
+    if (userInfo?.invitationId) {
+      const permissionGroupId = await this.getPermissionGroupIdFromInvitation(userInfo?.invitationId, userInfo?.email!, locale)
       await this.giveTheUserPermission(permissionGroupId, newUser._id!)
     }
 
@@ -207,27 +181,28 @@ export class AuthService {
 
   public async createProfile(
     {userType, uniqueId, additionalInfo}:
-      {userType: UserTypesEnum, uniqueId: string, additionalInfo?: AdditionalInfoModel}
+      {userType: UserTypesEnum, uniqueId: string, additionalInfo?: AdditionalInfoModel},
+    getProfile: IGetProfile,
+    locale?: LocaleEnum
   ): Promise<Person | Company> {
     try {
-      let dataFromCpfCnpjApi = await fetch(`${process.env.API_CPF_CNPJ}/${userType === 'person' ? 2 : 6}/${uniqueId.replace(/\D/g, "")}`)
-      dataFromCpfCnpjApi = dataFromCpfCnpjApi.json()
-      if (!dataFromCpfCnpjApi.status) throw new Error(serverMessages['auth']['uniqueIdNotFound'][localeMessage])
-      const dataTypedFromCpfCnpjApi: IPersonFromAPI | ICompanyFromAPI = await dataFromCpfCnpjApi;
 
-      const profileDTO: PersonDTO | CompanyDTO =
-        userType === 'person' ?
-          new PersonDTO({dataFromApi: dataTypedFromCpfCnpjApi as IPersonFromAPI, additionalInfo: additionalInfo as AdditionalInfoModel}) :
-          new CompanyDTO({dataFromApi: dataTypedFromCpfCnpjApi as ICompanyFromAPI, additionalInfo: additionalInfo as AdditionalInfoModel});
+      const profileDTO = await getProfile.getFullProfileInfo(uniqueId, userType, additionalInfo)
+      if (!profileDTO) throw new Error(serverMessages['auth']['uniqueIdNotFound'][locale ?? LocaleEnum['pt-BR']])
 
-      const profileCreated = await this[`${userType}Repository`].create({...profileDTO});
-      return profileCreated;
+      const profileCreated = await this[`${userType}Repository`].create({...profileDTO})
+
+      return profileCreated
+
     } catch (err) {
-      throw new Error(serverMessages['auth']['createProfileError'][localeMessage])
+
+      throw new Error(serverMessages['auth']['createProfileError'][locale ?? LocaleEnum['pt-BR']])
+
     }
   }
 
   public async refreshToken(id: string): Promise<IRefreshTokenResponse> {
+
     return {
       authToken: jwt.sign({
         id: id,
@@ -240,9 +215,7 @@ export class AuthService {
         expiresIn: '10m'
       })
     }
+
   }
-}
-function PermissionGroupsRepository(PermissionGroupsRepository: any) {
-  throw new Error('Function not implemented.')
 }
 

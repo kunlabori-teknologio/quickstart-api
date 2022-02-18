@@ -5,14 +5,14 @@ import {
 } from '@loopback/repository';
 import {del, get, param, patch, post, put, Request, requestBody, response, Response, RestBindings} from '@loopback/rest';
 import {SecurityBindings, securityId, UserProfile} from '@loopback/security';
-import {HttpClass} from '../classes/http.class';
+import {LocaleEnum} from '../enums/locale.enum';
+import {HttpDocumentation, HttpResponseToClient} from '../implementations/index';
+import {IHttpResponse} from '../interfaces/http.interface';
 import {Module} from '../models/module.model';
 import {ModuleRepository} from '../repositories/module.repository';
-import {localeMessage, serverMessages} from '../utils/server-messages';
+import {serverMessages} from '../utils/server-messages';
 
 export class ModuleController {
-
-  private httpClass
 
   constructor(
     @repository(ModuleRepository) public moduleRepository: ModuleRepository,
@@ -21,27 +21,41 @@ export class ModuleController {
     @inject(RestBindings.Http.RESPONSE) private httpResponse: Response,
 
     @inject(SecurityBindings.USER, {optional: true}) private currentUser?: UserProfile,
-  ) {
-    this.httpClass = new HttpClass({response: this.httpResponse, request: this.httpRequest})
-  }
+  ) { }
 
   @authenticate({strategy: 'autentikigo', options: {collection: 'Module', action: 'createOne'}})
   @post('/modules')
   @response(200, {
     description: 'Module model instance',
-    properties: new HttpClass().findOneSchema(Module)
+    properties: HttpDocumentation.createDocResponseSchemaForFindOneResult(Module)
   })
   async create(
-    @requestBody({content: new HttpClass().requestSchema(Module)}) data: Module,
-  ): Promise<void> {
+    @requestBody({
+      content: HttpDocumentation.createDocRequestSchema(Module)
+    }) data: Module,
+    @param.query.string('locale') locale?: LocaleEnum,
+  ): Promise<IHttpResponse> {
     try {
+
       const createdBy = this.currentUser?.[securityId] as string
-      const module = await this.moduleRepository.create({...data, _createdBy: createdBy})
-      this.httpClass.createResponse({data: module})
+      const ownerId = this.currentUser?.ownerId as string
+
+      const module = await this.moduleRepository.create({...data, _createdBy: createdBy, _ownerId: ownerId})
+
+      return HttpResponseToClient.createHttpResponse({
+        data: module,
+        locale,
+        request: this.httpRequest,
+        response: this.httpResponse,
+      })
+
     } catch (err) {
-      this.httpClass.badRequestErrorResponse({
-        message: serverMessages['crudError']['create'][localeMessage],
-        logMessage: err.message
+
+      return HttpResponseToClient.badRequestErrorHttpResponse({
+        logMessage: err.message,
+        locale,
+        request: this.httpRequest,
+        response: this.httpResponse,
       })
     }
   }
@@ -50,26 +64,38 @@ export class ModuleController {
   @get('/modules')
   @response(200, {
     description: 'Array of Module model instances',
-    properties: new HttpClass().findAllResponseSchema(Module)
+    properties: HttpDocumentation.createDocResponseSchemaForFindManyResults(Module)
   })
   async find(
-    @param.query.number('limit') limit: number,
-    @param.query.number('page') page: number,
-    @param.query.string('order_by') orderBy: string,
-  ): Promise<void> {
+    @param.query.number('limit') limit?: number,
+    @param.query.number('page') page?: number,
+    @param.query.string('order_by') orderBy?: string,
+    @param.query.string('locale') locale?: LocaleEnum,
+  ): Promise<IHttpResponse> {
     try {
-      const filters = this.httpClass.createFilterRequestParams(this.httpRequest.url)
+
+      const filters = HttpDocumentation.createFilterRequestParams(this.httpRequest.url)
+
       const result = await this.moduleRepository.find(filters)
+
       const total = await this.moduleRepository.count(filters['where'])
-      this.httpClass.okResponse({
+
+      return HttpResponseToClient.okHttpResponse({
         data: {total: total?.count, result},
-        message: serverMessages['crudSuccess']['read'][localeMessage]
+        locale,
+        request: this.httpRequest,
+        response: this.httpResponse,
       })
+
     } catch (err) {
-      this.httpClass.badRequestErrorResponse({
-        message: serverMessages['crudError']['read'][localeMessage],
-        logMessage: err
+
+      return HttpResponseToClient.badRequestErrorHttpResponse({
+        logMessage: err.message,
+        locale,
+        request: this.httpRequest,
+        response: this.httpResponse,
       })
+
     }
   }
 
@@ -77,22 +103,33 @@ export class ModuleController {
   @get('/modules/{moduleId}')
   @response(200, {
     description: 'Module model instance',
-    properties: new HttpClass().findOneSchema(Module)
+    properties: HttpDocumentation.createDocResponseSchemaForFindOneResult(Module)
   })
   async findById(
     @param.path.string('moduleId') id: string,
-  ): Promise<void> {
+    @param.query.string('locale') locale?: LocaleEnum,
+  ): Promise<IHttpResponse> {
     try {
-      const data = await this.moduleRepository.findById(id)
-      this.httpClass.okResponse({
+
+      const data = await this.moduleRepository.findOne({where: {and: [{_id: id}, {_deletedAt: {eq: null}}]}})
+      if (!data) throw new Error(serverMessages['httpResponse']['notFoundError'][locale ?? LocaleEnum['pt-BR']])
+
+      return HttpResponseToClient.okHttpResponse({
         data,
-        message: serverMessages['crudSuccess']['read'][localeMessage]
+        locale,
+        request: this.httpRequest,
+        response: this.httpResponse,
       })
+
     } catch (err) {
-      this.httpClass.badRequestErrorResponse({
-        message: serverMessages['crudError']['read'][localeMessage],
-        logMessage: err.message
+
+      return HttpResponseToClient.badRequestErrorHttpResponse({
+        logMessage: err.message,
+        locale,
+        request: this.httpRequest,
+        response: this.httpResponse,
       })
+
     }
   }
 
@@ -101,16 +138,29 @@ export class ModuleController {
   @response(200, {description: 'Module PUT success'})
   async updateById(
     @param.path.string('moduleId') id: string,
-    @requestBody({content: new HttpClass().requestSchema(Module)}) data: Module,
-  ): Promise<void> {
+    @requestBody({
+      content: HttpDocumentation.createDocRequestSchema(Module)
+    }) data: Module,
+    @param.query.string('locale') locale?: LocaleEnum,
+  ): Promise<IHttpResponse> {
     try {
+
       await this.moduleRepository.updateById(id, data)
-      this.httpClass.noContentResponse()
-    } catch (err) {
-      this.httpClass.badRequestErrorResponse({
-        message: serverMessages['crudError']['update'][localeMessage],
-        logMessage: err.message,
+
+      return HttpResponseToClient.noContentHttpResponse({
+        locale,
+        request: this.httpRequest,
+        response: this.httpResponse,
       })
+
+    } catch (err) {
+
+      return HttpResponseToClient.badRequestErrorHttpResponse({
+        logMessage: err.message,
+        request: this.httpRequest,
+        response: this.httpResponse,
+      })
+
     }
   }
 
@@ -119,16 +169,30 @@ export class ModuleController {
   @response(200, {description: 'Module PATCH success'})
   async partialUpdateById(
     @param.path.string('moduleId') id: string,
-    @requestBody({content: new HttpClass().requestSchema(Module, true)}) data: Module,
-  ): Promise<void> {
+    @requestBody({
+      content: HttpDocumentation.createDocRequestSchema(Module)
+    }) data: Module,
+    @param.query.string('locale') locale?: LocaleEnum,
+  ): Promise<IHttpResponse> {
     try {
+
       await this.moduleRepository.updateById(id, data)
-      this.httpClass.noContentResponse()
-    } catch (err) {
-      this.httpClass.badRequestErrorResponse({
-        message: serverMessages['crudError']['update'][localeMessage],
-        logMessage: err.message,
+
+      return HttpResponseToClient.noContentHttpResponse({
+        locale,
+        request: this.httpRequest,
+        response: this.httpResponse,
       })
+
+    } catch (err) {
+
+      return HttpResponseToClient.badRequestErrorHttpResponse({
+        logMessage: err.message,
+        locale,
+        request: this.httpRequest,
+        response: this.httpResponse,
+      })
+
     }
   }
 
@@ -136,17 +200,30 @@ export class ModuleController {
   @del('/modules/{moduleId}')
   @response(204, {description: 'Module DELETE success'})
   async deleteById(
-    @param.path.string('moduleId') id: string
-  ): Promise<void> {
+    @param.path.string('moduleId') id: string,
+    @param.query.string('locale') locale?: LocaleEnum,
+  ): Promise<IHttpResponse> {
     try {
+
       const moduleToDelete = await this.moduleRepository.findById(id)
+
       await this.moduleRepository.updateById(id, {...moduleToDelete, _deletedAt: new Date()})
-      this.httpClass.noContentResponse()
-    } catch (err) {
-      this.httpClass.badRequestErrorResponse({
-        message: serverMessages['crudError']['delete'][localeMessage],
-        logMessage: err.message,
+
+      return HttpResponseToClient.noContentHttpResponse({
+        locale,
+        request: this.httpRequest,
+        response: this.httpResponse,
       })
+
+    } catch (err) {
+
+      return HttpResponseToClient.badRequestErrorHttpResponse({
+        logMessage: err.message,
+        locale,
+        request: this.httpRequest,
+        response: this.httpResponse,
+      })
+
     }
   }
 }

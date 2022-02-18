@@ -1,7 +1,7 @@
 import {AnyObject} from '@loopback/repository';
+import {AdditionalInfoModel} from '../entities/signup.entity';
 import {IPersonFromAPI} from '../interfaces/person.interface';
 import {Person} from '../models';
-import {AdditionalInfoModel} from '../models/signup.model';
 import {convertBirthdayStringToDate} from '../utils/date-manipulation-functions';
 
 export class PersonDTO implements Person {

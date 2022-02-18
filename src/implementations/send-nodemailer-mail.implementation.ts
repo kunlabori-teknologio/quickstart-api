@@ -1,14 +1,18 @@
-import { /* inject, */ BindingScope, injectable} from '@loopback/core';
 import * as nodemailer from 'nodemailer';
+import {ISendMail} from '../interfaces/send-mail.interface';
 
-@injectable({scope: BindingScope.TRANSIENT})
-export class InvitationService {
-  constructor() { }
+export class SendNodemailerMailImplementation implements ISendMail {
 
-  public sendInvitation(email: string, mailBody: string): void {
+  sendInvitationMail(invitationId: string, emailOfInvited: string): string | null {
+    const mailBody = `
+      <p>
+        <a href='${process.env.SERVER_ROOT_URI}/auth/google-signin?invitationId=${invitationId}'>Login com convite</a>
+      </p>
+    `
+
     const mailOptions = {
       from: '"Kunlatek" <noreply@kunlatek.com.br>',
-      to: email,
+      to: emailOfInvited,
       subject: 'Convite Kunlatek',
       html: mailBody
     }
@@ -24,8 +28,13 @@ export class InvitationService {
       tls: {rejectUnauthorized: false}
     });
 
+    let errorMessage = null
+
     transporter.sendMail(mailOptions, (error) => {
-      if (error) throw new Error(error.message)
+      if (error) errorMessage = error.message
     })
+
+    return errorMessage
   }
+
 }

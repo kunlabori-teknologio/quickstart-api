@@ -5,14 +5,14 @@ import {
 } from '@loopback/repository'
 import {del, get, param, patch, post, put, Request, requestBody, response, Response, RestBindings} from '@loopback/rest'
 import {SecurityBindings, securityId, UserProfile} from '@loopback/security'
-import {HttpClass} from '../classes/http.class'
+import {LocaleEnum} from '../enums/locale.enum'
+import {HttpDocumentation, HttpResponseToClient} from '../implementations'
+import {IHttpResponse} from '../interfaces/http.interface'
 import {PermissionAction} from '../models/permission-action.model'
 import {PermissionActionRepository} from '../repositories'
-import {localeMessage, serverMessages} from '../utils/server-messages'
+import {serverMessages} from '../utils/server-messages'
 
 export class PermissionActionController {
-
-  private httpClass
 
   constructor(
     @repository(PermissionActionRepository) public permissionActionRepository: PermissionActionRepository,
@@ -21,28 +21,43 @@ export class PermissionActionController {
     @inject(RestBindings.Http.RESPONSE) private httpResponse: Response,
 
     @inject(SecurityBindings.USER, {optional: true}) private currentUser?: UserProfile,
-  ) {
-    this.httpClass = new HttpClass({response: this.httpResponse, request: this.httpRequest})
-  }
+  ) { }
 
   @authenticate({strategy: 'autentikigo', options: {collection: 'PermissionAction', action: 'createOne'}})
   @post('/permission-actions')
   @response(200, {
     description: 'PermissionAction model instance',
-    properties: new HttpClass().findOneSchema(PermissionAction)
+    properties: HttpDocumentation.createDocResponseSchemaForFindOneResult(PermissionAction)
   })
   async create(
-    @requestBody({content: new HttpClass().requestSchema(PermissionAction)}) data: PermissionAction,
-  ): Promise<void> {
+    @requestBody({
+      content: HttpDocumentation.createDocRequestSchema(PermissionAction)
+    }) data: PermissionAction,
+    @param.query.string('locale') locale?: LocaleEnum,
+  ): Promise<IHttpResponse> {
     try {
+
       const createdBy = this.currentUser?.[securityId] as string
-      const permissionAction = await this.permissionActionRepository.create({...data, _createdBy: createdBy})
-      this.httpClass.createResponse({data: permissionAction})
-    } catch (err) {
-      this.httpClass.badRequestErrorResponse({
-        message: serverMessages['crudError']['create'][localeMessage],
-        logMessage: err.message
+      const ownerId = this.currentUser?.ownerId as string
+
+      const permissionAction = await this.permissionActionRepository.create({...data, _createdBy: createdBy, _ownerId: ownerId})
+
+      return HttpResponseToClient.createHttpResponse({
+        data: permissionAction,
+        locale,
+        request: this.httpRequest,
+        response: this.httpResponse,
       })
+
+    } catch (err) {
+
+      return HttpResponseToClient.badRequestErrorHttpResponse({
+        logMessage: err.message,
+        locale,
+        request: this.httpRequest,
+        response: this.httpResponse,
+      })
+
     }
   }
 
@@ -50,26 +65,38 @@ export class PermissionActionController {
   @get('/permission-actions')
   @response(200, {
     description: 'Array of PermissionAction model instances',
-    properties: new HttpClass().findAllResponseSchema(PermissionAction)
+    properties: HttpDocumentation.createDocResponseSchemaForFindManyResults(PermissionAction)
   })
   async find(
-    @param.query.number('limit') limit: number,
-    @param.query.number('page') page: number,
-    @param.query.string('order_by') orderBy: string,
-  ): Promise<void> {
+    @param.query.number('limit') limit?: number,
+    @param.query.number('page') page?: number,
+    @param.query.string('order_by') orderBy?: string,
+    @param.query.string('locale') locale?: LocaleEnum,
+  ): Promise<IHttpResponse> {
     try {
-      const filters = this.httpClass.createFilterRequestParams(this.httpRequest.url)
+
+      const filters = HttpDocumentation.createFilterRequestParams(this.httpRequest.url)
+
       const result = await this.permissionActionRepository.find(filters)
+
       const total = await this.permissionActionRepository.count(filters['where'])
-      this.httpClass.okResponse({
+
+      return HttpResponseToClient.okHttpResponse({
         data: {total: total?.count, result},
-        message: serverMessages['crudSuccess']['read'][localeMessage]
+        locale,
+        request: this.httpRequest,
+        response: this.httpResponse,
       })
+
     } catch (err) {
-      this.httpClass.badRequestErrorResponse({
-        message: serverMessages['crudError']['read'][localeMessage],
-        logMessage: err
+
+      return HttpResponseToClient.badRequestErrorHttpResponse({
+        logMessage: err.message,
+        locale,
+        request: this.httpRequest,
+        response: this.httpResponse,
       })
+
     }
   }
 
@@ -77,22 +104,33 @@ export class PermissionActionController {
   @get('/permission-actions/{permissionActionId}')
   @response(200, {
     description: 'PermissionAction model instance',
-    properties: new HttpClass().findOneSchema(PermissionAction)
+    properties: HttpDocumentation.createDocResponseSchemaForFindOneResult(PermissionAction)
   })
   async findById(
     @param.path.string('permissionActionId') id: string,
-  ): Promise<void> {
+    @param.query.string('locale') locale?: LocaleEnum,
+  ): Promise<IHttpResponse> {
     try {
-      const data = await this.permissionActionRepository.findById(id)
-      this.httpClass.okResponse({
+
+      const data = await this.permissionActionRepository.findOne({where: {and: [{_id: id}, {_deletedAt: {eq: null}}]}})
+      if (!data) throw new Error(serverMessages['httpResponse']['notFoundError'][locale ?? LocaleEnum['pt-BR']])
+
+      return HttpResponseToClient.okHttpResponse({
         data,
-        message: serverMessages['crudSuccess']['read'][localeMessage]
+        locale,
+        request: this.httpRequest,
+        response: this.httpResponse,
       })
+
     } catch (err) {
-      this.httpClass.badRequestErrorResponse({
-        message: serverMessages['crudError']['read'][localeMessage],
-        logMessage: err.message
+
+      return HttpResponseToClient.badRequestErrorHttpResponse({
+        logMessage: err.message,
+        locale,
+        request: this.httpRequest,
+        response: this.httpResponse,
       })
+
     }
   }
 
@@ -101,16 +139,30 @@ export class PermissionActionController {
   @response(200, {description: 'PermissionAction PUT success'})
   async updateById(
     @param.path.string('permissionActionId') id: string,
-    @requestBody({content: new HttpClass().requestSchema(PermissionAction)}) data: PermissionAction,
-  ): Promise<void> {
+    @requestBody({
+      content: HttpDocumentation.createDocRequestSchema(PermissionAction)
+    }) data: PermissionAction,
+    @param.query.string('locale') locale?: LocaleEnum,
+  ): Promise<IHttpResponse> {
     try {
+
       await this.permissionActionRepository.updateById(id, data)
-      this.httpClass.noContentResponse()
-    } catch (err) {
-      this.httpClass.badRequestErrorResponse({
-        message: serverMessages['crudError']['update'][localeMessage],
-        logMessage: err.message,
+
+      return HttpResponseToClient.noContentHttpResponse({
+        locale,
+        request: this.httpRequest,
+        response: this.httpResponse,
       })
+
+    } catch (err) {
+
+      return HttpResponseToClient.badRequestErrorHttpResponse({
+        logMessage: err.message,
+        locale,
+        request: this.httpRequest,
+        response: this.httpResponse,
+      })
+
     }
   }
 
@@ -119,16 +171,30 @@ export class PermissionActionController {
   @response(200, {description: 'PermissionAction PATCH success'})
   async partialUpdateById(
     @param.path.string('permissionActionId') id: string,
-    @requestBody({content: new HttpClass().requestSchema(PermissionAction, true)}) data: PermissionAction,
-  ): Promise<void> {
+    @requestBody({
+      content: HttpDocumentation.createDocRequestSchema(PermissionAction)
+    }) data: PermissionAction,
+    @param.query.string('locale') locale?: LocaleEnum,
+  ): Promise<IHttpResponse> {
     try {
+
       await this.permissionActionRepository.updateById(id, data)
-      this.httpClass.noContentResponse()
-    } catch (err) {
-      this.httpClass.badRequestErrorResponse({
-        message: serverMessages['crudError']['update'][localeMessage],
-        logMessage: err.message,
+
+      return HttpResponseToClient.noContentHttpResponse({
+        locale,
+        request: this.httpRequest,
+        response: this.httpResponse,
       })
+
+    } catch (err) {
+
+      return HttpResponseToClient.badRequestErrorHttpResponse({
+        logMessage: err.message,
+        locale,
+        request: this.httpRequest,
+        response: this.httpResponse,
+      })
+
     }
   }
 
@@ -136,16 +202,28 @@ export class PermissionActionController {
   @del('/permission-actions/{permissionActionId}')
   @response(204, {description: 'PermissionAction DELETE success'})
   async deleteById(
-    @param.path.string('permissionActionId') id: string
-  ): Promise<void> {
+    @param.path.string('permissionActionId') id: string,
+    @param.query.string('locale') locale?: LocaleEnum,
+  ): Promise<IHttpResponse> {
     try {
+
       const permissionActionToDelete = await this.permissionActionRepository.findById(id)
+
       await this.permissionActionRepository.updateById(id, {...permissionActionToDelete, _deletedAt: new Date()})
-      this.httpClass.noContentResponse()
+
+      return HttpResponseToClient.noContentHttpResponse({
+        locale,
+        request: this.httpRequest,
+        response: this.httpResponse,
+      })
+
     } catch (err) {
-      this.httpClass.badRequestErrorResponse({
-        message: serverMessages['crudError']['delete'][localeMessage],
+
+      return HttpResponseToClient.badRequestErrorHttpResponse({
         logMessage: err.message,
+        locale,
+        request: this.httpRequest,
+        response: this.httpResponse,
       })
     }
   }
