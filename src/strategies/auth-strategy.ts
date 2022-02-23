@@ -3,9 +3,6 @@ import {Getter, inject} from '@loopback/core';
 import {model, repository} from '@loopback/repository';
 import {Request, Response, RestBindings} from '@loopback/rest';
 import {securityId, UserProfile} from '@loopback/security';
-import {LocaleEnum} from '../enums/locale.enum';
-import {JwtToken} from '../implementations';
-import {serverMessages} from '../utils/server-messages';
 import {UserRepository} from './../repositories/user.repository';
 
 @model()
@@ -40,45 +37,45 @@ export class AutentikigoStrategy implements AuthenticationStrategy {
       const action = metadata['0']['options']['action']
 
 
-      const tokenVerified = JwtToken.verifyAuthToken(
-        request.headers.authorization!, process.env.PROJECT_SECRET!,
-        request, this.response, LocaleEnum['pt-BR']
-      )
-      if (!tokenVerified) return
+      // const tokenVerified = JwtToken.verifyAuthToken(
+      //   request.headers.authorization!, process.env.AUTENTIKIGO_SECRET!,
+      //   request, this.response, LocaleEnum['pt-BR']
+      // )
+      // if (!tokenVerified) return
 
-      const userId = JwtToken.getUserIdFromToken(request.headers.authorization!)
+      // const userId = JwtToken.getUserIdFromToken(request.headers.authorization!)
 
-      let ownerId = null
+      // let ownerId = null
 
-      const permissionGroups = await this.userRepository
-        .permissionGroups(userId)
-        .find({
-          where: {projectId: process.env.PROJECT_ID},
-          include: [{
-            relation: 'permissions', scope: {
-              include: [
-                {relation: 'permissionActions', scope: {where: {name: action}}},
-                {relation: 'module', scope: {where: {collection}}}
-              ]
-            }
-          }]
-        })
-      const permissionGroup = permissionGroups[0]
+      // const permissionGroups = await this.userRepository
+      //   .permissionGroups(userId)
+      //   .find({
+      //     where: {projectId: process.env.PROJECT_ID},
+      //     include: [{
+      //       relation: 'permissions', scope: {
+      //         include: [
+      //           {relation: 'permissionActions', scope: {where: {name: action}}},
+      //           {relation: 'module', scope: {where: {collection}}}
+      //         ]
+      //       }
+      //     }]
+      //   })
+      // const permissionGroup = permissionGroups[0]
 
-      if (action) {
-        if (permissionGroup) {//} && permissionGroup.name !== 'Kunlatek - Admin') {
-          let userHasPermission = false;
-          permissionGroup.permissions?.forEach(permission => {
-            if (permission.module && permission.permissionActions.length) {
-              userHasPermission = true
-              ownerId = permissionGroup._createdBy
-            }
-          })
-          if (!userHasPermission) throw serverMessages['httpResponse']['unauthorizedError'][LocaleEnum['pt-BR']]
-        } else throw serverMessages['httpResponse']['unauthorizedError'][LocaleEnum['pt-BR']]
-      }
+      // if (action) {
+      //   if (permissionGroup) {//} && permissionGroup.name !== 'Kunlatek - Admin') {
+      //     let userHasPermission = false;
+      //     permissionGroup.permissions?.forEach(permission => {
+      //       if (permission.module && permission.permissionActions.length) {
+      //         userHasPermission = true
+      //         ownerId = permissionGroup._createdBy
+      //       }
+      //     })
+      //     if (!userHasPermission) throw serverMessages['httpResponse']['unauthorizedError'][LocaleEnum['pt-BR']]
+      //   } else throw serverMessages['httpResponse']['unauthorizedError'][LocaleEnum['pt-BR']]
+      // }
 
-      const userProfile = this.convertIdToUserProfile(userId, ownerId)
+      const userProfile = this.convertIdToUserProfile('userId', 'ownerId')
       return userProfile
 
     } catch (err) {
