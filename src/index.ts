@@ -1,9 +1,9 @@
-import {ApplicationConfig, QuickstartApiApplication} from './application';
+import {ApplicationConfig, ProjektoApplication} from './application';
 
 export * from './application';
 
 export async function main(options: ApplicationConfig = {}) {
-  const app = new QuickstartApiApplication(options);
+  const app = new ProjektoApplication(options);
   await app.boot();
   await app.start();
 

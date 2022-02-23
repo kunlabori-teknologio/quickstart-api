@@ -1,7 +1,7 @@
 {
-  "name": "quickstart-api",
+  "name": "projekto",
   "version": "0.0.1",
-  "description": "Quickstart API",
+  "description": "Projekto",
   "keywords": [
     "loopback-application",
     "loopback"
@@ -23,8 +23,8 @@
     "eslint:fix": "npm run eslint -- --fix",
     "pretest": "npm run rebuild",
     "posttest": "npm run lint",
-    "docker:build": "docker build -t quickstart-api .",
-    "docker:run": "docker run -p 3000:3000 -d quickstart-api",
+    "docker:build": "docker build -t projekto .",
+    "docker:run": "docker run -p 3000:3000 -d projekto",
     "premigrate": "npm run build",
     "migrate": "node ./dist/migrate",
     "preopenapi-spec": "npm run build",

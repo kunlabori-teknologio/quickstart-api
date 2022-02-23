@@ -1,10 +1,10 @@
-import {QuickstartApiApplication} from './application';
+import {ProjektoApplication} from './application';
 
 export async function migrate(args: string[]) {
   const existingSchema = args.includes('--rebuild') ? 'drop' : 'alter';
   console.log('Migrating schemas (%s existing schema)', existingSchema);
 
-  const app = new QuickstartApiApplication();
+  const app = new ProjektoApplication();
   await app.boot();
   await app.migrateSchema({existingSchema});
 

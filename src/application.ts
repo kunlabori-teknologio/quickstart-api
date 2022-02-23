@@ -14,7 +14,7 @@ import {AutentikigoStrategy} from './strategies/auth-strategy';
 
 export {ApplicationConfig};
 
-export class QuickstartApiApplication extends BootMixin(
+export class ProjektoApplication extends BootMixin(
   ServiceMixin(RepositoryMixin(RestApplication)),
 ) {
   constructor(options: ApplicationConfig = {}) {
