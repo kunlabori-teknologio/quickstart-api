@@ -1,4 +1,5 @@
 import {Request, Response} from '@loopback/rest';
+import {AccessTokenResponse, AppleIdTokenType} from 'apple-sign-in-rest';
 import {CompanyDTO} from '../dto/company.dto';
 import {PersonDTO} from '../dto/person.dto';
 import {AdditionalInfoModel} from '../entities/signup.entity';
@@ -38,4 +39,44 @@ export interface IOAuthLogin {
 
 export interface IGetProfile {
   getFullProfileInfo(uniqueId: string, userType: UserTypesEnum, additionalInfo?: AdditionalInfoModel): Promise<PersonDTO | CompanyDTO | null>
+}
+
+export interface IAppleAuthorizationUrlConfig {
+  redirectUri: string;
+  scope?: ("name" | "email")[];
+  state?: string;
+  nonce?: string;
+}
+
+export interface IAppleAuthorizationTokenConfig {
+  code: string;
+  options: {
+    redirectUri?: string;
+  }
+}
+
+export interface IAppleRefreshAuthorizationTokenConfig {
+  clientSecret: string;
+  refreshToken: string;
+}
+
+export interface IAppleAuthorizationTokenResponse {
+  accessToken: AccessTokenResponse,
+  clientSecret: string
+}
+
+export interface IAppleVerifyIdTokenConfig {
+  idToken: string,
+  options: {
+    nonce?: string;
+    ignoreExpiration?: boolean;
+    subject?: string;
+  }
+}
+
+export interface IAppleLogin {
+  getAuthorizationUrl(config: IAppleAuthorizationUrlConfig): Promise<string>
+  getAuthorizationToken(config: IAppleAuthorizationTokenConfig): Promise<IAppleAuthorizationTokenResponse>
+  verifyIdToken(config: IAppleVerifyIdTokenConfig): Promise<AppleIdTokenType>
+  createOAuthToken(oAuthUser: IOAuthUser, invitationId?: string | null): string,
 }
