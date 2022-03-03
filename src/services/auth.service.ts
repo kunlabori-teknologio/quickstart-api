@@ -1,18 +1,27 @@
-import {repository} from '@loopback/repository'
-import jwt from 'jsonwebtoken'
-import {AdditionalInfoModel, Signup} from '../entities/signup.entity'
-import {LocaleEnum} from '../enums/locale.enum'
-import {IGetProfile, ILoginResponse, ILoginUserInfo, IOAuthLogin, IRefreshTokenResponse} from '../interfaces/auth.interface'
-import {IOAuthUser} from '../interfaces/user.interface'
-import {Company} from '../models/company.model'
-import {PermissionGroup} from '../models/permission-group.model'
-import {Person} from '../models/person.model'
-import {User} from '../models/user.model'
-import {CompanyRepository, InvitationRepository, PersonRepository, UserHasPermissionGroupsRepository, UserRepository} from '../repositories'
-import {theDatesMatch} from '../utils/date-manipulation-functions'
-import {getUserType, UserTypesEnum} from '../utils/general-functions'
-import {serverMessages} from '../utils/server-messages'
-import {hideEmailString} from '../utils/string-manipulation-functions'
+import {repository} from '@loopback/repository';
+import jwt from 'jsonwebtoken';
+import {AdditionalInfoModel, Signup} from '../entities/signup.entity';
+import {LocaleEnum} from '../enums/locale.enum';
+import {
+  IAppleAuthorizationTokenConfig,
+  IAppleAuthorizationTokenResponse,
+  IAppleAuthorizationUrlConfig,
+  IAppleLogin, IGetProfile,
+  ILoginResponse,
+  ILoginUserInfo,
+  IOAuthLogin,
+  IRefreshTokenResponse
+} from '../interfaces/auth.interface';
+import {IOAuthUser} from '../interfaces/user.interface';
+import {Company} from '../models/company.model';
+import {PermissionGroup} from '../models/permission-group.model';
+import {Person} from '../models/person.model';
+import {User} from '../models/user.model';
+import {CompanyRepository, InvitationRepository, PersonRepository, UserHasPermissionGroupsRepository, UserRepository} from '../repositories';
+import {theDatesMatch} from '../utils/date-manipulation-functions';
+import {getUserType, UserTypesEnum} from '../utils/general-functions';
+import {serverMessages} from '../utils/server-messages';
+import {hideEmailString} from '../utils/string-manipulation-functions';
 
 export class AuthService {
 
@@ -36,14 +45,26 @@ export class AuthService {
     return oAuth.createOAuthToken(oAuthUser, invitationId)
   }
 
+  public async getAppleAuthorizationUrl(appleLogin: IAppleLogin, params: IAppleAuthorizationUrlConfig) : Promise<string> {
+    return appleLogin.getAuthorizationUrl(params)
+  }
+
+  public async createAppleAuthorizationToken(appleLogin: IAppleLogin, params: IAppleAuthorizationTokenConfig): Promise<IAppleAuthorizationTokenResponse> {
+    return appleLogin.getAuthorizationToken(params)
+  }
+
+  public signInWithAppleOAuthToken(appleLogin: IAppleLogin, oAuthUser: IOAuthUser, invitationId?: string | null): string {
+    return appleLogin.createOAuthToken(oAuthUser, invitationId)
+  }
+
   public async login(userLoginInfo: ILoginUserInfo): Promise<ILoginResponse | null> {
 
-    const {email, googleId, invitationId} = userLoginInfo
+    const {email, googleId, appleId, invitationId} = userLoginInfo
 
     const permissionGroupId = invitationId ?
       await this.getPermissionGroupIdFromInvitation(invitationId, email!) : null
 
-    let user = await this.findUserWithPermissions(email!, googleId!)
+    let user = await this.findUserWithPermissions(email!, googleId!, appleId!)
     if (!user) return null
 
     if (invitationId) {
@@ -76,7 +97,7 @@ export class AuthService {
   private async findUserWithPermissions(email: string, googleId: string, appleId?: string): Promise<User | null> {
 
     const user = await this.userRepository.findOne({
-      where: {and: [{email}, {googleId}]}, include: [
+      where: {and: [{email}, {googleId}, {appleId}]}, include: [
         'person', 'company',
         {
           relation: 'permissionGroups', scope: {
@@ -176,7 +197,7 @@ export class AuthService {
       await this.giveTheUserPermission(permissionGroupId, newUser._id!)
     }
 
-    return await this.userRepository.findById(newUser?._id, {include: ['person', 'company']})
+    return this.userRepository.findById(newUser?._id, {include: ['person', 'company']})
   }
 
   public async createProfile(
