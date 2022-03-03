@@ -83,6 +83,14 @@ export const serverMessages = {
       [LocaleEnum['pt-BR']]: 'Erro ao buscar usuário do google',
       [LocaleEnum['en-US']]: 'Error when searching for google user',
     },
+    'getAppleUrl': {
+      [LocaleEnum['pt-BR']]: 'Erro ao gerar URL da apple',
+      [LocaleEnum['en-US']]: 'Generate apple URL error',
+    },
+    'getAppleUser': {
+      [LocaleEnum['pt-BR']]: 'Erro ao buscar usuário da apple',
+      [LocaleEnum['en-US']]: 'Error when searching for apple user',
+    },
     'unregisteredUser': {
       [LocaleEnum['pt-BR']]: 'Usuário não registrado',
       [LocaleEnum['en-US']]: 'User is not registered',
