@@ -12,11 +12,13 @@ import {
 import {URLSearchParams} from 'url';
 import {Signup} from '../entities/signup.entity';
 import {LocaleEnum} from '../enums/locale.enum';
+import {AppleSigninImplementation} from '../implementations/apple-signin.implementation';
 import {GoogleOAuthImplementation} from '../implementations/google-oauth.implementation';
 import {HttpDocumentation, HttpResponseToClient, JwtToken} from '../implementations/index';
 import {ProfileFromAPIImplementation} from '../implementations/profile-from-api.implementation';
-import {IGetProfile, IOAuthLogin} from '../interfaces/auth.interface';
+import {IAppleLogin, IGetProfile, IOAuthLogin} from '../interfaces/auth.interface';
 import {IHttpResponse} from '../interfaces/http.interface';
+import {IOAuthUser} from '../interfaces/user.interface';
 import {User} from '../models/user.model';
 import {AuthService} from '../services';
 import {serverMessages} from './../utils/server-messages';
@@ -25,6 +27,7 @@ export class AuthController {
 
   private googleOAuth: IOAuthLogin
   private getProfile: IGetProfile
+  private appleLogin: IAppleLogin
 
   constructor(
     @inject(RestBindings.Http.REQUEST) private httpRequest: Request,
@@ -34,6 +37,7 @@ export class AuthController {
   ) {
     this.googleOAuth = new GoogleOAuthImplementation()
     this.getProfile = new ProfileFromAPIImplementation()
+    this.appleLogin = new AppleSigninImplementation()
   }
 
   @get('auth/google-signin')
@@ -91,6 +95,92 @@ export class AuthController {
     }
   }
 
+  @get('auth/apple-signin')
+  @response(200, {description: 'Redirect to Apple login page'})
+  async redirectToAppleLoginPage(
+    @param.query.string('nonce') nonce?: string,
+    @param.query.string('invitationId') invitationId?: string,
+    @param.query.string('locale') locale?: LocaleEnum,
+  ): Promise<void | IHttpResponse> {
+    try {
+
+      const url = await this.authService.getAppleAuthorizationUrl(this.appleLogin, {
+        redirectUri: process.env.APPLE_AUTH_REDIRECT_URI as string,
+        nonce,
+        scope: ['name', 'email'],
+        state: JSON.stringify(invitationId)
+      })
+
+      this.httpResponse.redirect(url);
+
+    } catch (err) {
+
+      return HttpResponseToClient.badRequestErrorHttpResponse({
+        message: serverMessages['auth']['getAppleUrl'][locale ?? LocaleEnum['pt-BR']],
+        logMessage: err.message,
+        locale,
+        request: this.httpRequest,
+        response: this.httpResponse,
+      });
+    }
+  }
+
+  @visibility(OperationVisibility.UNDOCUMENTED)
+  @get('auth/apple')
+  async handleAppleLoginCodeAndReturnToken(
+    @param.query.string('code') code: string,
+    @param.query.string('state') state?: string,
+  ): Promise<void | IHttpResponse> {
+
+    const invitationId = new URLSearchParams(state).get('invitationId');
+
+    const nonce = new URLSearchParams(state).get('nonce') || undefined;
+
+    const localeStr: any = new URLSearchParams(state).get('locale') ?? 'pt-BR';
+
+    const locale = LocaleEnum[localeStr] as unknown as LocaleEnum;
+
+    try {
+
+      const {accessToken} = await this.appleLogin.getAuthorizationToken({
+        code,
+        options: {
+          redirectUri: process.env.APPLE_AUTH_REDIRECT_URI
+        }
+      });
+
+      const {email, sub} = await this.appleLogin.verifyIdToken({
+        idToken: accessToken.id_token,
+        options: {
+          nonce
+        }
+      });
+
+      const appleUser: IOAuthUser = {
+        email,
+        id: sub
+      };
+
+      const token = this.authService.signInWithAppleOAuthToken(
+        this.appleLogin,
+        appleUser,
+        invitationId
+      );
+
+      this.httpResponse.redirect(`${process.env.CLIENT_URI}?token=${token}`);
+
+    } catch (err) {
+
+      return HttpResponseToClient.badRequestErrorHttpResponse({
+        message: serverMessages['auth']['getAppleUser'][locale],
+        logMessage: err.message,
+        locale,
+        request: this.httpRequest,
+        response: this.httpResponse,
+      });
+    }
+  }
+
   @get('auth/login')
   @response(200, {
     description: 'Auth token',
@@ -110,7 +200,6 @@ export class AuthController {
     @param.query.string('locale') locale?: LocaleEnum,
   ): Promise<IHttpResponse | undefined> {
     try {
-
       const tokenVerified = JwtToken.verifyAuthToken(
         this.httpRequest.headers.authorization!, process.env.PROJECT_SECRET!,
         this.httpRequest, this.httpResponse, locale
