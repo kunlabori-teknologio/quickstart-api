@@ -104,12 +104,16 @@ export class AuthController {
   ): Promise<void | IHttpResponse> {
     try {
 
+      const invitationParam = invitationId ? `invitationId=${invitationId}` : '';
+
+      const nonceParam = nonce ? `nonce=${nonce}` : '';
+
       const url = await this.authService.getAppleAuthorizationUrl(this.appleLogin, {
         redirectUri: process.env.APPLE_AUTH_REDIRECT_URI as string,
         nonce,
         scope: ['name', 'email'],
-        state: JSON.stringify(invitationId)
-      })
+        state: JSON.stringify(`${invitationParam},${nonceParam}`)
+      });
 
       this.httpResponse.redirect(url);
 
