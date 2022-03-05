@@ -14,6 +14,7 @@ export interface IAuthorizedUser {
 
 export interface IAuth {
   webGoogleLogin(httpResponse: Response, invitationId?: string): Promise<void>;
+  webAppleLogin(httpResponse: Response, invitationId?: string): Promise<void>;
 
   login(token: string): Promise<ILoginResponse>;
   signup(signupBodyRequest: Signup, token: string): Promise<any>;

@@ -22,6 +22,17 @@ export class AuthAutentikigoImplementation implements IAuth {
 
   }
 
+  async webAppleLogin(httpResponse: Response<any, Record<string, any>>, invitationId?: string): Promise<void> {
+    const invitation = invitationId ? `&invitation=${invitationId}` : ''
+
+    const response = await fetch(`${this.autentikigoRoute}/apple-login-url?client-redirect-uri=${this.clientRedirectUri}${invitation}`)
+    const data = await response.json()
+
+    if (data.statusCode === 200) httpResponse.redirect(data.data.url);
+    else throw new Error(data.logMessage)
+
+  }
+
   async login(token: string): Promise<ILoginResponse> {
 
     const response = await fetch(`${this.autentikigoRoute}/login?project-id=${process.env.PROJECT_ID}`, {

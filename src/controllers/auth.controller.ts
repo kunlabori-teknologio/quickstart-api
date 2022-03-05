@@ -38,6 +38,30 @@ export class AuthController {
     }
   }
 
+  @get('/auth/apple-signin')
+  @response(200, {
+    description: 'Redirect to apple login page',
+  })
+  async appleSignin(
+    @param.query.string('invitation-id') invitationId: string,
+    @param.query.string('locale') locale?: LocaleEnum,
+  ): Promise<IHttpResponse | void> {
+    try {
+
+      await Autentikigo.webAppleLogin(this.httpResponse, invitationId)
+
+    } catch (err) {
+
+      return HttpResponseToClient.badRequestErrorHttpResponse({
+        logMessage: err.message,
+        locale,
+        request: this.httpRequest,
+        response: this.httpResponse,
+      })
+
+    }
+  }
+
   @get('/auth/login')
   @response(200, {
     description: 'Login user',
