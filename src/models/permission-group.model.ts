@@ -47,6 +47,15 @@ export class PermissionGroup extends Default {
   })
   projectId?: string;
 
+  @property({
+    name: 'isAdminPermission',
+    description: 'Define if is an admin permission used in login without invite',
+    type: 'boolean',
+    required: false,
+    default: false,
+  })
+  isAdminPermission?: boolean;
+
   @hasMany(() => Permission)
   permissions: Permission[];
 
