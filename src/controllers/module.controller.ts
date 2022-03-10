@@ -1,5 +1,5 @@
 import {authenticate} from '@loopback/authentication';
-import {inject} from '@loopback/core';
+import {inject, service} from '@loopback/core';
 import {
   repository
 } from '@loopback/repository';
@@ -10,6 +10,7 @@ import {HttpDocumentation, HttpResponseToClient} from '../implementations/index'
 import {IHttpResponse} from '../interfaces/http.interface';
 import {Module} from '../models/module.model';
 import {ModuleRepository} from '../repositories/module.repository';
+import {ModuleService} from '../services';
 import {serverMessages} from '../utils/server-messages';
 
 export class ModuleController {
@@ -19,6 +20,8 @@ export class ModuleController {
 
     @inject(RestBindings.Http.REQUEST) private httpRequest: Request,
     @inject(RestBindings.Http.RESPONSE) private httpResponse: Response,
+
+    @service(ModuleService) private moduleService: ModuleService,
 
     @inject(SecurityBindings.USER, {optional: true}) private currentUser?: UserProfile,
   ) { }
@@ -41,6 +44,8 @@ export class ModuleController {
       const ownerId = this.currentUser?.ownerId as string
 
       const module = await this.moduleRepository.create({...data, _createdBy: createdBy, _ownerId: ownerId})
+
+      await this.moduleService.createDefaultPermission(process.env.PROJECT_ID!, module._id!, ownerId)
 
       return HttpResponseToClient.createHttpResponse({
         data: module,

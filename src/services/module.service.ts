@@ -28,13 +28,14 @@ export class ModuleService {
     return defaultPermissionGroup ?? null;
   }
 
-  private async createDefaultPermissionGroup(projectId: string): Promise<PermissionGroup> {
+  private async createDefaultPermissionGroup(projectId: string, ownerId: string): Promise<PermissionGroup> {
 
     const defaultPermissionGroup = await this.permissionGroupRepository.create({
       name: 'Default',
       description: 'Default permission',
       projectId,
       isAdminPermission: true,
+      _ownerId: ownerId,
     })
 
     return defaultPermissionGroup
@@ -61,18 +62,16 @@ export class ModuleService {
         return {permissionId, permissionActionId: permissionAction._id!}
       })
     )
-
-    throw new Error('Not implemented')
   }
 
-  public async createDefaultPermission(projectId: string, moduleId: string): Promise<void> {
+  public async createDefaultPermission(projectId: string, moduleId: string, ownerId: string): Promise<void> {
 
     try {
 
       let defaultPermissionGroup: PermissionGroup | null = await this.defaultPermissionGroupExists(projectId)
 
       if (!defaultPermissionGroup) {
-        defaultPermissionGroup = await this.createDefaultPermissionGroup(projectId)
+        defaultPermissionGroup = await this.createDefaultPermissionGroup(projectId, ownerId)
       }
 
       const defaultPermission: Permission = await this.createModuleDefaultPermission(moduleId, defaultPermissionGroup._id!)
