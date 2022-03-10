@@ -3,6 +3,7 @@ import {Getter, inject} from '@loopback/core';
 import {model, repository} from '@loopback/repository';
 import {Request, Response, RestBindings} from '@loopback/rest';
 import {securityId, UserProfile} from '@loopback/security';
+import {Autentikigo} from '../implementations';
 import {UserRepository} from './../repositories/user.repository';
 
 @model()
@@ -36,46 +37,11 @@ export class AutentikigoStrategy implements AuthenticationStrategy {
       const collection = metadata['0']['options']['collection']
       const action = metadata['0']['options']['action']
 
+      const authorizedUser = await Autentikigo.verifyAuthorization(
+        collection, action, request.headers.authorization!
+      )
 
-      // const tokenVerified = JwtToken.verifyAuthToken(
-      //   request.headers.authorization!, process.env.AUTENTIKIGO_SECRET!,
-      //   request, this.response, LocaleEnum['pt-BR']
-      // )
-      // if (!tokenVerified) return
-
-      // const userId = JwtToken.getUserIdFromToken(request.headers.authorization!)
-
-      // let ownerId = null
-
-      // const permissionGroups = await this.userRepository
-      //   .permissionGroups(userId)
-      //   .find({
-      //     where: {projectId: process.env.PROJECT_ID},
-      //     include: [{
-      //       relation: 'permissions', scope: {
-      //         include: [
-      //           {relation: 'permissionActions', scope: {where: {name: action}}},
-      //           {relation: 'module', scope: {where: {collection}}}
-      //         ]
-      //       }
-      //     }]
-      //   })
-      // const permissionGroup = permissionGroups[0]
-
-      // if (action) {
-      //   if (permissionGroup) {//} && permissionGroup.name !== 'Kunlatek - Admin') {
-      //     let userHasPermission = false;
-      //     permissionGroup.permissions?.forEach(permission => {
-      //       if (permission.module && permission.permissionActions.length) {
-      //         userHasPermission = true
-      //         ownerId = permissionGroup._createdBy
-      //       }
-      //     })
-      //     if (!userHasPermission) throw serverMessages['httpResponse']['unauthorizedError'][LocaleEnum['pt-BR']]
-      //   } else throw serverMessages['httpResponse']['unauthorizedError'][LocaleEnum['pt-BR']]
-      // }
-
-      const userProfile = this.convertIdToUserProfile('userId', 'ownerId')
+      const userProfile = this.convertIdToUserProfile(authorizedUser.userId, authorizedUser.ownerId)
       return userProfile
 
     } catch (err) {

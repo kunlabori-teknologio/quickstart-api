@@ -1,5 +1,5 @@
 import {ApplicationConfig} from '@loopback/core';
-import {QuickstartApiApplication} from './application';
+import {ProjektoApplication} from './application';
 
 /**
  * Export the OpenAPI spec from the application
@@ -12,7 +12,7 @@ async function exportOpenApiSpec(): Promise<void> {
     },
   };
   const outFile = process.argv[2] ?? '';
-  const app = new QuickstartApiApplication(config);
+  const app = new ProjektoApplication(config);
   await app.boot();
   await app.exportOpenApiSpec(outFile);
 }
