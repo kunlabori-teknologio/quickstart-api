@@ -68,7 +68,7 @@ export class PermissionGroupController {
     }
   }
 
-  @authenticate({strategy: 'autentikigo', options: {collection: 'PermissionGroup'}})
+  @authenticate({strategy: 'autentikigo', options: {collection: 'PermissionGroup', action: 'read'}})
   @get('/permission-groups')
   @response(200, {
     description: 'Array of Permission group model instances',
@@ -107,7 +107,7 @@ export class PermissionGroupController {
     }
   }
 
-  @authenticate({strategy: 'autentikigo', options: {collection: 'PermissionGroup'}})
+  @authenticate({strategy: 'autentikigo', options: {collection: 'PermissionGroup', action: 'readOne'}})
   @get('/permission-groups/{permissionGroupId}')
   @response(200, {
     description: 'Permission group model instance',

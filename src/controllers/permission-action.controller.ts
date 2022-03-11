@@ -61,7 +61,7 @@ export class PermissionActionController {
     }
   }
 
-  @authenticate({strategy: 'autentikigo', options: {collection: 'PermissionAction'}})
+  @authenticate({strategy: 'autentikigo', options: {collection: 'PermissionAction', action: 'read'}})
   @get('/permission-actions')
   @response(200, {
     description: 'Array of PermissionAction model instances',
@@ -100,7 +100,7 @@ export class PermissionActionController {
     }
   }
 
-  @authenticate({strategy: 'autentikigo', options: {collection: 'PermissionAction'}})
+  @authenticate({strategy: 'autentikigo', options: {collection: 'PermissionAction', action: 'readOne'}})
   @get('/permission-actions/{permissionActionId}')
   @response(200, {
     description: 'PermissionAction model instance',

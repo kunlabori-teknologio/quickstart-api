@@ -65,7 +65,7 @@ export class ModuleController {
     }
   }
 
-  @authenticate({strategy: 'autentikigo', options: {collection: 'Module'}})
+  @authenticate({strategy: 'autentikigo', options: {collection: 'Module', action: 'read'}})
   @get('/modules')
   @response(200, {
     description: 'Array of Module model instances',
@@ -104,7 +104,7 @@ export class ModuleController {
     }
   }
 
-  @authenticate({strategy: 'autentikigo', options: {collection: 'Module'}})
+  @authenticate({strategy: 'autentikigo', options: {collection: 'Module', action: 'readOne'}})
   @get('/modules/{moduleId}')
   @response(200, {
     description: 'Module model instance',

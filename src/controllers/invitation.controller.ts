@@ -67,7 +67,7 @@ export class InvitationController {
     }
   }
 
-  @authenticate({strategy: 'autentikigo', options: {collection: 'Invitation'}})
+  @authenticate({strategy: 'autentikigo', options: {collection: 'Invitation', action: 'read'}})
   @get('/invitations')
   @response(200, {
     description: 'Array of Invitation model instances',
@@ -106,7 +106,7 @@ export class InvitationController {
     }
   }
 
-  @authenticate({strategy: 'autentikigo', options: {collection: 'Invitation'}})
+  @authenticate({strategy: 'autentikigo', options: {collection: 'Invitation', action: 'readOne'}})
   @get('/invitations/{invitationId}')
   @response(200, {
     description: 'Invitation model instance',
@@ -235,7 +235,7 @@ export class InvitationController {
     }
   }
 
-  @authenticate({strategy: 'autentikigo', options: {collection: 'Invitation'}})
+  @authenticate({strategy: 'autentikigo', options: {collection: 'Invitation', action: 'readOne'}})
   @get('/invitations/send/{invitationId}')
   @response(200, {description: 'Invitation sent successfully'})
   async sendInvitation(

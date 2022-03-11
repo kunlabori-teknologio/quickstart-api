@@ -76,7 +76,7 @@ export class ProjectController {
     }
   }
 
-  @authenticate({strategy: 'autentikigo', options: {collection: 'Project'}})
+  @authenticate({strategy: 'autentikigo', options: {collection: 'Project', action: 'read'}})
   @get('/projects')
   @response(200, {
     description: 'Array of Project model instances',
@@ -115,7 +115,7 @@ export class ProjectController {
     }
   }
 
-  @authenticate({strategy: 'autentikigo', options: {collection: 'Project'}})
+  @authenticate({strategy: 'autentikigo', options: {collection: 'Project', action: 'readOne'}})
   @get('/projects/{projectId}')
   @response(200, {
     description: 'Project model instance',
