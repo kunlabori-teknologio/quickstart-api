@@ -58,7 +58,7 @@ export class AuthAutentikigoImplementation implements IAuth {
         'Content-type': 'application/json',
         'Authorization': token,
       },
-      body: signupBodyRequest,
+      body: JSON.stringify(signupBodyRequest),
     })
     const data = await response.json()
 
