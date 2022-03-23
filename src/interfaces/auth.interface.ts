@@ -5,6 +5,8 @@ export interface ILoginResponse {
   authToken: string,
   authRefreshToken: string,
   userData?: any,
+  statusCode?: number,
+  message?: string,
 }
 
 export interface IAuthorizedUser {

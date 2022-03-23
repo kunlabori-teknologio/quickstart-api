@@ -75,7 +75,9 @@ export class AuthController {
       const data = await Autentikigo.login(this.httpRequest.headers.authorization!)
 
       return HttpResponseToClient.okHttpResponse({
-        data,
+        data: data.statusCode ? {} : data,
+        message: data.message,
+        statusCode: data.statusCode || 200,
         locale,
         request: this.httpRequest,
         response: this.httpResponse,

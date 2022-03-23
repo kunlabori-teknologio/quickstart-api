@@ -45,6 +45,7 @@ export class AuthAutentikigoImplementation implements IAuth {
     const data = await response.json()
 
     if (data.statusCode === 200) return data.data as ILoginResponse;
+    else if (data.statusCode === 601) return data as ILoginResponse;
     else throw new Error(data.logMessage)
 
   }
