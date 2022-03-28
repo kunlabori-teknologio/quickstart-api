@@ -8,7 +8,7 @@ export class AuthAutentikigoImplementation implements IAuth {
 
   autentikigoRoute = 'https://autentikigo-tftftsuywa-uc.a.run.app/'
 
-  clientRedirectUri = 'http://localhost:4200'
+  clientRedirectUri = process.env.CLIENT_REDIRECT_URI || 'http://localhost:4200'
 
   async webGoogleLogin(httpResponse: Response, invitationId?: string): Promise<void> {
 

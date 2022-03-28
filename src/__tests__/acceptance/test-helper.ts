@@ -2,7 +2,7 @@ import {
   Client, createRestAppClient,
   givenHttpServerConfig
 } from '@loopback/testlab';
-import {ProjektoApplication} from '../..';
+import {QuickstartApiApplication} from '../..';
 
 export async function setupApplication(): Promise<AppWithClient> {
   const restConfig = givenHttpServerConfig({
@@ -13,7 +13,7 @@ export async function setupApplication(): Promise<AppWithClient> {
     // port: +process.env.PORT,
   });
 
-  const app = new ProjektoApplication({
+  const app = new QuickstartApiApplication({
     rest: restConfig,
   });
 
@@ -26,6 +26,6 @@ export async function setupApplication(): Promise<AppWithClient> {
 }
 
 export interface AppWithClient {
-  app: ProjektoApplication;
+  app: QuickstartApiApplication;
   client: Client;
 }
