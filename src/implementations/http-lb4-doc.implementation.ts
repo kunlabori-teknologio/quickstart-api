@@ -65,7 +65,7 @@ export class HttpLb4DocImplementation implements IHttpDocumentation {
     return {
       limit: (paramsFromUrl.get('limit') ?? 100) as number,
       skip: ((paramsFromUrl.get('limit') ?? 100) as number) * ((paramsFromUrl.get('page') ?? 0) as number),
-      order: [(paramsFromUrl.get('order_by') ?? '')],
+      order: [(paramsFromUrl.get('order_by') ?? '_createdAt DESC')],
       where: whereConditions.length ? {'and': whereConditions} : {},
     }
   }
