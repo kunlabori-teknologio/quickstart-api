@@ -62,11 +62,15 @@ export class HttpLb4DocImplementation implements IHttpDocumentation {
   }
 
   private createFilters(paramsFromUrl: URLSearchParams, whereConditions: IWhereFilterCondition[]): IFilters {
+
+    let where = JSON.parse(paramsFromUrl.get('filter') || '{}')
+    if (whereConditions.length) where['and'] = [...(where['and'] || []), ...whereConditions]
+
     return {
       limit: (paramsFromUrl.get('limit') ?? 100) as number,
       skip: ((paramsFromUrl.get('limit') ?? 100) as number) * ((paramsFromUrl.get('page') ?? 0) as number),
       order: [(paramsFromUrl.get('order_by') ?? '_createdAt DESC')],
-      where: whereConditions.length ? {'and': whereConditions} : {},
+      where,
     }
   }
 
