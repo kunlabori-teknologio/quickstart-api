@@ -53,7 +53,7 @@ export class HttpLb4DocImplementation implements IHttpDocumentation {
     const whereArray: IWhereFilterCondition[] = [];
 
     paramsFromUrl.forEach((paramValue, paramKey) => {
-      if (!['limit', 'page', 'order_by'].includes(paramKey))
+      if (!['limit', 'page', 'order_by', 'filter'].includes(paramKey))
         whereArray.push({[paramKey]: {like: new RegExp('.*' + paramValue + '.*', "i")}})
     })
 
