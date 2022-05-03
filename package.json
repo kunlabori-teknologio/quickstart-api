@@ -34,7 +34,8 @@
     "clean": "lb-clean dist *.tsbuildinfo .eslintcache",
     "rebuild": "npm run clean && npm run build",
     "esprimi": "node ./src/utils/esprimi-api-cli/esprimi-api-main.js",
-    "test": "mocha --recursive \"dist/__tests__\""
+    "test": "mocha --recursive \"dist/__tests__\"",
+    "start:watch": "tsc-watch --target es2017 --outDir ./dist --onSuccess \"node .\""
   },
   "repository": {
     "type": "git",
@@ -84,6 +85,7 @@
     "lodash": "^4.17.21",
     "mocha": "^9.2.0",
     "source-map-support": "^0.5.21",
+    "tsc-watch": "^5.0.3",
     "typescript": "~4.5.4"
   }
 }
