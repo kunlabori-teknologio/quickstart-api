@@ -1,5 +1,6 @@
 import {Response} from '@loopback/rest';
 import {Signup} from '../entities/signup.entity';
+import {UserTypesEnum} from '../utils/general-functions';
 import {IAuth, IAuthorizedUser, ILoginResponse} from './../interfaces/auth.interface';
 
 const fetch = require('node-fetch');
@@ -94,6 +95,38 @@ export class AuthAutentikigoImplementation implements IAuth {
     const data = await response.json()
 
     if (data.statusCode === 200) return data.data as ILoginResponse;
+    else throw new Error(data.logMessage)
+
+  }
+
+  async verifyJwtAuthorization(token: string): Promise<IAuthorizedUser> {
+
+    const response = await fetch(`${this.autentikigoRoute}/verify-jwt-authorization?token=${token}`, {
+      method: 'GET',
+      headers: {
+        'Content-type': 'application/json'
+        // 'Authorization': token,
+      },
+    })
+    const data = await response.json()
+
+    if (data.statusCode === 200) return data;
+    else throw new Error(data.logMessage)
+
+  }
+
+  async getProfile(userType: UserTypesEnum, uniqueId: string): Promise<any> {
+
+    const response = await fetch(`${this.autentikigoRoute}/get-profile?userType=${userType}&uniqueId=${uniqueId}`, {
+      method: 'GET',
+      headers: {
+        'Content-type': 'application/json'
+        // 'Authorization': token,
+      },
+    })
+    const data = await response.json()
+
+    if (data.statusCode === 200) return data;
     else throw new Error(data.logMessage)
 
   }
