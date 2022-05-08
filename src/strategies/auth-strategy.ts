@@ -3,7 +3,9 @@ import {Getter, inject} from '@loopback/core';
 import {model, repository} from '@loopback/repository';
 import {Request, Response, RestBindings} from '@loopback/rest';
 import {securityId, UserProfile} from '@loopback/security';
-import {Autentikigo} from '../implementations';
+import {LocaleEnum} from '../enums/locale.enum';
+import {Autentikigo, JwtToken} from '../implementations';
+import {serverMessages} from '../utils/server-messages';
 import {UserRepository} from './../repositories/user.repository';
 
 @model()
@@ -37,11 +39,41 @@ export class AutentikigoStrategy implements AuthenticationStrategy {
       const collection = metadata['0']['options']['collection']
       const action = metadata['0']['options']['action']
 
-      const authorizedUser = await Autentikigo.verifyAuthorization(
-        collection, action, request.headers.authorization!
-      )
+      const tokenVerified = await Autentikigo.verifyJwtAuthorization(request.headers.authorization!)
+      if (!tokenVerified) throw new Error()
 
-      const userProfile = this.convertIdToUserProfile(authorizedUser.userId, authorizedUser.ownerId)
+      const userId = JwtToken.getUserIdFromToken(request.headers.authorization!)
+
+      let ownerId = null
+
+      const permissionGroups = await this.userRepository
+        .permissionGroups(userId)
+        .find({
+          include: [{
+            relation: 'permissions', scope: {
+              include: [
+                {relation: 'permissionActions', scope: {where: {name: action}}},
+                {relation: 'module', scope: {where: {collection}}}
+              ]
+            }
+          }]
+        })
+      const permissionGroup = permissionGroups[0]
+
+      if (action) {
+        if (permissionGroup) {
+          let userHasPermission = false;
+          permissionGroup.permissions?.forEach(permission => {
+            if (permission.module && permission.permissionActions.length) {
+              userHasPermission = true
+              ownerId = permissionGroup._createdBy
+            }
+          })
+          if (!userHasPermission) throw serverMessages['httpResponse']['unauthorizedError'][LocaleEnum['pt-BR']]
+        } else throw serverMessages['httpResponse']['unauthorizedError'][LocaleEnum['pt-BR']]
+      }
+
+      const userProfile = this.convertIdToUserProfile(userId, ownerId)
       return userProfile
 
     } catch (err) {

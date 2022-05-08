@@ -92,7 +92,7 @@ export class AuthController {
 
       const loginUserInfo = JwtToken.getLoginUserInfoFromToken(this.httpRequest.headers.authorization!)
 
-      const tokenAndUser = await this.authService.login(loginUserInfo, process.env.PROJECT_ID!)
+      const tokenAndUser = await this.authService.login(loginUserInfo/*, process.env.PROJECT_ID!*/)
 
       return HttpResponseToClient.createHttpResponse({
         data: tokenAndUser?.statusCode ? {} : tokenAndUser?.userData,

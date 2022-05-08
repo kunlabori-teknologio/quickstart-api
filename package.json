@@ -66,8 +66,10 @@
     "jsonwebtoken": "^8.5.1",
     "loopback-boot": "^3.3.1",
     "loopback-connector-mongodb": "^6.1.0",
+    "mongodb": "^4.5.0",
     "node-fetch": "^2.6.6",
     "nodemailer": "^6.7.2",
+    "pluralize": "^8.0.0",
     "query-string": "^7.0.1",
     "tslib": "^2.0.0",
     "tslog": "^3.3.1"
@@ -80,6 +82,7 @@
     "@types/mocha": "^9.1.0",
     "@types/node": "^10.17.60",
     "@types/nodemailer": "^6.4.4",
+    "@types/pluralize": "0.0.29",
     "eslint": "^8.6.0",
     "fs-extra": "^10.0.0",
     "lodash": "^4.17.21",

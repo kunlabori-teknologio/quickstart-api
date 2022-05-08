@@ -17,23 +17,24 @@ export class ModuleService {
     @repository(PermissionHasActionsRepository) private permissionHasActionsRepository: PermissionHasActionsRepository,
   ) { }
 
-  private async defaultPermissionGroupExists(projectId: string): Promise<PermissionGroup | null> {
+  private async defaultPermissionGroupExists(/*projectId: string*/): Promise<PermissionGroup | null> {
     const defaultPermissionGroup = await this.permissionGroupRepository.findOne({
       where: {
         and: [
-          {projectId}, {isAdminPermission: true}
+          // {projectId},
+          {isAdminPermission: true}
         ]
       }
     })
     return defaultPermissionGroup ?? null;
   }
 
-  private async createDefaultPermissionGroup(projectId: string, ownerId: string): Promise<PermissionGroup> {
+  private async createDefaultPermissionGroup(/*projectId: string, */ownerId?: string): Promise<PermissionGroup> {
 
     const defaultPermissionGroup = await this.permissionGroupRepository.create({
       name: 'Default',
       description: 'Default permission',
-      projectId,
+      // projectId,
       isAdminPermission: true,
       _ownerId: ownerId,
     })
@@ -64,14 +65,14 @@ export class ModuleService {
     )
   }
 
-  public async createDefaultPermission(projectId: string, moduleId: string, ownerId: string): Promise<void> {
+  public async createDefaultPermission(/*projectId: string,*/ moduleId: string, ownerId?: string): Promise<void> {
 
     try {
 
-      let defaultPermissionGroup: PermissionGroup | null = await this.defaultPermissionGroupExists(projectId)
+      let defaultPermissionGroup: PermissionGroup | null = await this.defaultPermissionGroupExists(/*projectId*/)
 
       if (!defaultPermissionGroup) {
-        defaultPermissionGroup = await this.createDefaultPermissionGroup(projectId, ownerId)
+        defaultPermissionGroup = await this.createDefaultPermissionGroup(/*projectId, */ownerId)
       }
 
       const defaultPermission: Permission = await this.createModuleDefaultPermission(moduleId, defaultPermissionGroup._id!)
