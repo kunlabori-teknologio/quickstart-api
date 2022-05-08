@@ -99,19 +99,19 @@ export class SeedService {
       .collection('PermissionGroup')
       .find().toArray()
 
-    if (permissionGroupInDatabase.length > 0) return null
+    if (permissionGroupInDatabase.length > 0)
+      return permissionGroupInDatabase[0]
 
-    const defaultPermissionGroup = (
-      await client
-        .db(process.env.DB)
-        .collection('PermissionGroup')
-        .insertOne({
-          _id: new mongoDB.ObjectId(),
-          name: 'Default',
-          description: 'Default permission',
-          isAdminPermission: true,
-        })
-    )
+    const defaultPermissionGroup = await client
+      .db(process.env.DB)
+      .collection('PermissionGroup')
+      .insertOne({
+        _id: new mongoDB.ObjectId(),
+        name: 'Default',
+        description: 'Default permission',
+        isAdminPermission: true,
+      })
+
     return defaultPermissionGroup
   }
 
@@ -154,11 +154,11 @@ export class SeedService {
 
       const defaultPermissionGroup = await this.createDefaultPermissionGroup(client)
 
-      if (!defaultPermissionGroup) return
+      const permissionGroupId = defaultPermissionGroup?.insertedId ?? defaultPermissionGroup?._id
 
       const defaultPermission = await this.createModuleDefaultPermission(
         moduleId,
-        defaultPermissionGroup?.insertedId!.toString(),
+        permissionGroupId!.toString(),
         client,
       )
 
