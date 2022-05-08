@@ -39,6 +39,7 @@ export interface IAuth {
   signup(signupBodyRequest: Signup, token: string): Promise<any>;
   getProfile(userType: UserTypesEnum, uniqueId: string): Promise<any>;
 
+  generateToken(payload: any, expiresIn: string): Promise<string>;
   refreshToken(token: string): Promise<ILoginResponse>;
   verifyAuthorization(collection: string, action: string, token: string): Promise<IAuthorizedUser>;
   verifyJwtAuthorization(token: string): Promise<any>;

@@ -9,6 +9,7 @@ import {IGetProfile} from '../interfaces/auth.interface';
 import {IHttpResponse} from '../interfaces/http.interface';
 import {User} from '../models';
 import {AuthService} from '../services/auth.service';
+import {serverMessages} from '../utils/server-messages';
 
 export class AuthController {
 
@@ -92,10 +93,16 @@ export class AuthController {
 
       const loginUserInfo = JwtToken.getLoginUserInfoFromToken(this.httpRequest.headers.authorization!)
 
-      const tokenAndUser = await this.authService.login(loginUserInfo/*, process.env.PROJECT_ID!*/)
+      const tokenAndUser =
+        (await this.authService.login(loginUserInfo)) ||
+        {
+          userData: {},
+          message: serverMessages['auth']['unregisteredUser'][locale ?? LocaleEnum['pt-BR']],
+          statusCode: 601
+        }
 
       return HttpResponseToClient.createHttpResponse({
-        data: tokenAndUser?.statusCode ? {} : tokenAndUser?.userData,
+        data: tokenAndUser?.userData,
         message: tokenAndUser?.message,
         statusCode: tokenAndUser?.statusCode || 200,
         locale,

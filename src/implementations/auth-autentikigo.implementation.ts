@@ -83,6 +83,23 @@ export class AuthAutentikigoImplementation implements IAuth {
 
   }
 
+  async generateToken(payload: any, expiresIn: string): Promise<string> {
+
+    const response = await fetch(`${this.autentikigoRoute}/generate-jwt`, {
+      method: 'POST',
+      headers: {
+        'Content-type': 'application/json',
+        // 'Authorization': token,
+      },
+      body: JSON.stringify({payload, expiresIn}),
+    })
+    const data = await response.json()
+
+    if (data.statusCode === 200) return data.data as string;
+    else throw new Error(data.logMessage)
+
+  }
+
   async refreshToken(token: string): Promise<ILoginResponse> {
 
     const response = await fetch(`${this.autentikigoRoute}/refresh-token`, {

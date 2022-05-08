@@ -137,7 +137,7 @@ export class SeedService {
 
     await client
       .db(process.env.DB)
-      .collection('permissionHasActions')
+      .collection('PermissionHasActions')
       .insertMany(
         permissionActions.map(permissionAction => {
           return {

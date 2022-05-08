@@ -1,5 +1,4 @@
 import {repository} from '@loopback/repository'
-import jwt from 'jsonwebtoken'
 import {AdditionalInfoModel, Signup} from '../entities/signup.entity'
 import {LocaleEnum} from '../enums/locale.enum'
 import {Autentikigo} from '../implementations'
@@ -63,17 +62,12 @@ export class AuthService {
 
     }
 
+    const authToken = await Autentikigo.generateToken({id: user?._id}, '5min')
+    const authRefreshToken = await Autentikigo.generateToken({id: user?._id}, '10min')
+
     return {
-      authToken: jwt.sign({
-        id: user?._id,
-      }, process.env.AUTENTIKIGO_SECRET!, {
-        expiresIn: '5m'
-      }),
-      authRefreshToken: jwt.sign({
-        id: user?._id,
-      }, process.env.AUTENTIKIGO_SECRET!, {
-        expiresIn: '10m'
-      }),
+      authToken,
+      authRefreshToken,
       userData: user
     }
 
@@ -223,9 +217,10 @@ export class AuthService {
       let profileDTO = await Autentikigo.getProfile(userType, uniqueId)
       if (!profileDTO) throw new Error(serverMessages['auth']['uniqueIdNotFound'][locale ?? LocaleEnum['pt-BR']])
 
-      delete profileDTO['userId']
+      delete profileDTO['data']['userId']
+      delete profileDTO['data']['_id']
 
-      const profileCreated = await this[`${userType}Repository`].create({...profileDTO})
+      const profileCreated = await this[`${userType}Repository`].create({...profileDTO['data']})
 
       return profileCreated
 
@@ -238,17 +233,12 @@ export class AuthService {
 
   public async refreshToken(id: string): Promise<IRefreshTokenResponse> {
 
+    const authToken = await Autentikigo.generateToken({id}, '5min')
+    const authRefreshToken = await Autentikigo.generateToken({id}, '10min')
+
     return {
-      authToken: jwt.sign({
-        id: id,
-      }, process.env.AUTENTIKIGO_SECRET!, {
-        expiresIn: '5m'
-      }),
-      authRefreshToken: jwt.sign({
-        id: id,
-      }, process.env.AUTENTIKIGO_SECRET!, {
-        expiresIn: '10m'
-      })
+      authToken,
+      authRefreshToken,
     }
 
   }
