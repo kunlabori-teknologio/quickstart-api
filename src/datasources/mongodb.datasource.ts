@@ -11,7 +11,7 @@ const config = {
   port: 27017,
   user: '',
   password: '',
-  database: 'fundamento',
+  database: process.env.DB,
   useNewUrlParser: true
 };
 
