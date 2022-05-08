@@ -102,11 +102,9 @@ export class AuthController {
         }
 
       return HttpResponseToClient.createHttpResponse({
-        data: {
-          userData: tokenAndUser?.userData,
-        },
-        message: tokenAndUser?.message,
-        statusCode: tokenAndUser?.statusCode || 200,
+        data: {...tokenAndUser},
+        message: tokenAndUser?.message ?? serverMessages['auth']['loginSuccess'][locale ?? LocaleEnum['pt-BR']],
+        statusCode: tokenAndUser?.statusCode ?? 200,
         locale,
         request: this.httpRequest,
         response: this.httpResponse,

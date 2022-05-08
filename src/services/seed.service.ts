@@ -16,9 +16,6 @@ export class SeedService {
 
     await this.createPermissionActions(client)
 
-    await this.createModules(client)
-
-    console.log('seed complete')
     client.close()
   }
 
@@ -44,6 +41,10 @@ export class SeedService {
           return {name: permissionAction}
         })
       )
+
+    await this.createModules(client)
+
+    console.log('seed complete')
   }
 
   private async createModules(client: mongoDB.MongoClient): Promise<void> {

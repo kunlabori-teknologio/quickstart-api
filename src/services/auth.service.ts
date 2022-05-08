@@ -91,11 +91,11 @@ export class AuthService {
         }
       ]
     })
-    user?.permissionGroups?.forEach(permissionGroup => {
-      permissionGroup.permissions.forEach(permission => {
-        console.log(permission)
-      })
-    })
+    // user?.permissionGroups?.forEach(permissionGroup => {
+    //   permissionGroup.permissions.forEach(permission => {
+    //     console.log(permission)
+    //   })
+    // })
     if (user)
       user!.permissionGroups = await this.getOwnerNamesOfPermissionGroups(user!)
 
