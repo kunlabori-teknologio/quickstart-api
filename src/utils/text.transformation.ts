@@ -86,3 +86,15 @@ export function replacePlurarizeFunctionToString(string: string): string {
   });
   return string;
 }
+
+export function kebabCaseToCamelCase(string: string) {
+  return string.replace(/-\w/g, clearAndUpper);
+}
+
+export function kebabCaseToPascalCase(string: string) {
+  return string.replace(/(^\w|-\w)/g, clearAndUpper);
+}
+
+export function clearAndUpper(string: string) {
+  return string.replace(/-/, "").toUpperCase();
+}

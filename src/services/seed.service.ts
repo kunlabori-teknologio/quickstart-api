@@ -2,7 +2,7 @@ import {BindingScope, injectable} from '@loopback/core';
 import * as fs from 'fs';
 import * as mongoDB from "mongodb";
 import path from 'path';
-import {pascalfy, replaceKebabfyFunctionToString} from '../utils/text.transformation';
+import {kebabCaseToPascalCase} from '../utils/text.transformation';
 
 @injectable({scope: BindingScope.TRANSIENT})
 export class SeedService {
@@ -61,16 +61,21 @@ export class SeedService {
     for (const file of files) {
       if (!notCreateModules.find(el => file.includes(el))) {
         if (file.includes('.repository.d.ts')) {
-          const moduleName = replaceKebabfyFunctionToString(file.split('.')[0])
+
+          const fileDir = path.join(__dirname, `../../src/repositories/${file.replace('.d.', '.')}`)
+          const fileContent = fs.readFileSync(fileDir, {encoding: 'utf8', flag: 'r'})
+          const moduleName = fileContent?.split('/* moduleName->')[1]?.replace('<- */', '').trim()
+
+          const kebabName = file.split('.')[0]
           const module = await client
             .db(process.env.DB)
             .collection('Module')
             .insertOne({
               _id: new mongoDB.ObjectId(),
-              name: moduleName.charAt(0).toUpperCase() + moduleName.slice(1),
-              description: moduleName.charAt(0).toUpperCase() + moduleName.slice(1),
-              route: `/${moduleName}`,
-              collection: pascalfy(moduleName),
+              name: moduleName,
+              description: moduleName,
+              route: `/${kebabName}`,
+              collection: kebabCaseToPascalCase(kebabName),
             })
 
           await this.createDefaultPermission(module?.insertedId!.toString(), client)
