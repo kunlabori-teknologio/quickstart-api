@@ -54,10 +54,10 @@ export class Module extends Default {
   })
   collection?: string;
 
-  @property({
-    type: 'string',
-  })
-  projectId?: string;
+  // @property({
+  //   type: 'string',
+  // })
+  // projectId?: string;
 
   constructor(data?: Partial<Module>) {
     super(data);

@@ -86,4 +86,16 @@ export class ModuleService {
     }
 
   }
+
+  public async deletePermissionAndPermissionActionsRelated(moduleId: string): Promise<void> {
+    const permissions = await this.permissionRepository.find({where: {moduleId}})
+
+    await this.permissionHasActionsRepository.deleteAll({
+      or: (permissions.map((permission) => {
+        return {permissionId: permission._id}
+      }))
+    })
+
+    await this.permissionRepository.deleteAll({moduleId})
+  }
 }
