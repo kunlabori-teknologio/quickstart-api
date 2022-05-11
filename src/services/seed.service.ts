@@ -51,9 +51,9 @@ export class SeedService {
 
     const notCreateModules = [
       'company.', 'esprimi-default.', 'index.', 'invitation.', 'module.', 'user.',
-      'permission-action.', 'permission-group.', 'permission-has-actions.',
+      'permission-action.', 'permission.', 'permission-has-actions.',
       'person.', 'project.', 'README.', 'user-has-permission-groups.',
-      // 'permission.'
+      // 'permission-group.'
     ]
 
     const dir = path.join(__dirname, '../repositories')

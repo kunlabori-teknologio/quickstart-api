@@ -1,4 +1,3 @@
-import {authenticate} from '@loopback/authentication';
 import {inject, service} from '@loopback/core';
 import {
   repository
@@ -65,7 +64,7 @@ export class ModuleController {
   //   }
   // }
 
-  @authenticate({strategy: 'autentikigo', options: {collection: 'Module', action: 'read'}})
+  // @authenticate({strategy: 'autentikigo', options: {collection: 'Module', action: 'read'}})
   @get('/modules')
   @response(200, {
     description: 'Array of Module model instances',
@@ -104,7 +103,7 @@ export class ModuleController {
     }
   }
 
-  @authenticate({strategy: 'autentikigo', options: {collection: 'Module', action: 'readOne'}})
+  // @authenticate({strategy: 'autentikigo', options: {collection: 'Module', action: 'readOne'}})
   @get('/modules/{moduleId}')
   @response(200, {
     description: 'Module model instance',

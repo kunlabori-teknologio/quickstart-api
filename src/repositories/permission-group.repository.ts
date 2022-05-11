@@ -1,7 +1,7 @@
-import {inject, Getter} from '@loopback/core';
-import {DefaultCrudRepository, repository, HasManyRepositoryFactory} from '@loopback/repository';
+import {Getter, inject} from '@loopback/core';
+import {DefaultCrudRepository, HasManyRepositoryFactory, repository} from '@loopback/repository';
 import {MongodbDataSource} from '../datasources';
-import {PermissionGroup, PermissionGroupRelations, Permission} from '../models';
+import {Permission, PermissionGroup, PermissionGroupRelations} from '../models';
 import {PermissionRepository} from './permission.repository';
 
 export class PermissionGroupRepository extends DefaultCrudRepository<
@@ -20,3 +20,5 @@ export class PermissionGroupRepository extends DefaultCrudRepository<
     this.registerInclusionResolver('permissions', this.permissions.inclusionResolver);
   }
 }
+
+/* moduleName->Permissões<- */
