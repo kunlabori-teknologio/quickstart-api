@@ -54,9 +54,9 @@ export class PermissionGroupController {
       //   name: string,
       //   description: string,
       //   isAdminPermission: true,
-      //   modules: [{
-      //     module: string,
-      //     permissionActions: []string
+      //   modulesPermissions: [{
+      //     module: string[],
+      //     permissions: string[]
       //   }]
       // }
 
@@ -73,11 +73,11 @@ export class PermissionGroupController {
       // Create permissions
       const permissions = await this.permissionService.createPermissions(
         permissionGroup?._id!,
-        data.modules,
+        data['modulesPermissions'],
       )
 
       // Create permissionHasActions
-      await this.permissionService.createPermissionHasActions(permissions, data['modules'])
+      await this.permissionService.createPermissionHasActions(permissions, data['modulesPermissions'])
 
       return HttpResponseToClient.createHttpResponse({
         // data: permission,
@@ -197,13 +197,13 @@ export class PermissionGroupController {
       const permissionsToDeleteActions = await this.permissionRepository.find({
         where: {permissionGroupId: id}
       })
-      const permissions = await this.permissionService.updatePermissions(id, data.modules)
+      const permissions = await this.permissionService.updatePermissions(id, data['modulesPermissions'])
 
       // Delete and Create permissionHasActions
       this.permissionService.updatePermissionHasActions(
         permissionsToDeleteActions,
         permissions,
-        data['modules']
+        data['modulesPermissions']
       )
 
       return HttpResponseToClient.noContentHttpResponse({
@@ -247,13 +247,13 @@ export class PermissionGroupController {
       const permissionsToDeleteActions = await this.permissionRepository.find({
         where: {permissionGroupId: id}
       })
-      const permissions = await this.permissionService.updatePermissions(id, data.modules)
+      const permissions = await this.permissionService.updatePermissions(id, data['modulesPermissions'])
 
       // Delete and Create permissionHasActions
       this.permissionService.updatePermissionHasActions(
         permissionsToDeleteActions,
         permissions,
-        data['modules']
+        data['modulesPermissions']
       )
 
       return HttpResponseToClient.noContentHttpResponse({

@@ -1,4 +1,4 @@
 export interface IModule {
-  module: string,
-  permissionActions: string[],
+  module: string[],
+  permissions: string[],
 }

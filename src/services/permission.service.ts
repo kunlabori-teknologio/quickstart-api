@@ -20,12 +20,16 @@ export class PermissionService {
     modules: IModule[],
   ): Promise<Permission[]> {
 
-    const permissions = await this.permissionRepository.createAll(modules.map((module: IModule) => {
-      return {
-        moduleId: module.module,
-        permissionGroupId
-      }
-    }))
+    const permissions = await this.permissionRepository.createAll(
+      modules.map((module: IModule) => {
+        return module.module.map(module => {
+          return {
+            moduleId: module,
+            permissionGroupId
+          }
+        })
+      }).flat()
+    )
 
     return permissions
   }
@@ -53,7 +57,7 @@ export class PermissionService {
 
       await this.permissionHasActionsRepository
         .createAll(
-          modules[permissionIndex].permissionActions
+          modules[permissionIndex].permissions
             .map((permissionActionId: string) => {
               return {permission: permission?._id, permissionActionId}
             })
@@ -81,7 +85,7 @@ export class PermissionService {
 
       await this.permissionHasActionsRepository
         .createAll(
-          modules[permissionIndex].permissionActions
+          modules[permissionIndex].permissions
             .map((permissionActionId: string) => {
               return {permission: permission?._id, permissionActionId}
             })
