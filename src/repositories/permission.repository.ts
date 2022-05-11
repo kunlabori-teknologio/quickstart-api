@@ -33,3 +33,5 @@ export class PermissionRepository extends DefaultCrudRepository<
     this.registerInclusionResolver('permissionActions', this.permissionActions.inclusionResolver);
   }
 }
+
+/* moduleName->Permissões<- */
