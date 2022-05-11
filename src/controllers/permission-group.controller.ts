@@ -1,5 +1,5 @@
 import {authenticate} from '@loopback/authentication';
-import {inject} from '@loopback/core';
+import {inject, service} from '@loopback/core';
 import {
   repository
 } from '@loopback/repository';
@@ -11,18 +11,19 @@ import {IHttpResponse} from '../interfaces/http.interface';
 import {PermissionGroup} from '../models';
 import {PermissionGroupRepository} from '../repositories';
 import {serverMessages} from '../utils/server-messages';
-import {PermissionHasActionsRepository} from './../repositories/permission-has-actions.repository';
 import {PermissionRepository} from './../repositories/permission.repository';
+import {PermissionService} from './../services/permission.service';
 
 export class PermissionGroupController {
 
   constructor(
     @repository(PermissionGroupRepository) public permissionGroupRepository: PermissionGroupRepository,
     @repository(PermissionRepository) public permissionRepository: PermissionRepository,
-    @repository(PermissionHasActionsRepository) public permissionHasActionsRepository: PermissionHasActionsRepository,
 
     @inject(RestBindings.Http.REQUEST) private httpRequest: Request,
     @inject(RestBindings.Http.RESPONSE) private httpResponse: Response,
+
+    @service(PermissionService) private permissionService: PermissionService,
 
     @inject(SecurityBindings.USER, {optional: true}) private currentUser?: UserProfile,
   ) { }
@@ -65,28 +66,18 @@ export class PermissionGroupController {
       // Create permissionGroup
       const permissionGroup = await this.permissionGroupRepository.create({
         ...{name: data.name, description: data.description},
-        _createdBy: createdBy, _ownerId: ownerId
+        _createdBy: createdBy,
+        _ownerId: ownerId
       })
 
       // Create permissions
-      const permissions = await this.permissionRepository.createAll(data.modules.map((module: any) => {
-        return {
-          moduleId: module['module'],
-          permissionGroupId: permissionGroup?._id
-        }
-      }))
+      const permissions = await this.permissionService.createPermissions(
+        permissionGroup?._id!,
+        data.modules,
+      )
 
       // Create permissionHasActions
-      for (let permissionIndex = 0; permissionIndex < permissions.length; permissionIndex++) {
-        const permission = permissions[permissionIndex];
-        await this.permissionHasActionsRepository
-          .createAll(
-            data['modules'][permissionIndex]['permissionActions']
-              .map((permissionActionId: string) => {
-                return {permission: permission?._id, permissionActionId}
-              })
-          )
-      }
+      await this.permissionService.createPermissionHasActions(permissions, data['modules'])
 
       return HttpResponseToClient.createHttpResponse({
         // data: permission,
@@ -188,14 +179,32 @@ export class PermissionGroupController {
   @response(200, {description: 'Permission group PUT success'})
   async updateById(
     @param.path.string('permissionGroupId') id: string,
-    @requestBody({
-      content: HttpDocumentation.createDocRequestSchema(PermissionGroup)
-    }) data: PermissionGroup,
+    // @requestBody({
+    //   content: HttpDocumentation.createDocRequestSchema(PermissionGroup)
+    // }) data: PermissionGroup,
+    @requestBody() data: any,
     @param.query.string('locale') locale?: LocaleEnum,
   ): Promise<IHttpResponse> {
     try {
 
-      await this.permissionGroupRepository.updateById(id, data)
+      // update permissionGroup
+      await this.permissionGroupRepository.updateById(id, {
+        name: data.name,
+        description: data.description
+      })
+
+      // Delete and Create permissions
+      const permissionsToDeleteActions = await this.permissionRepository.find({
+        where: {permissionGroupId: id}
+      })
+      const permissions = await this.permissionService.updatePermissions(id, data.modules)
+
+      // Delete and Create permissionHasActions
+      this.permissionService.updatePermissionHasActions(
+        permissionsToDeleteActions,
+        permissions,
+        data['modules']
+      )
 
       return HttpResponseToClient.noContentHttpResponse({
         locale,
@@ -220,14 +229,32 @@ export class PermissionGroupController {
   @response(200, {description: 'Permission group PATCH success'})
   async partialUpdateById(
     @param.path.string('permissionGroupId') id: string,
-    @requestBody({
-      content: HttpDocumentation.createDocRequestSchema(PermissionGroup)
-    }) data: PermissionGroup,
+    // @requestBody({
+    //   content: HttpDocumentation.createDocRequestSchema(PermissionGroup)
+    // }) data: PermissionGroup,
+    @requestBody() data: any,
     @param.query.string('locale') locale?: LocaleEnum,
   ): Promise<IHttpResponse> {
     try {
 
-      await this.permissionGroupRepository.updateById(id, data)
+      // update permissionGroup
+      await this.permissionGroupRepository.updateById(id, {
+        name: data.name,
+        description: data.description
+      })
+
+      // Delete and Create permissions
+      const permissionsToDeleteActions = await this.permissionRepository.find({
+        where: {permissionGroupId: id}
+      })
+      const permissions = await this.permissionService.updatePermissions(id, data.modules)
+
+      // Delete and Create permissionHasActions
+      this.permissionService.updatePermissionHasActions(
+        permissionsToDeleteActions,
+        permissions,
+        data['modules']
+      )
 
       return HttpResponseToClient.noContentHttpResponse({
         locale,
