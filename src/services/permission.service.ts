@@ -22,7 +22,7 @@ export class PermissionService {
 
     const permissions = await this.permissionRepository.createAll(
       modules.map((module: IModule) => {
-        return module.module.map(module => {
+        return module.modules.map(module => {
           return {
             moduleId: module,
             permissionGroupId

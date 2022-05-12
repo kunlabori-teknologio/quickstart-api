@@ -55,7 +55,7 @@ export class PermissionGroupController {
       //   description: string,
       //   isAdminPermission: true,
       //   modulesPermissions: [{
-      //     module: string[],
+      //     modules: string[],
       //     permissions: string[]
       //   }]
       // }
