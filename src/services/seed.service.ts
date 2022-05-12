@@ -38,7 +38,10 @@ export class SeedService {
       .collection('PermissionAction')
       .insertMany(
         permissionActions.map(permissionAction => {
-          return {name: permissionAction}
+          return {
+            name: permissionAction,
+            _deletedAt: null,
+          }
         })
       )
 
@@ -77,6 +80,7 @@ export class SeedService {
               description: moduleName,
               route: `/${kebabName}`,
               collection: kebabCaseToPascalCase(kebabName),
+              _deletedAt: null,
             })
 
           await this.createDefaultPermission(module?.insertedId!.toString(), client)
