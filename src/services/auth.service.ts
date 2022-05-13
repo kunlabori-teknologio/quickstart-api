@@ -37,22 +37,22 @@ export class AuthService {
     return oAuth.createOAuthToken(oAuthUser, invitationId)
   }
 
-  public async login(userLoginInfo: ILoginUserInfo/*, projectId: string*/): Promise<ILoginResponse | null> {
+  public async login(userLoginInfo: ILoginUserInfo): Promise<ILoginResponse | null> {
 
     const {email, googleId, appleId, invitationId} = userLoginInfo
 
     const permissionGroupId = invitationId ?
       await this.getPermissionGroupIdFromInvitation(invitationId, email!) :
-      await this.getDefaultPermissionGroupId(/*projectId*/)
+      await this.getDefaultPermissionGroupId(email!)
 
-    let user = await this.findUserWithPermissions(email!, /*projectId!,*/ googleId, appleId)
+    let user = await this.findUserWithPermissions(email!, googleId, appleId)
     if (!user) return null
 
     const userHasPermissionGroup = user.permissionGroups?.find(permissionGroup => permissionGroup._id === permissionGroupId)
     if (!userHasPermissionGroup) {
 
       await this.giveTheUserPermission(permissionGroupId!, user._id!)
-      user = await this.findUserWithPermissions(email!, /*projectId!,*/ googleId, appleId)
+      user = await this.findUserWithPermissions(email!, googleId, appleId)
 
       if (invitationId) {
         await this.invitationRepository.updateById(invitationId, {
@@ -73,7 +73,7 @@ export class AuthService {
 
   }
 
-  private async findUserWithPermissions(email: string, /*projectId: string,*/ googleId?: string, appleId?: string): Promise<User | null> {
+  private async findUserWithPermissions(email: string, googleId?: string, appleId?: string): Promise<User | null> {
     const oAuthWhere = googleId ? {googleId} : {appleId}
 
     const user = await this.userRepository.findOne({
@@ -81,7 +81,6 @@ export class AuthService {
         'person', 'company',
         {
           relation: 'permissionGroups', scope: {
-            // where: {projectId: projectId},
             include: [{
               relation: 'permissions', scope: {
                 include: ['module', 'permissionActions']
@@ -147,12 +146,16 @@ export class AuthService {
 
   }
 
-  private async getDefaultPermissionGroupId(/*projectId: string*/): Promise<string | undefined> {
+  private async getDefaultPermissionGroupId(email: string): Promise<string | undefined> {
+
+    if (process.env.ADMIN_USERS) {
+      const adminUsers = process.env.ADMIN_USERS.split(',')
+      if (!adminUsers.includes(email)) throw new Error(serverMessages['auth']['userIsNotAdmin'][LocaleEnum['pt-BR']])
+    }
 
     const defaultPermissionGroup: PermissionGroup | null = await this.permissionGroupRepository.findOne({
       where: {
         and: [
-          // {projectId},
           {isAdminPermission: true}
         ]
       }
@@ -243,14 +246,13 @@ export class AuthService {
 
   }
 
-  public async verifyAuthorization(userId: string, action: string, collection: string/*, projectId: string*/) {
+  public async verifyAuthorization(userId: string, action: string, collection: string) {
 
     let ownerId = null
 
     const permissionGroups = await this.userRepository
       .permissionGroups(userId)
       .find({
-        // where: {projectId: projectId},
         include: [{
           relation: 'permissions', scope: {
             include: [

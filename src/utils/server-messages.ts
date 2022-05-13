@@ -142,6 +142,10 @@ export const serverMessages = {
     'emailInvitationIncorrect': {
       [LocaleEnum['pt-BR']]: 'Convite invalido. Utilize o e-mail do usuário convidado',
       [LocaleEnum['en-US']]: 'Invalid invitation. Use correct invited user e-mail',
+    },
+    'userIsNotAdmin': {
+      [LocaleEnum['pt-BR']]: 'Login invalido. Usuário não é admin',
+      [LocaleEnum['en-US']]: 'Invalid login. User is not admin',
     }
   },
   'user': {

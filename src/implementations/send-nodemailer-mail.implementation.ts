@@ -11,9 +11,9 @@ export class SendNodemailerMailImplementation implements ISendMail {
     `
 
     const mailOptions = {
-      from: '"Kunlatek" <noreply@kunlatek.com.br>',
+      from: `${process.env.PROJECT || 'Quickstart'}`,
       to: emailOfInvited,
-      subject: 'Convite Kunlatek',
+      subject: `Convite - ${process.env.PROJECT || 'Quickstart'}`,
       html: mailBody
     }
 
