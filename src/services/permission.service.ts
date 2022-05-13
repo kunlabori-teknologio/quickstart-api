@@ -1,6 +1,6 @@
-import { /* inject, */ BindingScope, injectable} from '@loopback/core';
+import {BindingScope, injectable} from '@loopback/core';
 import {repository} from '@loopback/repository';
-import {IModule} from '../interfaces/permission.interface';
+import {IModulesPermissions} from '../interfaces/permission.interface';
 import {PermissionHasActionsRepository} from '../repositories/permission-has-actions.repository';
 import {PermissionRepository} from './../repositories/permission.repository';
 
@@ -16,89 +16,64 @@ export class PermissionService {
 
   public async createPermissions(
     permissionGroupId: string,
-    modules: IModule[],
+    modulesPermissionsArray: IModulesPermissions[],
   ): Promise<void> {
 
-    for (let permissionIndex = 0; permissionIndex < modules.length; permissionIndex++) {
-      const permission = modules[permissionIndex];
+    for (
+      let modulesPermissionsIndex = 0;
+      modulesPermissionsIndex < modulesPermissionsArray.length;
+      modulesPermissionsIndex++
+    ) {
+      const modulesPermissions = modulesPermissionsArray[modulesPermissionsIndex];
 
-      for (let moduleIndex = 0; moduleIndex < permission.modules.length; moduleIndex++) {
-        const module = permission.modules[moduleIndex];
+      for (
+        let moduleIndex = 0;
+        moduleIndex < modulesPermissions.modules.length;
+        moduleIndex++
+      ) {
+        const module = modulesPermissions.modules[moduleIndex];
 
-        const permissionCreated = await this.permissionRepository.create({
+        const permission = await this.permissionRepository.create({
           moduleId: module,
           permissionGroupId,
         })
 
-        await this.permissionHasActionsRepository
-          .createAll(
-            permission.permissions
-              .map((permissionActionId: string) => {
-                return {permissionId: permissionCreated?._id, permissionActionId}
-              })
-          )
-      }
+        this.createPermissionHasActions(
+          permission._id!,
+          modulesPermissions.permissions,
+        )
 
+      }
     }
+  }
+
+  public async createPermissionHasActions(
+    permissionId: string,
+    actions: string[],
+  ): Promise<void> {
+
+    await this.permissionHasActionsRepository.createAll(
+      actions.map(permissionActionId => {
+        return {permissionId, permissionActionId}
+      })
+    )
   }
 
   public async updatePermissions(
     permissionGroupId: string,
-    modules: IModule[],
+    modules: IModulesPermissions[],
   ): Promise<void> {
+
+    const permissions = await this.permissionRepository.find({where: {permissionGroupId}})
 
     await this.permissionRepository.deleteAll({permissionGroupId})
 
+    await this.permissionHasActionsRepository.deleteAll({
+      or: permissions.map(permission => {
+        return {permissionId: permission._id}
+      })
+    })
+
     await this.createPermissions(permissionGroupId, modules)
   }
-
-  // public async createPermissionHasActions(
-  //   permissions: Permission[],
-  //   modules: IModule[],
-  // ): Promise<void> {
-  //   console.log(53, permissions)
-  //   console.log(54, modules)
-  //   for (let permissionIndex = 0; permissionIndex < permissions.length; permissionIndex++) {
-
-  //     const permission = permissions[permissionIndex];
-
-  //     await this.permissionHasActionsRepository
-  //       .createAll(
-  //         modules[permissionIndex].permissions
-  //           .map((permissionActionId: string) => {
-  //             return {permissionId: permission?._id, permissionActionId}
-  //           })
-  //       )
-
-  //   }
-
-  // }
-
-  // public async updatePermissionHasActions(
-  //   permissionsToDelete: Permission[],
-  //   permissions: Permission[],
-  //   modules: IModule[],
-  // ): Promise<void> {
-
-  //   await this.permissionHasActionsRepository.deleteAll({
-  //     or: permissionsToDelete.map(permission => {
-  //       return {permissionId: permission._id}
-  //     })
-  //   })
-
-  //   for (let permissionIndex = 0; permissionIndex < permissions.length; permissionIndex++) {
-
-  //     const permission = permissions[permissionIndex];
-
-  //     await this.permissionHasActionsRepository
-  //       .createAll(
-  //         modules[permissionIndex].permissions
-  //           .map((permissionActionId: string) => {
-  //             return {permission: permission?._id, permissionActionId}
-  //           })
-  //       )
-
-  //   }
-
-  // }
 }

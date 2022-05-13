@@ -1,4 +1,4 @@
-export interface IModule {
+export interface IModulesPermissions {
   modules: string[],
   permissions: string[],
 }
