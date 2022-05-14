@@ -1,7 +1,7 @@
 import {Entity, model, property} from '@loopback/repository';
 
 @model()
-export class UserHasPermissionGroups extends Entity {
+export class __UserHasPermissionGroups extends Entity {
   @property({
     type: 'string',
     id: true,
@@ -19,7 +19,7 @@ export class UserHasPermissionGroups extends Entity {
   })
   permissionGroupId?: string;
 
-  constructor(data?: Partial<UserHasPermissionGroups>) {
+  constructor(data?: Partial<__UserHasPermissionGroups>) {
     super(data);
   }
 }
@@ -28,4 +28,4 @@ export interface UserHasPermissionGroupsRelations {
   // describe navigational properties here
 }
 
-export type UserHasPermissionGroupsWithRelations = UserHasPermissionGroups & UserHasPermissionGroupsRelations;
+export type UserHasPermissionGroupsWithRelations = __UserHasPermissionGroups & UserHasPermissionGroupsRelations;

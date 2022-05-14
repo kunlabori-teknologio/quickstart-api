@@ -10,16 +10,16 @@ import {HttpDocumentation, HttpResponseToClient} from '../implementations/index'
 import {SendNodemailerMailImplementation} from '../implementations/send-nodemailer-mail.implementation'
 import {IHttpResponse} from '../interfaces/http.interface'
 import {ISendMail} from '../interfaces/send-mail.interface'
-import {Invitation} from '../models'
-import {InvitationRepository} from '../repositories'
+import {__Invitation} from '../models'
+import {__InvitationRepository} from '../repositories'
 import {serverMessages} from '../utils/server-messages'
 
-export class InvitationController {
+export class __InvitationController {
 
   private sendMail: ISendMail
 
   constructor(
-    @repository(InvitationRepository) public invitationRepository: InvitationRepository,
+    @repository(__InvitationRepository) public invitationRepository: __InvitationRepository,
 
     @inject(RestBindings.Http.REQUEST) private httpRequest: Request,
     @inject(RestBindings.Http.RESPONSE) private httpResponse: Response,
@@ -30,15 +30,15 @@ export class InvitationController {
   }
 
   @authenticate({strategy: 'autentikigo', options: {collection: 'Invitation', action: 'createOne'}})
-  @post('/invitations')
+  @post('/__invitations')
   @response(200, {
     description: 'Invitation model instance',
-    properties: HttpDocumentation.createDocResponseSchemaForFindOneResult(Invitation)
+    properties: HttpDocumentation.createDocResponseSchemaForFindOneResult(__Invitation)
   })
   async create(
     @requestBody({
-      content: HttpDocumentation.createDocRequestSchema(Invitation)
-    }) data: Invitation,
+      content: HttpDocumentation.createDocRequestSchema(__Invitation)
+    }) data: __Invitation,
     @param.query.string('locale') locale?: LocaleEnum,
   ): Promise<IHttpResponse> {
     try {
@@ -68,10 +68,10 @@ export class InvitationController {
   }
 
   @authenticate({strategy: 'autentikigo', options: {collection: 'Invitation', action: 'read'}})
-  @get('/invitations')
+  @get('/__invitations')
   @response(200, {
     description: 'Array of Invitation model instances',
-    properties: HttpDocumentation.createDocResponseSchemaForFindManyResults(Invitation)
+    properties: HttpDocumentation.createDocResponseSchemaForFindManyResults(__Invitation)
   })
   async find(
     @param.query.number('limit') limit?: number,
@@ -107,10 +107,10 @@ export class InvitationController {
   }
 
   @authenticate({strategy: 'autentikigo', options: {collection: 'Invitation', action: 'readOne'}})
-  @get('/invitations/{invitationId}')
+  @get('/__invitations/{invitationId}')
   @response(200, {
     description: 'Invitation model instance',
-    properties: HttpDocumentation.createDocResponseSchemaForFindOneResult(Invitation)
+    properties: HttpDocumentation.createDocResponseSchemaForFindOneResult(__Invitation)
   })
   async findById(
     @param.path.string('invitationId') id: string,
@@ -141,13 +141,13 @@ export class InvitationController {
   }
 
   @authenticate({strategy: 'autentikigo', options: {collection: 'Invitation', action: 'updateOne'}})
-  @put('/invitations/{invitationId}')
+  @put('/__invitations/{invitationId}')
   @response(200, {description: 'Invitation PUT success'})
   async updateById(
     @param.path.string('invitationId') id: string,
     @requestBody({
-      content: HttpDocumentation.createDocRequestSchema(Invitation)
-    }) data: Invitation,
+      content: HttpDocumentation.createDocRequestSchema(__Invitation)
+    }) data: __Invitation,
     @param.query.string('locale') locale?: LocaleEnum,
   ): Promise<IHttpResponse> {
     try {
@@ -173,13 +173,13 @@ export class InvitationController {
   }
 
   @authenticate({strategy: 'autentikigo', options: {collection: 'Invitation', action: 'updateOne'}})
-  @patch('/invitations/{invitationId}')
+  @patch('/__invitations/{invitationId}')
   @response(200, {description: 'Invitation PATCH success'})
   async partialUpdateById(
     @param.path.string('invitationId') id: string,
     @requestBody({
-      content: HttpDocumentation.createDocRequestSchema(Invitation)
-    }) data: Invitation,
+      content: HttpDocumentation.createDocRequestSchema(__Invitation)
+    }) data: __Invitation,
     @param.query.string('locale') locale?: LocaleEnum,
   ): Promise<IHttpResponse> {
     try {
@@ -205,7 +205,7 @@ export class InvitationController {
   }
 
   @authenticate({strategy: 'autentikigo', options: {collection: 'Invitation', action: 'deleteOne'}})
-  @del('/invitations/{invitationId}')
+  @del('/__invitations/{invitationId}')
   @response(204, {description: 'Invitation DELETE success'})
   async deleteById(
     @param.path.string('invitationId') id: string,
@@ -236,7 +236,7 @@ export class InvitationController {
   }
 
   @authenticate({strategy: 'autentikigo', options: {collection: 'Invitation', action: 'readOne'}})
-  @get('/invitations/send/{invitationId}')
+  @get('/__invitations/send/{invitationId}')
   @response(200, {description: 'Invitation sent successfully'})
   async sendInvitation(
     @param.path.string('invitationId') id: string,

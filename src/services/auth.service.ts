@@ -4,11 +4,11 @@ import {LocaleEnum} from '../enums/locale.enum'
 import {Autentikigo} from '../implementations'
 import {IGetProfile, ILoginResponse, ILoginUserInfo, IOAuthLogin, IRefreshTokenResponse} from '../interfaces/auth.interface'
 import {IOAuthUser} from '../interfaces/user.interface'
-import {Company} from '../models/company.model'
-import {PermissionGroup} from '../models/permission-group.model'
-import {Person} from '../models/person.model'
-import {User} from '../models/user.model'
-import {CompanyRepository, InvitationRepository, PermissionGroupRepository, PersonRepository, UserHasPermissionGroupsRepository, UserRepository} from '../repositories'
+import {__Company} from '../models/__company.model'
+import {__PermissionGroup} from '../models/__permission-group.model'
+import {__Person} from '../models/__person.model'
+import {__User} from '../models/__user.model'
+import {__CompanyRepository, __InvitationRepository, __PermissionGroupRepository, __PersonRepository, __UserHasPermissionGroupsRepository, __UserRepository} from '../repositories'
 import {theDatesMatch} from '../utils/date-manipulation-functions'
 import {getUserType, UserTypesEnum} from '../utils/general-functions'
 import {serverMessages} from '../utils/server-messages'
@@ -17,12 +17,12 @@ import {hideEmailString} from '../utils/string-manipulation-functions'
 export class AuthService {
 
   constructor(
-    @repository(UserRepository) private userRepository: UserRepository,
-    @repository(PersonRepository) private personRepository: PersonRepository,
-    @repository(CompanyRepository) private companyRepository: CompanyRepository,
-    @repository(InvitationRepository) private invitationRepository: InvitationRepository,
-    @repository(UserHasPermissionGroupsRepository) private userHasPermissionGroupRepository: UserHasPermissionGroupsRepository,
-    @repository(PermissionGroupRepository) private permissionGroupRepository: PermissionGroupRepository,
+    @repository(__UserRepository) private userRepository: __UserRepository,
+    @repository(__PersonRepository) private personRepository: __PersonRepository,
+    @repository(__CompanyRepository) private companyRepository: __CompanyRepository,
+    @repository(__InvitationRepository) private invitationRepository: __InvitationRepository,
+    @repository(__UserHasPermissionGroupsRepository) private userHasPermissionGroupRepository: __UserHasPermissionGroupsRepository,
+    @repository(__PermissionGroupRepository) private permissionGroupRepository: __PermissionGroupRepository,
   ) { }
 
   public async getOAuthLoginPageURL(oAuth: IOAuthLogin, params?: string): Promise<string> {
@@ -73,7 +73,7 @@ export class AuthService {
 
   }
 
-  private async findUserWithPermissions(email: string, googleId?: string, appleId?: string): Promise<User | null> {
+  private async findUserWithPermissions(email: string, googleId?: string, appleId?: string): Promise<__User | null> {
     const oAuthWhere = googleId ? {googleId} : {appleId}
 
     const user = await this.userRepository.findOne({
@@ -101,7 +101,7 @@ export class AuthService {
     return user
   }
 
-  private async getOwnerNamesOfPermissionGroups(user: User): Promise<PermissionGroup[] | undefined> {
+  private async getOwnerNamesOfPermissionGroups(user: __User): Promise<__PermissionGroup[] | undefined> {
 
     const permissionGroupsOwnerIds = user?.permissionGroups?.map(permissionGroup => {
       if (permissionGroup.isAdminPermission) return user._id
@@ -153,7 +153,7 @@ export class AuthService {
       if (!adminUsers.includes(email)) throw new Error(serverMessages['auth']['userIsNotAdmin'][LocaleEnum['pt-BR']])
     }
 
-    const defaultPermissionGroup: PermissionGroup | null = await this.permissionGroupRepository.findOne({
+    const defaultPermissionGroup: __PermissionGroup | null = await this.permissionGroupRepository.findOne({
       where: {
         and: [
           {isAdminPermission: true}
@@ -171,7 +171,7 @@ export class AuthService {
 
   }
 
-  public async signup(data: Signup, userInfo: ILoginUserInfo, getProfile: IGetProfile, locale?: LocaleEnum): Promise<User> {
+  public async signup(data: Signup, userInfo: ILoginUserInfo, getProfile: IGetProfile, locale?: LocaleEnum): Promise<__User> {
 
     const userType = getUserType(data, locale)
 
@@ -213,7 +213,7 @@ export class AuthService {
       {userType: UserTypesEnum, uniqueId: string, additionalInfo?: AdditionalInfoModel},
     getProfile: IGetProfile,
     locale?: LocaleEnum
-  ): Promise<Person | Company> {
+  ): Promise<__Person | __Company> {
     try {
 
       // const profileDTO = await getProfile.getFullProfileInfo(uniqueId, userType, additionalInfo)

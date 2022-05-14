@@ -1,18 +1,21 @@
 import {model, property} from '@loopback/repository';
-import {Default} from '.';
+import {__Default} from './__default.model';
 
 @model()
-export class Module extends Default {
+export class __PermissionAction extends __Default {
   @property({
     type: 'string',
     id: true,
     generated: true,
+    mongodb: {
+      dataType: 'ObjectId'
+    },
   })
   _id?: string;
 
   @property({
     name: 'name',
-    description: "The Module's name",
+    description: "The PermissionAction's name",
     type: 'string',
     required: true,
     jsonSchema: {
@@ -26,7 +29,7 @@ export class Module extends Default {
 
   @property({
     name: 'description',
-    description: "The Module's description",
+    description: "The PermissionAction's description",
     type: 'string',
     required: false,
     jsonSchema: {
@@ -38,34 +41,13 @@ export class Module extends Default {
   })
   description?: string;
 
-  @property({
-    name: 'route',
-    description: "The Module's route",
-    type: 'string',
-    required: false,
-  })
-  route?: string;
-
-  @property({
-    name: 'collection',
-    description: "The Module's collection",
-    type: 'string',
-    required: false,
-  })
-  collection?: string;
-
-  // @property({
-  //   type: 'string',
-  // })
-  // projectId?: string;
-
-  constructor(data?: Partial<Module>) {
+  constructor(data?: Partial<__PermissionAction>) {
     super(data);
   }
 }
 
-export interface ModuleRelations {
+export interface PermissionActionRelations {
   // describe navigational properties here
 }
 
-export type ModuleWithRelations = Module & ModuleRelations;
+export type PermissionActionWithRelations = __PermissionAction & PermissionActionRelations;

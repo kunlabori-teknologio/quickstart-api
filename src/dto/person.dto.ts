@@ -1,10 +1,10 @@
 import {AnyObject} from '@loopback/repository';
 import {AdditionalInfoModel} from '../entities/signup.entity';
 import {IPersonFromAPI} from '../interfaces/person.interface';
-import {Person} from '../models';
+import {__Person} from '../models';
 import {convertBirthdayStringToDate} from '../utils/date-manipulation-functions';
 
-export class PersonDTO implements Person {
+export class PersonDTO implements __Person {
   _id?: string | undefined;
   name: string;
   uniqueId: string;

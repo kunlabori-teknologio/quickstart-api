@@ -7,11 +7,11 @@ import {Autentikigo, HttpDocumentation, HttpResponseToClient, JwtToken} from '..
 import {ProfileFromAPIImplementation} from '../implementations/profile-from-api.implementation';
 import {IGetProfile} from '../interfaces/auth.interface';
 import {IHttpResponse} from '../interfaces/http.interface';
-import {User} from '../models';
+import {__User} from '../models';
 import {AuthService} from '../services/auth.service';
 import {serverMessages} from '../utils/server-messages';
 
-export class AuthController {
+export class __AuthController {
 
   private getProfile: IGetProfile
 
@@ -75,7 +75,7 @@ export class AuthController {
   @get('/auth/login')
   @response(200, {
     description: 'Login user',
-    properties: HttpDocumentation.createDocResponseSchemaForFindOneResult(User)
+    properties: HttpDocumentation.createDocResponseSchemaForFindOneResult(__User)
   })
   async login(
     @param.query.string('locale') locale?: LocaleEnum,

@@ -5,8 +5,8 @@ import {Request, Response, RestBindings} from '@loopback/rest';
 import {securityId, UserProfile} from '@loopback/security';
 import {LocaleEnum} from '../enums/locale.enum';
 import {Autentikigo, JwtToken} from '../implementations';
+import {__UserRepository} from '../repositories/__user.repository';
 import {serverMessages} from '../utils/server-messages';
-import {UserRepository} from './../repositories/user.repository';
 
 @model()
 export class User implements UserProfile {
@@ -29,7 +29,7 @@ export class AutentikigoStrategy implements AuthenticationStrategy {
     @inject.getter(AuthenticationBindings.METADATA) readonly getMetaData: Getter<AuthenticationMetadata>,
     @inject(RestBindings.Http.RESPONSE) private response: Response,
 
-    @repository(UserRepository) private userRepository: UserRepository,
+    @repository(__UserRepository) private userRepository: __UserRepository,
   ) { }
 
   async authenticate(request: Request): Promise<UserProfile | undefined> {

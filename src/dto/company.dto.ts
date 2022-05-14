@@ -1,10 +1,10 @@
 import {AnyObject} from '@loopback/repository';
 import {AdditionalInfoModel} from '../entities/signup.entity';
 import {IBusinessActivityCode, ICompanyFromAPI} from '../interfaces/company.interface';
-import {Company} from '../models';
+import {__Company} from '../models';
 import {convertBirthdayStringToDate} from '../utils/date-manipulation-functions';
 
-export class CompanyDTO implements Company {
+export class CompanyDTO implements __Company {
   _id?: string | undefined;
   corporateName: string;
   tradeName: string;

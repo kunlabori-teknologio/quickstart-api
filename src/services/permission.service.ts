@@ -1,17 +1,17 @@
 import {BindingScope, injectable} from '@loopback/core';
 import {repository} from '@loopback/repository';
 import {IModulesPermissions} from '../interfaces/permission.interface';
-import {PermissionHasActionsRepository} from '../repositories/permission-has-actions.repository';
-import {PermissionRepository} from './../repositories/permission.repository';
+import {__PermissionHasActionsRepository} from '../repositories/__permission-has-actions.repository';
+import {__PermissionRepository} from '../repositories/__permission.repository';
 
 @injectable({scope: BindingScope.TRANSIENT})
 export class PermissionService {
   constructor(
-    @repository(PermissionRepository)
-    private permissionRepository: PermissionRepository,
+    @repository(__PermissionRepository)
+    private permissionRepository: __PermissionRepository,
 
-    @repository(PermissionHasActionsRepository)
-    private permissionHasActionsRepository: PermissionHasActionsRepository
+    @repository(__PermissionHasActionsRepository)
+    private permissionHasActionsRepository: __PermissionHasActionsRepository
   ) { }
 
   public async createPermissions(

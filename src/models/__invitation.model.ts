@@ -1,9 +1,9 @@
 import {belongsTo, model, property} from '@loopback/repository';
-import {Default} from '.';
-import {PermissionGroup} from './permission-group.model';
+import {__Default} from '.';
+import {__PermissionGroup} from './__permission-group.model';
 
 @model()
-export class Invitation extends Default {
+export class __Invitation extends __Default {
   @property({
     type: 'string',
     id: true,
@@ -17,10 +17,10 @@ export class Invitation extends Default {
   })
   email: string;
 
-  @belongsTo(() => PermissionGroup)
+  @belongsTo(() => __PermissionGroup)
   permissionGroupId: string;
 
-  constructor(data?: Partial<Invitation>) {
+  constructor(data?: Partial<__Invitation>) {
     super(data);
   }
 }
@@ -29,4 +29,4 @@ export interface InvitationRelations {
   // describe navigational properties here
 }
 
-export type InvitationWithRelations = Invitation & InvitationRelations;
+export type InvitationWithRelations = __Invitation & InvitationRelations;

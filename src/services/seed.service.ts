@@ -22,7 +22,7 @@ export class SeedService {
   private async createPermissionActions(client: mongoDB.MongoClient): Promise<void | null> {
     const permissionsActionsInDatabase = await client
       .db(process.env.DB)
-      .collection('PermissionAction')
+      .collection('__PermissionAction')
       .find().toArray()
 
     if (permissionsActionsInDatabase.length > 0) return null
@@ -35,7 +35,7 @@ export class SeedService {
 
     await client
       .db(process.env.DB)
-      .collection('PermissionAction')
+      .collection('__PermissionAction')
       .insertMany(
         permissionActions.map(permissionAction => {
           return {
@@ -52,28 +52,21 @@ export class SeedService {
 
   private async createModules(client: mongoDB.MongoClient): Promise<void> {
 
-    const notCreateModules = [
-      'company.', 'esprimi-default.', 'index.', 'invitation.', 'module.', 'user.',
-      'permission-action.', 'permission.', 'permission-has-actions.',
-      'person.', 'project.', 'README.', 'user-has-permission-groups.',
-      // 'permission-group.'
-    ]
-
-    const dir = path.join(__dirname, '../repositories')
+    const dir = path.join(__dirname, '../../src/repositories')
     const files = fs.readdirSync(dir)
 
     for (const file of files) {
-      if (!notCreateModules.find(el => file.includes(el))) {
-        if (file.includes('.repository.d.ts')) {
+      if (!file.startsWith('__') || file.includes('__permission-group')) {
+        if (file.includes('.repository.ts')) {
 
-          const fileDir = path.join(__dirname, `../../src/repositories/${file.replace('.d.', '.')}`)
+          const fileDir = path.join(__dirname, `../../src/repositories/${file}`)
           const fileContent = fs.readFileSync(fileDir, {encoding: 'utf8', flag: 'r'})
           const moduleName = fileContent?.split('/* moduleName->')[1]?.replace('<- */', '').trim()
 
           const kebabName = file.split('.')[0]
           const module = await client
             .db(process.env.DB)
-            .collection('Module')
+            .collection('__Module')
             .insertOne({
               _id: new mongoDB.ObjectId(),
               name: moduleName,
@@ -107,7 +100,7 @@ export class SeedService {
 
     const permissionGroupInDatabase = await client
       .db(process.env.DB)
-      .collection('PermissionGroup')
+      .collection('__PermissionGroup')
       .find().toArray()
 
     if (permissionGroupInDatabase.length > 0)
@@ -115,7 +108,7 @@ export class SeedService {
 
     const defaultPermissionGroup = await client
       .db(process.env.DB)
-      .collection('PermissionGroup')
+      .collection('__PermissionGroup')
       .insertOne({
         _id: new mongoDB.ObjectId(),
         name: 'Default',
@@ -130,7 +123,7 @@ export class SeedService {
 
     const defaultPermission = await client
       .db(process.env.DB)
-      .collection('Permission')
+      .collection('__Permission')
       .insertOne({
         _id: new mongoDB.ObjectId(),
         moduleId: new mongoDB.ObjectId(moduleId),
@@ -143,12 +136,12 @@ export class SeedService {
   private async giveAllActionsToDefaultPermission(permissionId: string, client: mongoDB.MongoClient): Promise<void> {
     const permissionActions = await client
       .db(process.env.DB)
-      .collection('PermissionAction')
+      .collection('__PermissionAction')
       .find().toArray()
 
     await client
       .db(process.env.DB)
-      .collection('PermissionHasActions')
+      .collection('__PermissionHasActions')
       .insertMany(
         permissionActions.map(permissionAction => {
           return {

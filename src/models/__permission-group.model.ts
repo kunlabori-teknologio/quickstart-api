@@ -1,9 +1,9 @@
 import {hasMany, model, property} from '@loopback/repository';
-import {Default} from './default.model';
-import {Permission} from './permission.model';
+import {__Default} from './__default.model';
+import {__Permission} from './__permission.model';
 
 @model()
-export class PermissionGroup extends Default {
+export class __PermissionGroup extends __Default {
   @property({
     type: 'string',
     id: true,
@@ -56,13 +56,13 @@ export class PermissionGroup extends Default {
   })
   isAdminPermission?: boolean;
 
-  @hasMany(() => Permission)
-  permissions: Permission[];
+  @hasMany(() => __Permission)
+  permissions: __Permission[];
 
   @property()
   owner?: {};
 
-  constructor(data?: Partial<PermissionGroup>) {
+  constructor(data?: Partial<__PermissionGroup>) {
     super(data);
   }
 }
@@ -71,4 +71,4 @@ export interface PermissionGroupRelations {
   // describe navigational properties here
 }
 
-export type PermissionGroupWithRelations = PermissionGroup & PermissionGroupRelations;
+export type PermissionGroupWithRelations = __PermissionGroup & PermissionGroupRelations;

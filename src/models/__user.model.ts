@@ -1,11 +1,11 @@
 import {Entity, hasMany, hasOne, model, property} from '@loopback/repository';
-import {Company} from './company.model';
-import {PermissionGroup} from './permission-group.model';
-import {Person} from './person.model';
-import {UserHasPermissionGroups} from './user-has-permission-groups.model';
+import {__Company} from './__company.model';
+import {__PermissionGroup} from './__permission-group.model';
+import {__Person} from './__person.model';
+import {__UserHasPermissionGroups} from './__user-has-permission-groups.model';
 
 @model()
-export class User extends Entity {
+export class __User extends Entity {
   @property({
     type: 'string',
     id: true,
@@ -58,16 +58,16 @@ export class User extends Entity {
   })
   appleId?: string;
 
-  @hasOne(() => Person)
-  person: Person;
+  @hasOne(() => __Person)
+  person: __Person;
 
-  @hasOne(() => Company)
-  company: Company;
+  @hasOne(() => __Company)
+  company: __Company;
 
-  @hasMany(() => PermissionGroup, {through: {model: () => UserHasPermissionGroups}})
-  permissionGroups?: PermissionGroup[];
+  @hasMany(() => __PermissionGroup, {through: {model: () => __UserHasPermissionGroups}})
+  permissionGroups?: __PermissionGroup[];
 
-  constructor(data?: Partial<User>) {
+  constructor(data?: Partial<__User>) {
     super(data);
   }
 }
@@ -76,4 +76,4 @@ export interface UserRelations {
   // describe navigational properties here
 }
 
-export type UserWithRelations = User & UserRelations;
+export type UserWithRelations = __User & UserRelations;

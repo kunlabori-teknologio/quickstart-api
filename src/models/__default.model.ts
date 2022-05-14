@@ -1,7 +1,7 @@
 import {Entity, model, property} from '@loopback/repository';
 
 @model()
-export class Default extends Entity {
+export class __Default extends Entity {
 
   @property({
     type: 'string',
@@ -30,7 +30,7 @@ export class Default extends Entity {
   _ownerId?: string;
 
 
-  constructor(data?: Partial<Default>) {
+  constructor(data?: Partial<__Default>) {
     super(data);
   }
 }
@@ -39,4 +39,4 @@ export interface DefaultRelations {
   // describe navigational properties here
 }
 
-export type DefaultWithRelations = Default & DefaultRelations;
+export type DefaultWithRelations = __Default & DefaultRelations;

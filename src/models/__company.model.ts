@@ -2,7 +2,7 @@ import {Entity, model, property} from '@loopback/repository';
 import {IBusinessActivityCode} from '../interfaces/company.interface';
 
 @model()
-export class Company extends Entity {
+export class __Company extends Entity {
   @property({
     type: 'string',
     id: true,
@@ -57,7 +57,7 @@ export class Company extends Entity {
   })
   userId?: string;
 
-  constructor(data?: Partial<Company>) {
+  constructor(data?: Partial<__Company>) {
     super(data);
   }
 }
@@ -66,4 +66,4 @@ export interface CompanyRelations {
   // describe navigational properties here
 }
 
-export type CompanyWithRelations = Company & CompanyRelations;
+export type CompanyWithRelations = __Company & CompanyRelations;

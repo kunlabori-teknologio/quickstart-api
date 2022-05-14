@@ -8,17 +8,17 @@ import {SecurityBindings, securityId, UserProfile} from '@loopback/security';
 import {LocaleEnum} from '../enums/locale.enum';
 import {HttpDocumentation, HttpResponseToClient} from '../implementations/index';
 import {IHttpResponse} from '../interfaces/http.interface';
-import {PermissionGroup} from '../models';
-import {PermissionGroupRepository} from '../repositories';
+import {__PermissionGroup} from '../models';
+import {__PermissionGroupRepository} from '../repositories';
+import {__PermissionRepository} from '../repositories/__permission.repository';
+import {PermissionService} from '../services/permission.service';
 import {serverMessages} from '../utils/server-messages';
-import {PermissionRepository} from './../repositories/permission.repository';
-import {PermissionService} from './../services/permission.service';
 
-export class PermissionGroupController {
+export class __PermissionGroupController {
 
   constructor(
-    @repository(PermissionGroupRepository) public permissionGroupRepository: PermissionGroupRepository,
-    @repository(PermissionRepository) public permissionRepository: PermissionRepository,
+    @repository(__PermissionGroupRepository) public permissionGroupRepository: __PermissionGroupRepository,
+    @repository(__PermissionRepository) public permissionRepository: __PermissionRepository,
 
     @inject(RestBindings.Http.REQUEST) private httpRequest: Request,
     @inject(RestBindings.Http.RESPONSE) private httpResponse: Response,
@@ -36,10 +36,10 @@ export class PermissionGroupController {
   }
 
   @authenticate({strategy: 'autentikigo', options: {collection: 'PermissionGroup', action: 'createOne'}})
-  @post('/permission-groups')
+  @post('/__permission-groups')
   @response(200, {
     description: 'Permission group model instance',
-    properties: HttpDocumentation.createDocResponseSchemaForFindOneResult(PermissionGroup)
+    properties: HttpDocumentation.createDocResponseSchemaForFindOneResult(__PermissionGroup)
   })
   async create(
     // @requestBody({
@@ -86,10 +86,10 @@ export class PermissionGroupController {
   }
 
   @authenticate({strategy: 'autentikigo', options: {collection: 'PermissionGroup', action: 'read'}})
-  @get('/permission-groups')
+  @get('/__permission-groups')
   @response(200, {
     description: 'Array of Permission group model instances',
-    properties: HttpDocumentation.createDocResponseSchemaForFindManyResults(PermissionGroup)
+    properties: HttpDocumentation.createDocResponseSchemaForFindManyResults(__PermissionGroup)
   })
   async find(
     @param.query.number('limit') limit?: number,
@@ -125,10 +125,10 @@ export class PermissionGroupController {
   }
 
   @authenticate({strategy: 'autentikigo', options: {collection: 'PermissionGroup', action: 'readOne'}})
-  @get('/permission-groups/{permissionGroupId}')
+  @get('/__permission-groups/{permissionGroupId}')
   @response(200, {
     description: 'Permission group model instance',
-    properties: HttpDocumentation.createDocResponseSchemaForFindOneResult(PermissionGroup)
+    properties: HttpDocumentation.createDocResponseSchemaForFindOneResult(__PermissionGroup)
   })
   async findById(
     @param.path.string('permissionGroupId') id: string,
@@ -162,7 +162,7 @@ export class PermissionGroupController {
   }
 
   @authenticate({strategy: 'autentikigo', options: {collection: 'PermissionGroup', action: 'updateOne'}})
-  @put('/permission-groups/{permissionGroupId}')
+  @put('/__permission-groups/{permissionGroupId}')
   @response(200, {description: 'Permission group PUT success'})
   async updateById(
     @param.path.string('permissionGroupId') id: string,
@@ -205,7 +205,7 @@ export class PermissionGroupController {
   }
 
   @authenticate({strategy: 'autentikigo', options: {collection: 'PermissionGroup', action: 'updateOne'}})
-  @patch('/permission-groups/{permissionGroupId}')
+  @patch('/__permission-groups/{permissionGroupId}')
   @response(200, {description: 'Permission group PATCH success'})
   async partialUpdateById(
     @param.path.string('permissionGroupId') id: string,
@@ -248,7 +248,7 @@ export class PermissionGroupController {
   }
 
   @authenticate({strategy: 'autentikigo', options: {collection: 'PermissionGroup', action: 'deleteOne'}})
-  @del('/permission-groups/{permissionGroupId}')
+  @del('/__permission-groups/{permissionGroupId}')
   @response(204, {description: 'Permission group DELETE success'})
   async deleteById(
     @param.path.string('permissionGroupId') id: string,

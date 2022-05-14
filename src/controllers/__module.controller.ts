@@ -1,37 +1,40 @@
-import {inject} from '@loopback/core'
+import {inject, service} from '@loopback/core';
 import {
   repository
-} from '@loopback/repository'
-import {get, param, Request, response, Response, RestBindings} from '@loopback/rest'
-import {SecurityBindings, UserProfile} from '@loopback/security'
-import {LocaleEnum} from '../enums/locale.enum'
-import {HttpDocumentation, HttpResponseToClient} from '../implementations'
-import {IHttpResponse} from '../interfaces/http.interface'
-import {PermissionAction} from '../models/permission-action.model'
-import {PermissionActionRepository} from '../repositories'
-import {serverMessages} from '../utils/server-messages'
+} from '@loopback/repository';
+import {get, param, Request, response, Response, RestBindings} from '@loopback/rest';
+import {SecurityBindings, UserProfile} from '@loopback/security';
+import {LocaleEnum} from '../enums/locale.enum';
+import {HttpDocumentation, HttpResponseToClient} from '../implementations/index';
+import {IHttpResponse} from '../interfaces/http.interface';
+import {__Module} from '../models/__module.model';
+import {__ModuleRepository} from '../repositories/__module.repository';
+import {ModuleService} from '../services';
+import {serverMessages} from '../utils/server-messages';
 
-export class PermissionActionController {
+export class __ModuleController {
 
   constructor(
-    @repository(PermissionActionRepository) public permissionActionRepository: PermissionActionRepository,
+    @repository(__ModuleRepository) public moduleRepository: __ModuleRepository,
 
     @inject(RestBindings.Http.REQUEST) private httpRequest: Request,
     @inject(RestBindings.Http.RESPONSE) private httpResponse: Response,
 
+    @service(ModuleService) private moduleService: ModuleService,
+
     @inject(SecurityBindings.USER, {optional: true}) private currentUser?: UserProfile,
   ) { }
 
-  // @authenticate({strategy: 'autentikigo', options: {collection: 'PermissionAction', action: 'createOne'}})
-  // @post('/permission-actions')
+  // @authenticate({strategy: 'autentikigo', options: {collection: 'Module', action: 'createOne'}})
+  // @post('/modules')
   // @response(200, {
-  //   description: 'PermissionAction model instance',
-  //   properties: HttpDocumentation.createDocResponseSchemaForFindOneResult(PermissionAction)
+  //   description: 'Module model instance',
+  //   properties: HttpDocumentation.createDocResponseSchemaForFindOneResult(Module)
   // })
   // async create(
   //   @requestBody({
-  //     content: HttpDocumentation.createDocRequestSchema(PermissionAction)
-  //   }) data: PermissionAction,
+  //     content: HttpDocumentation.createDocRequestSchema(Module)
+  //   }) data: Module,
   //   @param.query.string('locale') locale?: LocaleEnum,
   // ): Promise<IHttpResponse> {
   //   try {
@@ -39,10 +42,12 @@ export class PermissionActionController {
   //     const createdBy = this.currentUser?.[securityId] as string
   //     const ownerId = this.currentUser?.ownerId as string
 
-  //     const permissionAction = await this.permissionActionRepository.create({...data, _createdBy: createdBy, _ownerId: ownerId})
+  //     const module = await this.moduleRepository.create({...data, _createdBy: createdBy, _ownerId: ownerId})
+
+  //     await this.moduleService.createDefaultPermission(module._id!, ownerId)
 
   //     return HttpResponseToClient.createHttpResponse({
-  //       data: permissionAction,
+  //       data: module,
   //       locale,
   //       request: this.httpRequest,
   //       response: this.httpResponse,
@@ -56,15 +61,14 @@ export class PermissionActionController {
   //       request: this.httpRequest,
   //       response: this.httpResponse,
   //     })
-
   //   }
   // }
 
-  // @authenticate({strategy: 'autentikigo', options: {collection: 'PermissionAction', action: 'read'}})
-  @get('/permission-actions')
+  // @authenticate({strategy: 'autentikigo', options: {collection: 'Module', action: 'read'}})
+  @get('/__modules')
   @response(200, {
-    description: 'Array of PermissionAction model instances',
-    properties: HttpDocumentation.createDocResponseSchemaForFindManyResults(PermissionAction)
+    description: 'Array of Module model instances',
+    properties: HttpDocumentation.createDocResponseSchemaForFindManyResults(__Module)
   })
   async find(
     @param.query.number('limit') limit?: number,
@@ -76,9 +80,9 @@ export class PermissionActionController {
 
       const filters = HttpDocumentation.createFilterRequestParams(this.httpRequest.url)
 
-      const result = await this.permissionActionRepository.find(filters)
+      const result = await this.moduleRepository.find(filters)
 
-      const total = await this.permissionActionRepository.count(filters['where'])
+      const total = await this.moduleRepository.count(filters['where'])
 
       return HttpResponseToClient.okHttpResponse({
         data: {total: total?.count, result},
@@ -99,19 +103,19 @@ export class PermissionActionController {
     }
   }
 
-  // @authenticate({strategy: 'autentikigo', options: {collection: 'PermissionAction', action: 'readOne'}})
-  @get('/permission-actions/{permissionActionId}')
+  // @authenticate({strategy: 'autentikigo', options: {collection: 'Module', action: 'readOne'}})
+  @get('/__modules/{moduleId}')
   @response(200, {
-    description: 'PermissionAction model instance',
-    properties: HttpDocumentation.createDocResponseSchemaForFindOneResult(PermissionAction)
+    description: 'Module model instance',
+    properties: HttpDocumentation.createDocResponseSchemaForFindOneResult(__Module)
   })
   async findById(
-    @param.path.string('permissionActionId') id: string,
+    @param.path.string('moduleId') id: string,
     @param.query.string('locale') locale?: LocaleEnum,
   ): Promise<IHttpResponse> {
     try {
 
-      const data = await this.permissionActionRepository.findOne({where: {and: [{_id: id}, {_deletedAt: {eq: null}}]}})
+      const data = await this.moduleRepository.findOne({where: {and: [{_id: id}, {_deletedAt: {eq: null}}]}})
       if (!data) throw new Error(serverMessages['httpResponse']['notFoundError'][locale ?? LocaleEnum['pt-BR']])
 
       return HttpResponseToClient.okHttpResponse({
@@ -133,19 +137,19 @@ export class PermissionActionController {
     }
   }
 
-  // @authenticate({strategy: 'autentikigo', options: {collection: 'PermissionAction', action: 'updateOne'}})
-  // @put('/permission-actions/{permissionActionId}')
-  // @response(200, {description: 'PermissionAction PUT success'})
+  // @authenticate({strategy: 'autentikigo', options: {collection: 'Module', action: 'updateOne'}})
+  // @put('/modules/{moduleId}')
+  // @response(200, {description: 'Module PUT success'})
   // async updateById(
-  //   @param.path.string('permissionActionId') id: string,
+  //   @param.path.string('moduleId') id: string,
   //   @requestBody({
-  //     content: HttpDocumentation.createDocRequestSchema(PermissionAction)
-  //   }) data: PermissionAction,
+  //     content: HttpDocumentation.createDocRequestSchema(Module)
+  //   }) data: Module,
   //   @param.query.string('locale') locale?: LocaleEnum,
   // ): Promise<IHttpResponse> {
   //   try {
 
-  //     await this.permissionActionRepository.updateById(id, data)
+  //     await this.moduleRepository.updateById(id, data)
 
   //     return HttpResponseToClient.noContentHttpResponse({
   //       locale,
@@ -157,7 +161,6 @@ export class PermissionActionController {
 
   //     return HttpResponseToClient.badRequestErrorHttpResponse({
   //       logMessage: err.message,
-  //       locale,
   //       request: this.httpRequest,
   //       response: this.httpResponse,
   //     })
@@ -165,19 +168,19 @@ export class PermissionActionController {
   //   }
   // }
 
-  // @authenticate({strategy: 'autentikigo', options: {collection: 'PermissionAction', action: 'create'}})
-  // @patch('/permission-actions/{permissionActionId}')
-  // @response(200, {description: 'PermissionAction PATCH success'})
+  // @authenticate({strategy: 'autentikigo', options: {collection: 'Module', action: 'create'}})
+  // @patch('/modules/{moduleId}')
+  // @response(200, {description: 'Module PATCH success'})
   // async partialUpdateById(
-  //   @param.path.string('permissionActionId') id: string,
+  //   @param.path.string('moduleId') id: string,
   //   @requestBody({
-  //     content: HttpDocumentation.createDocRequestSchema(PermissionAction)
-  //   }) data: PermissionAction,
+  //     content: HttpDocumentation.createDocRequestSchema(Module)
+  //   }) data: Module,
   //   @param.query.string('locale') locale?: LocaleEnum,
   // ): Promise<IHttpResponse> {
   //   try {
 
-  //     await this.permissionActionRepository.updateById(id, data)
+  //     await this.moduleRepository.updateById(id, data)
 
   //     return HttpResponseToClient.noContentHttpResponse({
   //       locale,
@@ -197,18 +200,20 @@ export class PermissionActionController {
   //   }
   // }
 
-  // @authenticate({strategy: 'autentikigo', options: {collection: 'PermissionAction', action: 'deleteOne'}})
-  // @del('/permission-actions/{permissionActionId}')
-  // @response(204, {description: 'PermissionAction DELETE success'})
+  // @authenticate({strategy: 'autentikigo', options: {collection: 'Module', action: 'deleteOne'}})
+  // @del('/modules/{moduleId}')
+  // @response(204, {description: 'Module DELETE success'})
   // async deleteById(
-  //   @param.path.string('permissionActionId') id: string,
+  //   @param.path.string('moduleId') id: string,
   //   @param.query.string('locale') locale?: LocaleEnum,
   // ): Promise<IHttpResponse> {
   //   try {
 
-  //     const permissionActionToDelete = await this.permissionActionRepository.findById(id)
+  //     const moduleToDelete = await this.moduleRepository.findById(id)
 
-  //     await this.permissionActionRepository.updateById(id, {...permissionActionToDelete, _deletedAt: new Date()})
+  //     await this.moduleRepository.updateById(id, {...moduleToDelete, _deletedAt: new Date()})
+
+  //     await this.moduleService.deletePermissionAndPermissionActionsRelated(id)
 
   //     return HttpResponseToClient.noContentHttpResponse({
   //       locale,
@@ -224,6 +229,7 @@ export class PermissionActionController {
   //       request: this.httpRequest,
   //       response: this.httpResponse,
   //     })
+
   //   }
   // }
 }

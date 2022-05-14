@@ -1,27 +1,26 @@
 import { /* inject, */ BindingScope, injectable} from '@loopback/core';
 import {repository} from '@loopback/repository';
-import {Permission} from '../models/permission.model';
-import {PermissionAction} from './../models/permission-action.model';
-import {PermissionGroup} from './../models/permission-group.model';
-import {PermissionActionRepository} from './../repositories/permission-action.repository';
-import {PermissionGroupRepository} from './../repositories/permission-group.repository';
-import {PermissionHasActionsRepository} from './../repositories/permission-has-actions.repository';
-import {PermissionRepository} from './../repositories/permission.repository';
+import {__PermissionAction} from '../models/__permission-action.model';
+import {__PermissionGroup} from '../models/__permission-group.model';
+import {__Permission} from '../models/__permission.model';
+import {__PermissionActionRepository} from '../repositories/__permission-action.repository';
+import {__PermissionGroupRepository} from '../repositories/__permission-group.repository';
+import {__PermissionHasActionsRepository} from '../repositories/__permission-has-actions.repository';
+import {__PermissionRepository} from '../repositories/__permission.repository';
 
 @injectable({scope: BindingScope.TRANSIENT})
 export class ModuleService {
   constructor(
-    @repository(PermissionGroupRepository) private permissionGroupRepository: PermissionGroupRepository,
-    @repository(PermissionRepository) private permissionRepository: PermissionRepository,
-    @repository(PermissionActionRepository) private permissionActionRepository: PermissionActionRepository,
-    @repository(PermissionHasActionsRepository) private permissionHasActionsRepository: PermissionHasActionsRepository,
+    @repository(__PermissionGroupRepository) private permissionGroupRepository: __PermissionGroupRepository,
+    @repository(__PermissionRepository) private permissionRepository: __PermissionRepository,
+    @repository(__PermissionActionRepository) private permissionActionRepository: __PermissionActionRepository,
+    @repository(__PermissionHasActionsRepository) private permissionHasActionsRepository: __PermissionHasActionsRepository,
   ) { }
 
-  private async defaultPermissionGroupExists(/*projectId: string*/): Promise<PermissionGroup | null> {
+  private async defaultPermissionGroupExists(): Promise<__PermissionGroup | null> {
     const defaultPermissionGroup = await this.permissionGroupRepository.findOne({
       where: {
         and: [
-          // {projectId},
           {isAdminPermission: true}
         ]
       }
@@ -29,12 +28,11 @@ export class ModuleService {
     return defaultPermissionGroup ?? null;
   }
 
-  private async createDefaultPermissionGroup(/*projectId: string, */ownerId?: string): Promise<PermissionGroup> {
+  private async createDefaultPermissionGroup(ownerId?: string): Promise<__PermissionGroup> {
 
     const defaultPermissionGroup = await this.permissionGroupRepository.create({
       name: 'Default',
       description: 'Default permission',
-      // projectId,
       isAdminPermission: true,
       _ownerId: ownerId,
     })
@@ -42,7 +40,7 @@ export class ModuleService {
     return defaultPermissionGroup
   }
 
-  private async createModuleDefaultPermission(moduleId: string, permissionGroupId: string): Promise<Permission> {
+  private async createModuleDefaultPermission(moduleId: string, permissionGroupId: string): Promise<__Permission> {
 
     const defaultPermission = await this.permissionRepository.create({
       moduleId,
@@ -53,29 +51,29 @@ export class ModuleService {
   }
 
   private async giveAllActionsToDefaultPermission(permissionId: string): Promise<void> {
-    const permissionActions: PermissionAction[] = await this.permissionActionRepository
+    const permissionActions: __PermissionAction[] = await this.permissionActionRepository
       .find({
         where: {_deletedAt: {eq: null}}
       });
 
     await this.permissionHasActionsRepository.createAll(
-      permissionActions.map((permissionAction: PermissionAction) => {
+      permissionActions.map((permissionAction: __PermissionAction) => {
         return {permissionId, permissionActionId: permissionAction._id!}
       })
     )
   }
 
-  public async createDefaultPermission(/*projectId: string,*/ moduleId: string, ownerId?: string): Promise<void> {
+  public async createDefaultPermission(moduleId: string, ownerId?: string): Promise<void> {
 
     try {
 
-      let defaultPermissionGroup: PermissionGroup | null = await this.defaultPermissionGroupExists(/*projectId*/)
+      let defaultPermissionGroup: __PermissionGroup | null = await this.defaultPermissionGroupExists()
 
       if (!defaultPermissionGroup) {
-        defaultPermissionGroup = await this.createDefaultPermissionGroup(/*projectId, */ownerId)
+        defaultPermissionGroup = await this.createDefaultPermissionGroup(ownerId)
       }
 
-      const defaultPermission: Permission = await this.createModuleDefaultPermission(moduleId, defaultPermissionGroup._id!)
+      const defaultPermission: __Permission = await this.createModuleDefaultPermission(moduleId, defaultPermissionGroup._id!)
 
       await this.giveAllActionsToDefaultPermission(defaultPermission._id!)
 

@@ -1,4 +1,4 @@
-export * from './auth.controller';
-export * from './invitation.controller';
 export * from './ping.controller';
+export * from './__auth.controller';
+export * from './__invitation.controller';
 
