@@ -1,13 +1,13 @@
 import {Getter, inject} from '@loopback/core';
 import {BelongsToAccessor, DefaultCrudRepository, repository} from '@loopback/repository';
 import {MongodbDataSource} from '../datasources';
-import {InvitationRelations, __Invitation, __PermissionGroup} from '../models';
+import {__Invitation, __InvitationRelations, __PermissionGroup} from '../models';
 import {__PermissionGroupRepository} from './__permission-group.repository';
 
 export class __InvitationRepository extends DefaultCrudRepository<
   __Invitation,
   typeof __Invitation.prototype._id,
-  InvitationRelations
+  __InvitationRelations
 > {
 
   public readonly permissionGroup: BelongsToAccessor<__PermissionGroup, typeof __Invitation.prototype._id>;

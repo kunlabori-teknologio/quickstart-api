@@ -72,8 +72,8 @@ export class __User extends Entity {
   }
 }
 
-export interface UserRelations {
+export interface __UserRelations {
   // describe navigational properties here
 }
 
-export type UserWithRelations = __User & UserRelations;
+export type __UserWithRelations = __User & __UserRelations;

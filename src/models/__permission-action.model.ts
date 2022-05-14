@@ -46,8 +46,8 @@ export class __PermissionAction extends __Default {
   }
 }
 
-export interface PermissionActionRelations {
+export interface __PermissionActionRelations {
   // describe navigational properties here
 }
 
-export type PermissionActionWithRelations = __PermissionAction & PermissionActionRelations;
+export type __PermissionActionWithRelations = __PermissionAction & __PermissionActionRelations;

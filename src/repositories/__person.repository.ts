@@ -1,12 +1,12 @@
 import {inject} from '@loopback/core';
 import {DefaultCrudRepository} from '@loopback/repository';
 import {MongodbDataSource} from '../datasources';
-import {PersonRelations, __Person} from '../models';
+import {__Person, __PersonRelations} from '../models';
 
 export class __PersonRepository extends DefaultCrudRepository<
   __Person,
   typeof __Person.prototype._id,
-  PersonRelations
+  __PersonRelations
 > {
   constructor(
     @inject('datasources.mongodb') dataSource: MongodbDataSource,

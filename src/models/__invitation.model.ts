@@ -25,8 +25,8 @@ export class __Invitation extends __Default {
   }
 }
 
-export interface InvitationRelations {
+export interface __InvitationRelations {
   // describe navigational properties here
 }
 
-export type InvitationWithRelations = __Invitation & InvitationRelations;
+export type __InvitationWithRelations = __Invitation & __InvitationRelations;

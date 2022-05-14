@@ -1,7 +1,7 @@
 import {Getter, inject} from '@loopback/core';
 import {DefaultCrudRepository, HasManyThroughRepositoryFactory, HasOneRepositoryFactory, repository} from '@loopback/repository';
 import {MongodbDataSource} from '../datasources';
-import {UserRelations, __Company, __PermissionGroup, __Person, __User, __UserHasPermissionGroups} from '../models';
+import {__Company, __PermissionGroup, __Person, __User, __UserHasPermissionGroups, __UserRelations} from '../models';
 import {__CompanyRepository} from './__company.repository';
 import {__PermissionGroupRepository} from './__permission-group.repository';
 import {__PersonRepository} from './__person.repository';
@@ -10,7 +10,7 @@ import {__UserHasPermissionGroupsRepository} from './__user-has-permission-group
 export class __UserRepository extends DefaultCrudRepository<
   __User,
   typeof __User.prototype._id,
-  UserRelations
+  __UserRelations
 > {
 
   public readonly person: HasOneRepositoryFactory<__Person, typeof __User.prototype._id>;

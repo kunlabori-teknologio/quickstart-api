@@ -67,8 +67,8 @@ export class __PermissionGroup extends __Default {
   }
 }
 
-export interface PermissionGroupRelations {
+export interface __PermissionGroupRelations {
   // describe navigational properties here
 }
 
-export type PermissionGroupWithRelations = __PermissionGroup & PermissionGroupRelations;
+export type __PermissionGroupWithRelations = __PermissionGroup & __PermissionGroupRelations;

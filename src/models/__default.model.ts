@@ -35,8 +35,8 @@ export class __Default extends Entity {
   }
 }
 
-export interface DefaultRelations {
+export interface __DefaultRelations {
   // describe navigational properties here
 }
 
-export type DefaultWithRelations = __Default & DefaultRelations;
+export type __DefaultWithRelations = __Default & __DefaultRelations;

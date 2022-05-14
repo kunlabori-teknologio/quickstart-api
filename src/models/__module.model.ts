@@ -64,8 +64,8 @@ export class __Module extends __Default {
   }
 }
 
-export interface ModuleRelations {
+export interface __ModuleRelations {
   // describe navigational properties here
 }
 
-export type ModuleWithRelations = __Module & ModuleRelations;
+export type __ModuleWithRelations = __Module & __ModuleRelations;

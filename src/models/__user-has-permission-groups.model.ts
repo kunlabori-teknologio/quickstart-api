@@ -24,8 +24,8 @@ export class __UserHasPermissionGroups extends Entity {
   }
 }
 
-export interface UserHasPermissionGroupsRelations {
+export interface __UserHasPermissionGroupsRelations {
   // describe navigational properties here
 }
 
-export type UserHasPermissionGroupsWithRelations = __UserHasPermissionGroups & UserHasPermissionGroupsRelations;
+export type __UserHasPermissionGroupsWithRelations = __UserHasPermissionGroups & __UserHasPermissionGroupsRelations;

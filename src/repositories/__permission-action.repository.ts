@@ -1,12 +1,12 @@
 import {inject} from '@loopback/core';
 import {DefaultCrudRepository} from '@loopback/repository';
 import {MongodbDataSource} from '../datasources';
-import {PermissionActionRelations, __PermissionAction} from '../models';
+import {__PermissionAction, __PermissionActionRelations} from '../models';
 
 export class __PermissionActionRepository extends DefaultCrudRepository<
   __PermissionAction,
   typeof __PermissionAction.prototype._id,
-  PermissionActionRelations
+  __PermissionActionRelations
 > {
   constructor(
     @inject('datasources.mongodb') dataSource: MongodbDataSource,

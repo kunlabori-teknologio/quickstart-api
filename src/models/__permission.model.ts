@@ -33,8 +33,8 @@ export class __Permission extends __Default {
   }
 }
 
-export interface PermissionRelations {
+export interface __PermissionRelations {
   // describe navigational properties here
 }
 
-export type PermissionWithRelations = __Permission & PermissionRelations;
+export type __PermissionWithRelations = __Permission & __PermissionRelations;

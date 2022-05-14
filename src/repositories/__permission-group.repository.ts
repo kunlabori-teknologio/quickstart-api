@@ -1,13 +1,13 @@
 import {Getter, inject} from '@loopback/core';
 import {DefaultCrudRepository, HasManyRepositoryFactory, repository} from '@loopback/repository';
 import {MongodbDataSource} from '../datasources';
-import {PermissionGroupRelations, __Permission, __PermissionGroup} from '../models';
+import {__Permission, __PermissionGroup, __PermissionGroupRelations} from '../models';
 import {__PermissionRepository} from './__permission.repository';
 
 export class __PermissionGroupRepository extends DefaultCrudRepository<
   __PermissionGroup,
   typeof __PermissionGroup.prototype._id,
-  PermissionGroupRelations
+  __PermissionGroupRelations
 > {
 
   public readonly permissions: HasManyRepositoryFactory<__Permission, typeof __PermissionGroup.prototype._id>;

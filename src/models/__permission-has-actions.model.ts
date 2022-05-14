@@ -24,8 +24,8 @@ export class __PermissionHasActions extends Entity {
   }
 }
 
-export interface PermissionHasActionsRelations {
+export interface __PermissionHasActionsRelations {
   // describe navigational properties here
 }
 
-export type PermissionHasActionsWithRelations = __PermissionHasActions & PermissionHasActionsRelations;
+export type __PermissionHasActionsWithRelations = __PermissionHasActions & __PermissionHasActionsRelations;

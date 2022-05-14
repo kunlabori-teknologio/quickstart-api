@@ -62,8 +62,8 @@ export class __Company extends Entity {
   }
 }
 
-export interface CompanyRelations {
+export interface __CompanyRelations {
   // describe navigational properties here
 }
 
-export type CompanyWithRelations = __Company & CompanyRelations;
+export type __CompanyWithRelations = __Company & __CompanyRelations;

@@ -1,7 +1,7 @@
 import {Getter, inject} from '@loopback/core';
 import {BelongsToAccessor, DefaultCrudRepository, HasManyThroughRepositoryFactory, repository} from '@loopback/repository';
 import {MongodbDataSource} from '../datasources';
-import {PermissionRelations, __Module, __Permission, __PermissionAction, __PermissionHasActions} from '../models';
+import {__Module, __Permission, __PermissionAction, __PermissionHasActions, __PermissionRelations} from '../models';
 import {__ModuleRepository} from './__module.repository';
 import {__PermissionActionRepository} from './__permission-action.repository';
 import {__PermissionGroupRepository} from './__permission-group.repository';
@@ -10,7 +10,7 @@ import {__PermissionHasActionsRepository} from './__permission-has-actions.repos
 export class __PermissionRepository extends DefaultCrudRepository<
   __Permission,
   typeof __Permission.prototype._id,
-  PermissionRelations
+  __PermissionRelations
 > {
 
   public readonly permissionActions: HasManyThroughRepositoryFactory<__PermissionAction, typeof __PermissionAction.prototype._id,

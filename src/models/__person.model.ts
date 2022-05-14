@@ -73,8 +73,8 @@ export class __Person extends Entity {
   }
 }
 
-export interface PersonRelations {
+export interface __PersonRelations {
   // describe navigational properties here
 }
 
-export type PersonWithRelations = __Person & PersonRelations;
+export type __PersonWithRelations = __Person & __PersonRelations;
