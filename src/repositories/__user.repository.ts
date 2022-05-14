@@ -24,10 +24,10 @@ export class __UserRepository extends DefaultCrudRepository<
 
   constructor(
     @inject('datasources.mongodb') dataSource: MongodbDataSource,
-    @repository.getter('PersonRepository') protected personRepositoryGetter: Getter<__PersonRepository>,
-    @repository.getter('CompanyRepository') protected companyRepositoryGetter: Getter<__CompanyRepository>,
-    @repository.getter('UserHasPermissionGroupsRepository') protected userHasPermissionGroupsRepositoryGetter: Getter<__UserHasPermissionGroupsRepository>,
-    @repository.getter('PermissionGroupRepository') protected permissionGroupRepositoryGetter: Getter<__PermissionGroupRepository>,
+    @repository.getter('__PersonRepository') protected personRepositoryGetter: Getter<__PersonRepository>,
+    @repository.getter('__CompanyRepository') protected companyRepositoryGetter: Getter<__CompanyRepository>,
+    @repository.getter('__UserHasPermissionGroupsRepository') protected userHasPermissionGroupsRepositoryGetter: Getter<__UserHasPermissionGroupsRepository>,
+    @repository.getter('__PermissionGroupRepository') protected permissionGroupRepositoryGetter: Getter<__PermissionGroupRepository>,
   ) {
     super(__User, dataSource);
     this.permissionGroups = this.createHasManyThroughRepositoryFactoryFor('permissionGroups', permissionGroupRepositoryGetter, userHasPermissionGroupsRepositoryGetter,);

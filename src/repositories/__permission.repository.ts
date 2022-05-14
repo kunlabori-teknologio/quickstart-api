@@ -22,8 +22,8 @@ export class __PermissionRepository extends DefaultCrudRepository<
 
   constructor(
     @inject('datasources.mongodb') dataSource: MongodbDataSource,
-    @repository.getter('PermissionHasActionsRepository') protected permissionHasActionsRepositoryGetter: Getter<__PermissionHasActionsRepository>,
-    @repository.getter('PermissionActionRepository') protected permissionActionRepositoryGetter: Getter<__PermissionActionRepository>, @repository.getter('ModuleRepository') protected moduleRepositoryGetter: Getter<__ModuleRepository>, @repository.getter('PermissionGroupRepository') protected permissionGroupRepositoryGetter: Getter<__PermissionGroupRepository>,
+    @repository.getter('__PermissionHasActionsRepository') protected permissionHasActionsRepositoryGetter: Getter<__PermissionHasActionsRepository>,
+    @repository.getter('__PermissionActionRepository') protected permissionActionRepositoryGetter: Getter<__PermissionActionRepository>, @repository.getter('__ModuleRepository') protected moduleRepositoryGetter: Getter<__ModuleRepository>, @repository.getter('__PermissionGroupRepository') protected permissionGroupRepositoryGetter: Getter<__PermissionGroupRepository>,
   ) {
     super(__Permission, dataSource);
     this.module = this.createBelongsToAccessorFor('module', moduleRepositoryGetter,);
