@@ -67,6 +67,8 @@ export class SeedService {
           const fileContent = fs.readFileSync(fileDir, {encoding: 'utf8', flag: 'r'})
           const moduleName = fileContent?.split('/* moduleName->')[1]?.replace('<- */', '').trim()
 
+          const isReservedModule = file.startsWith('__')
+
           const kebabName = file.split('.')[0]
           const module = await client
             .db(process.env.DB)
@@ -76,7 +78,7 @@ export class SeedService {
               name: moduleName,
               description: moduleName,
               route: `/${kebabName}`,
-              collection: kebabCaseToPascalCase(kebabName.replace('__', '')),
+              collection: `${isReservedModule ? '__' : ''}${kebabCaseToPascalCase(kebabName.replace('__', ''))}`,
               _deletedAt: null,
             })
 
