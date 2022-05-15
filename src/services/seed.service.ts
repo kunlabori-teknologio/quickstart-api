@@ -26,7 +26,7 @@ export class SeedService {
       .find().toArray()
 
     if (permissionsActionsInDatabase.length > 0) return null
-    console.log('seeding')
+    console.log('creating modules...')
 
     const permissionActions = [
       'delete', 'read', 'readOne', 'exportOne', 'updateOne',
@@ -47,7 +47,7 @@ export class SeedService {
 
     await this.createModules(client)
 
-    console.log('seed complete')
+    console.log('modules created!')
   }
 
   private async createModules(client: mongoDB.MongoClient): Promise<void> {
@@ -56,7 +56,11 @@ export class SeedService {
     const files = fs.readdirSync(dir)
 
     for (const file of files) {
-      if (!file.startsWith('__') || file.includes('__permission-group')) {
+      if (
+        !file.startsWith('__') ||
+        (process.env.ADMIN_USERS && file.startsWith('__permission-group')) ||
+        (process.env.ADMIN_USERS && file.startsWith('__invitation'))
+      ) {
         if (file.includes('.repository.ts')) {
 
           const fileDir = path.join(__dirname, `../../src/repositories/${file}`)

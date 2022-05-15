@@ -20,3 +20,5 @@ export class __InvitationRepository extends DefaultCrudRepository<
     this.registerInclusionResolver('permissionGroup', this.permissionGroup.inclusionResolver);
   }
 }
+
+/* moduleName->Convites<- */

@@ -80,8 +80,11 @@ export class __InvitationController {
     @param.query.string('locale') locale?: LocaleEnum,
   ): Promise<IHttpResponse> {
     try {
+      const createdBy = this.currentUser?.[securityId] as string
+      const ownerId = this.currentUser?.ownerId as string
 
-      const filters = HttpDocumentation.createFilterRequestParams(this.httpRequest.url)
+      const url = `${this.httpRequest.url}&_createdBy=${createdBy}&_ownerId=${ownerId}`
+      const filters = HttpDocumentation.createFilterRequestParams(url)
 
       const result = await this.invitationRepository.find({...filters, include: ['permissionGroup']})
 
