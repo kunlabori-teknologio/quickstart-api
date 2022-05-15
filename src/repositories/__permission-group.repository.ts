@@ -21,4 +21,4 @@ export class __PermissionGroupRepository extends DefaultCrudRepository<
   }
 }
 
-/* moduleName->Permissões<- */
+/* moduleName->Grupo de permissões<- */

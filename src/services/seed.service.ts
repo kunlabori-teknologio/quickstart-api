@@ -76,7 +76,7 @@ export class SeedService {
               name: moduleName,
               description: moduleName,
               route: `/${kebabName}`,
-              collection: kebabCaseToPascalCase(kebabName),
+              collection: kebabCaseToPascalCase(kebabName.replace('__', '')),
               _deletedAt: null,
             })
 

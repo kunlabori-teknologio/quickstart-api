@@ -35,7 +35,7 @@ export class __PermissionGroupController {
     }
   }
 
-  @authenticate({strategy: 'autentikigo', options: {collection: 'PermissionGroup', action: 'createOne'}})
+  @authenticate({strategy: 'autentikigo', options: {collection: '__PermissionGroup', action: 'createOne'}})
   @post('/__permission-groups')
   @response(200, {
     description: 'Permission group model instance',
@@ -85,7 +85,7 @@ export class __PermissionGroupController {
     }
   }
 
-  @authenticate({strategy: 'autentikigo', options: {collection: 'PermissionGroup', action: 'read'}})
+  @authenticate({strategy: 'autentikigo', options: {collection: '__PermissionGroup', action: 'read'}})
   @get('/__permission-groups')
   @response(200, {
     description: 'Array of Permission group model instances',
@@ -124,7 +124,7 @@ export class __PermissionGroupController {
     }
   }
 
-  @authenticate({strategy: 'autentikigo', options: {collection: 'PermissionGroup', action: 'readOne'}})
+  @authenticate({strategy: 'autentikigo', options: {collection: '__PermissionGroup', action: 'readOne'}})
   @get('/__permission-groups/{permissionGroupId}')
   @response(200, {
     description: 'Permission group model instance',
@@ -161,7 +161,7 @@ export class __PermissionGroupController {
     }
   }
 
-  @authenticate({strategy: 'autentikigo', options: {collection: 'PermissionGroup', action: 'updateOne'}})
+  @authenticate({strategy: 'autentikigo', options: {collection: '__PermissionGroup', action: 'updateOne'}})
   @put('/__permission-groups/{permissionGroupId}')
   @response(200, {description: 'Permission group PUT success'})
   async updateById(
@@ -204,7 +204,7 @@ export class __PermissionGroupController {
     }
   }
 
-  @authenticate({strategy: 'autentikigo', options: {collection: 'PermissionGroup', action: 'updateOne'}})
+  @authenticate({strategy: 'autentikigo', options: {collection: '__PermissionGroup', action: 'updateOne'}})
   @patch('/__permission-groups/{permissionGroupId}')
   @response(200, {description: 'Permission group PATCH success'})
   async partialUpdateById(
@@ -247,7 +247,7 @@ export class __PermissionGroupController {
     }
   }
 
-  @authenticate({strategy: 'autentikigo', options: {collection: 'PermissionGroup', action: 'deleteOne'}})
+  @authenticate({strategy: 'autentikigo', options: {collection: '__PermissionGroup', action: 'deleteOne'}})
   @del('/__permission-groups/{permissionGroupId}')
   @response(204, {description: 'Permission group DELETE success'})
   async deleteById(

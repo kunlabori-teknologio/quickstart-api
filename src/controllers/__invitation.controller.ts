@@ -29,7 +29,7 @@ export class __InvitationController {
     this.sendMail = new SendNodemailerMailImplementation()
   }
 
-  @authenticate({strategy: 'autentikigo', options: {collection: 'Invitation', action: 'createOne'}})
+  @authenticate({strategy: 'autentikigo', options: {collection: '__Invitation', action: 'createOne'}})
   @post('/__invitations')
   @response(200, {
     description: 'Invitation model instance',
@@ -67,7 +67,7 @@ export class __InvitationController {
     }
   }
 
-  @authenticate({strategy: 'autentikigo', options: {collection: 'Invitation', action: 'read'}})
+  @authenticate({strategy: 'autentikigo', options: {collection: '__Invitation', action: 'read'}})
   @get('/__invitations')
   @response(200, {
     description: 'Array of Invitation model instances',
@@ -109,7 +109,7 @@ export class __InvitationController {
     }
   }
 
-  @authenticate({strategy: 'autentikigo', options: {collection: 'Invitation', action: 'readOne'}})
+  @authenticate({strategy: 'autentikigo', options: {collection: '__Invitation', action: 'readOne'}})
   @get('/__invitations/{invitationId}')
   @response(200, {
     description: 'Invitation model instance',
@@ -143,7 +143,7 @@ export class __InvitationController {
     }
   }
 
-  @authenticate({strategy: 'autentikigo', options: {collection: 'Invitation', action: 'updateOne'}})
+  @authenticate({strategy: 'autentikigo', options: {collection: '__Invitation', action: 'updateOne'}})
   @put('/__invitations/{invitationId}')
   @response(200, {description: 'Invitation PUT success'})
   async updateById(
@@ -175,7 +175,7 @@ export class __InvitationController {
     }
   }
 
-  @authenticate({strategy: 'autentikigo', options: {collection: 'Invitation', action: 'updateOne'}})
+  @authenticate({strategy: 'autentikigo', options: {collection: '__Invitation', action: 'updateOne'}})
   @patch('/__invitations/{invitationId}')
   @response(200, {description: 'Invitation PATCH success'})
   async partialUpdateById(
@@ -207,7 +207,7 @@ export class __InvitationController {
     }
   }
 
-  @authenticate({strategy: 'autentikigo', options: {collection: 'Invitation', action: 'deleteOne'}})
+  @authenticate({strategy: 'autentikigo', options: {collection: '__Invitation', action: 'deleteOne'}})
   @del('/__invitations/{invitationId}')
   @response(204, {description: 'Invitation DELETE success'})
   async deleteById(
@@ -238,7 +238,7 @@ export class __InvitationController {
     }
   }
 
-  @authenticate({strategy: 'autentikigo', options: {collection: 'Invitation', action: 'readOne'}})
+  @authenticate({strategy: 'autentikigo', options: {collection: '__Invitation', action: 'readOne'}})
   @get('/__invitations/send/{invitationId}')
   @response(200, {description: 'Invitation sent successfully'})
   async sendInvitation(
