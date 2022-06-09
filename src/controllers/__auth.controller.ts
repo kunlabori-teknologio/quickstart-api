@@ -63,6 +63,7 @@ export class __AuthController {
       const tokenAndUser =
         (await this.authService.login({email, googleId, invitationId})) ||
         {
+          authToken: await Autentikigo.generateToken({email, googleId, invitationId}, '5min'),
           userData: {},
           message: serverMessages['auth']['unregisteredUser'][locale ?? LocaleEnum['pt-BR']],
           statusCode: 601
@@ -128,6 +129,7 @@ export class __AuthController {
       const tokenAndUser =
         (await this.authService.login({email, appleId, invitationId})) ||
         {
+          authToken: await Autentikigo.generateToken({email, appleId, invitationId}, '5min'),
           userData: {},
           message: serverMessages['auth']['unregisteredUser'][locale ?? LocaleEnum['pt-BR']],
           statusCode: 601
