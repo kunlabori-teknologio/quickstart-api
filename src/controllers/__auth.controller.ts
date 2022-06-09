@@ -48,6 +48,47 @@ export class __AuthController {
     }
   }
 
+  @get('/auth/mobile/google-signin')
+  @response(200, {
+    description: 'Mobile google login',
+  })
+  async mobileGoogleSignin(
+    @param.query.string('email') email: string,
+    @param.query.string('google-id') googleId: string,
+    @param.query.string('invitation-id') invitationId: string,
+    @param.query.string('locale') locale?: LocaleEnum,
+  ): Promise<IHttpResponse | void> {
+    try {
+
+      const tokenAndUser =
+        (await Autentikigo.mobileGoogleLogin(email, googleId, invitationId)) ||
+        {
+          userData: {},
+          message: serverMessages['auth']['unregisteredUser'][locale ?? LocaleEnum['pt-BR']],
+          statusCode: 601
+        }
+
+      return HttpResponseToClient.createHttpResponse({
+        data: {...tokenAndUser},
+        message: tokenAndUser?.message ?? serverMessages['auth']['loginSuccess'][locale ?? LocaleEnum['pt-BR']],
+        statusCode: tokenAndUser?.statusCode ?? 200,
+        locale,
+        request: this.httpRequest,
+        response: this.httpResponse,
+      })
+
+    } catch (err) {
+
+      return HttpResponseToClient.badRequestErrorHttpResponse({
+        logMessage: err.message,
+        locale,
+        request: this.httpRequest,
+        response: this.httpResponse,
+      })
+
+    }
+  }
+
   @get('/auth/apple-signin')
   @response(200, {
     description: 'Redirect to apple login page',
@@ -59,6 +100,47 @@ export class __AuthController {
     try {
 
       await Autentikigo.webAppleLogin(this.httpResponse, invitationId)
+
+    } catch (err) {
+
+      return HttpResponseToClient.badRequestErrorHttpResponse({
+        logMessage: err.message,
+        locale,
+        request: this.httpRequest,
+        response: this.httpResponse,
+      })
+
+    }
+  }
+
+  @get('/auth/mobile/apple-signin')
+  @response(200, {
+    description: 'Mobile google login',
+  })
+  async mobileAppleSignin(
+    @param.query.string('email') email: string,
+    @param.query.string('apple-id') appleId: string,
+    @param.query.string('invitation-id') invitationId: string,
+    @param.query.string('locale') locale?: LocaleEnum,
+  ): Promise<IHttpResponse | void> {
+    try {
+
+      const tokenAndUser =
+        (await Autentikigo.mobileAppleLogin(email, appleId, invitationId)) ||
+        {
+          userData: {},
+          message: serverMessages['auth']['unregisteredUser'][locale ?? LocaleEnum['pt-BR']],
+          statusCode: 601
+        }
+
+      return HttpResponseToClient.createHttpResponse({
+        data: {...tokenAndUser},
+        message: tokenAndUser?.message ?? serverMessages['auth']['loginSuccess'][locale ?? LocaleEnum['pt-BR']],
+        statusCode: tokenAndUser?.statusCode ?? 200,
+        locale,
+        request: this.httpRequest,
+        response: this.httpResponse,
+      })
 
     } catch (err) {
 

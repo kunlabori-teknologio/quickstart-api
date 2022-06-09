@@ -23,6 +23,18 @@ export class AuthAutentikigoImplementation implements IAuth {
 
   }
 
+  async mobileGoogleLogin(googleId: string, email: string, invitationId?: string): Promise<ILoginResponse> {
+    const token = await fetch(`${this.autentikigoRoute}/generate-jwt`, {
+      method: 'POST',
+      headers: {'Content-type': 'application/json'},
+      body: JSON.stringify({
+        payload: {email, googleId, invitationId}
+      }),
+    })
+
+    return this.login(token)
+  }
+
   async webAppleLogin(httpResponse: Response<any, Record<string, any>>, invitationId?: string): Promise<void> {
     const invitation = invitationId ? `&invitation=${invitationId}` : ''
 
@@ -32,6 +44,18 @@ export class AuthAutentikigoImplementation implements IAuth {
     if (data.statusCode === 200) httpResponse.redirect(data.data.url);
     else throw new Error(data.logMessage)
 
+  }
+
+  async mobileAppleLogin(appleId: string, email: string, invitationId?: string): Promise<ILoginResponse> {
+    const token = await fetch(`${this.autentikigoRoute}/generate-jwt`, {
+      method: 'POST',
+      headers: {'Content-type': 'application/json'},
+      body: JSON.stringify({
+        payload: {email, googleId: appleId, invitationId}
+      }),
+    })
+
+    return this.login(token)
   }
 
   async login(token: string): Promise<ILoginResponse> {
