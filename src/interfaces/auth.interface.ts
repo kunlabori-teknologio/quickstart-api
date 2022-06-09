@@ -33,9 +33,7 @@ export interface IAuthorizedUser {
 
 export interface IAuth {
   webGoogleLogin(httpResponse: Response, invitationId?: string): Promise<void>;
-  mobileGoogleLogin(googleId: string, email: string, invitationId?: string): Promise<ILoginResponse>;
   webAppleLogin(httpResponse: Response, invitationId?: string): Promise<void>;
-  mobileAppleLogin(appleId: string, email: string, invitationId?: string): Promise<ILoginResponse>;
 
   login(token: string): Promise<ILoginResponse>;
   signup(signupBodyRequest: Signup, token: string): Promise<any>;

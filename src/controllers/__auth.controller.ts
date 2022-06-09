@@ -61,7 +61,7 @@ export class __AuthController {
     try {
 
       const tokenAndUser =
-        (await Autentikigo.mobileGoogleLogin(email, googleId, invitationId)) ||
+        (await this.authService.login({email, googleId, invitationId})) ||
         {
           userData: {},
           message: serverMessages['auth']['unregisteredUser'][locale ?? LocaleEnum['pt-BR']],
@@ -126,7 +126,7 @@ export class __AuthController {
     try {
 
       const tokenAndUser =
-        (await Autentikigo.mobileAppleLogin(email, appleId, invitationId)) ||
+        (await this.authService.login({email, appleId, invitationId})) ||
         {
           userData: {},
           message: serverMessages['auth']['unregisteredUser'][locale ?? LocaleEnum['pt-BR']],
