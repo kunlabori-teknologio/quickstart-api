@@ -46,4 +46,26 @@ export class ChartService {
       }
     }
   }
+
+  public async getChartDetails(allData: any[], urlString: string): Promise<any[]> {
+    const paramsFromUrl = new URL(`${process.env.SERVER_ROOT_URI}${urlString}`).searchParams
+
+    const label = paramsFromUrl.get('label')!;
+    const value = paramsFromUrl.get('value')!;
+
+    const data = allData.filter(element => {
+      let elementLabel
+
+      if (label.split('.').length) {
+        const labelArray = label.split('.');
+        elementLabel = element[labelArray[0]] && element[labelArray[0]][labelArray[1]];
+      } else {
+        elementLabel = element[label];
+      }
+
+      return elementLabel === value;
+    });
+
+    return data;
+  }
 }
