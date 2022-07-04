@@ -97,7 +97,7 @@ export class SeedService {
     const moduleFound = await client
       .db(process.env.DB)
       .collection('__Module')
-      .find({name: moduleName})
+      .findOne({name: moduleName})
 
     return moduleFound ? true : false
   }
