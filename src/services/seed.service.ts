@@ -20,30 +20,31 @@ export class SeedService {
   }
 
   private async createPermissionActions(client: mongoDB.MongoClient): Promise<void | null> {
+    console.log('Checking and creating modules...')
+
     const permissionsActionsInDatabase = await client
       .db(process.env.DB)
       .collection('__PermissionAction')
       .find().toArray()
 
-    if (permissionsActionsInDatabase.length > 0) return null
-    console.log('creating modules...')
+    if (permissionsActionsInDatabase.length === 0) {
+      const permissionActions = [
+        'delete', 'read', 'readOne', 'exportOne', 'updateOne',
+        'createOne', 'deleteOne', 'export', 'update', 'create'
+      ]
 
-    const permissionActions = [
-      'delete', 'read', 'readOne', 'exportOne', 'updateOne',
-      'createOne', 'deleteOne', 'export', 'update', 'create'
-    ]
-
-    await client
-      .db(process.env.DB)
-      .collection('__PermissionAction')
-      .insertMany(
-        permissionActions.map(permissionAction => {
-          return {
-            name: permissionAction,
-            _deletedAt: null,
-          }
-        })
-      )
+      await client
+        .db(process.env.DB)
+        .collection('__PermissionAction')
+        .insertMany(
+          permissionActions.map(permissionAction => {
+            return {
+              name: permissionAction,
+              _deletedAt: null,
+            }
+          })
+        )
+    }
 
     await this.createModules(client)
 
@@ -67,40 +68,39 @@ export class SeedService {
           const fileContent = fs.readFileSync(fileDir, {encoding: 'utf8', flag: 'r'})
           const moduleName = fileContent?.split('/* moduleName->')[1]?.replace('<- */', '').trim()
 
-          const isReservedModule = file.startsWith('__')
+          const moduleHasAlreadyBeenInserted = await this.moduleHasAlreadyBeenInserted(client, moduleName)
 
-          const kebabName = file.split('.')[0]
-          const module = await client
-            .db(process.env.DB)
-            .collection('__Module')
-            .insertOne({
-              _id: new mongoDB.ObjectId(),
-              name: moduleName,
-              description: moduleName,
-              route: `/${kebabName}`,
-              collection: `${isReservedModule ? '__' : ''}${kebabCaseToPascalCase(kebabName.replace('__', ''))}`,
-              _deletedAt: null,
-            })
+          if (!moduleHasAlreadyBeenInserted) {
+            const isReservedModule = file.startsWith('__')
 
-          await this.createDefaultPermission(module?.insertedId!.toString(), client)
+            const kebabName = file.split('.')[0]
+            const module = await client
+              .db(process.env.DB)
+              .collection('__Module')
+              .insertOne({
+                _id: new mongoDB.ObjectId(),
+                name: moduleName,
+                description: moduleName,
+                route: `/${kebabName}`,
+                collection: `${isReservedModule ? '__' : ''}${kebabCaseToPascalCase(kebabName.replace('__', ''))}`,
+                _deletedAt: null,
+              })
+
+            await this.createDefaultPermission(module?.insertedId!.toString(), client)
+          }
         }
       }
     }
   }
 
-  // private async defaultPermissionGroupExists(client: mongoDB.MongoClient): Promise<PermissionGroup | null> {
-  //   const defaultPermissionGroup = (
-  //     await client
-  //       .db(process.env.DB)
-  //       .collection('PermissionGroup')
-  //       .findOne({
-  //         $and: [
-  //           {isAdminPermission: true}
-  //         ]
-  //       })
-  //   ) as PermissionGroup | null
-  //   return defaultPermissionGroup;
-  // }
+  private async moduleHasAlreadyBeenInserted(client: mongoDB.MongoClient, moduleName: string): Promise<Boolean> {
+    const moduleFound = await client
+      .db(process.env.DB)
+      .collection('__Module')
+      .find({name: moduleName})
+
+    return moduleFound ? true : false
+  }
 
   private async createDefaultPermissionGroup(client: mongoDB.MongoClient): Promise<any> {
 
