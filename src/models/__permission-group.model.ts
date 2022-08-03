@@ -32,7 +32,7 @@ export class __PermissionGroup extends __Default {
     name: 'description',
     description: "The permission's description",
     type: 'string',
-    required: true,
+    required: false,
     jsonSchema: {
       maxLength: 50,
       errorMessage: {
