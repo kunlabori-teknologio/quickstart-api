@@ -29,7 +29,7 @@ export class __PermissionGroupController {
   ) { }
 
   private getPermissionGroupRelatedPermissions = {
-    relation: 'permissions',
+    relation: 'modulePermissions',
     scope: {
       include: ['permissionActions', 'module'],
     }

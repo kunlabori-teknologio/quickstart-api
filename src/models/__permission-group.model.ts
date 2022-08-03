@@ -57,7 +57,7 @@ export class __PermissionGroup extends __Default {
   isAdminPermission?: boolean;
 
   @hasMany(() => __Permission)
-  permissions: __Permission[];
+  modulePermissions: __Permission[];
 
   @property()
   owner?: {};

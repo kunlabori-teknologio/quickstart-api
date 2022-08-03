@@ -10,14 +10,14 @@ export class __PermissionGroupRepository extends DefaultCrudRepository<
   __PermissionGroupRelations
 > {
 
-  public readonly permissions: HasManyRepositoryFactory<__Permission, typeof __PermissionGroup.prototype._id>;
+  public readonly modulePermissions: HasManyRepositoryFactory<__Permission, typeof __PermissionGroup.prototype._id>;
 
   constructor(
     @inject('datasources.mongodb') dataSource: MongodbDataSource, @repository.getter('__PermissionRepository') protected permissionRepositoryGetter: Getter<__PermissionRepository>,
   ) {
     super(__PermissionGroup, dataSource);
-    this.permissions = this.createHasManyRepositoryFactoryFor('permissions', permissionRepositoryGetter,);
-    this.registerInclusionResolver('permissions', this.permissions.inclusionResolver);
+    this.modulePermissions = this.createHasManyRepositoryFactoryFor('modulePermissions', permissionRepositoryGetter,);
+    this.registerInclusionResolver('modulePermissions', this.modulePermissions.inclusionResolver);
   }
 }
 
