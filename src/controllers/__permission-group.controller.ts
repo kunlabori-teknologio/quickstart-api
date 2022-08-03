@@ -63,7 +63,7 @@ export class __PermissionGroupController {
       // Create permissions
       await this.permissionService.createPermissions(
         permissionGroup?._id!,
-        data['modulesPermissions'],
+        data['modulePermissions'],
       )
 
       return HttpResponseToClient.createHttpResponse({
@@ -184,7 +184,7 @@ export class __PermissionGroupController {
       const permissionsToDeleteActions = await this.permissionRepository.find({
         where: {permissionGroupId: id}
       })
-      await this.permissionService.updatePermissions(id, data['modulesPermissions'])
+      await this.permissionService.updatePermissions(id, data['modulePermissions'])
 
       return HttpResponseToClient.noContentHttpResponse({
         locale,
@@ -227,7 +227,7 @@ export class __PermissionGroupController {
       const permissionsToDeleteActions = await this.permissionRepository.find({
         where: {permissionGroupId: id}
       })
-      await this.permissionService.updatePermissions(id, data['modulesPermissions'])
+      await this.permissionService.updatePermissions(id, data['modulePermissions'])
 
       return HttpResponseToClient.noContentHttpResponse({
         locale,
