@@ -33,7 +33,7 @@ export class PermissionService {
 
       this.createPermissionHasActions(
         permission._id!,
-        modulePermissions.permissions,
+        modulePermissions.permissionActions,
       )
     }
   }
