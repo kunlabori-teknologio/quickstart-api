@@ -68,11 +68,13 @@ export class PermissionService {
 
     await this.permissionRepository.deleteAll({permissionGroupId})
 
-    await this.permissionHasActionsRepository.deleteAll({
-      or: permissions.map(permission => {
-        return {permissionId: permission._id}
+    if (permissions && permissions.length) {
+      await this.permissionHasActionsRepository.deleteAll({
+        or: permissions.map(permission => {
+          return {permissionId: permission._id}
+        })
       })
-    })
+    }
 
     await this.createPermissions(permissionGroupId, modules)
   }
