@@ -1,4 +1,4 @@
 export interface IModulesPermissions {
-  modules: string[],
+  moduleId: string,
   permissions: string[],
 }

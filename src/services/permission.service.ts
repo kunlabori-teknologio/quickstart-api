@@ -16,34 +16,25 @@ export class PermissionService {
 
   public async createPermissions(
     permissionGroupId: string,
-    modulesPermissionsArray: IModulesPermissions[],
+    modulePermissionsArray: IModulesPermissions[],
   ): Promise<void> {
 
     for (
-      let modulesPermissionsIndex = 0;
-      modulesPermissionsIndex < modulesPermissionsArray.length;
-      modulesPermissionsIndex++
+      let modulePermissionsIndex = 0;
+      modulePermissionsIndex < modulePermissionsArray.length;
+      modulePermissionsIndex++
     ) {
-      const modulesPermissions = modulesPermissionsArray[modulesPermissionsIndex];
+      const modulePermissions = modulePermissionsArray[modulePermissionsIndex];
 
-      for (
-        let moduleIndex = 0;
-        moduleIndex < modulesPermissions.modules.length;
-        moduleIndex++
-      ) {
-        const module = modulesPermissions.modules[moduleIndex];
+      const permission = await this.permissionRepository.create({
+        moduleId: modulePermissions.moduleId,
+        permissionGroupId,
+      })
 
-        const permission = await this.permissionRepository.create({
-          moduleId: module,
-          permissionGroupId,
-        })
-
-        this.createPermissionHasActions(
-          permission._id!,
-          modulesPermissions.permissions,
-        )
-
-      }
+      this.createPermissionHasActions(
+        permission._id!,
+        modulePermissions.permissions,
+      )
     }
   }
 
