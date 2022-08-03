@@ -50,7 +50,7 @@ export class AutentikigoStrategy implements AuthenticationStrategy {
         .permissionGroups(userId)
         .find({
           include: [{
-            relation: 'permissions', scope: {
+            relation: 'modulePermissions', scope: {
               include: [
                 {relation: 'permissionActions', scope: {where: {name: action}}},
                 {relation: 'module', scope: {where: {collection}}}

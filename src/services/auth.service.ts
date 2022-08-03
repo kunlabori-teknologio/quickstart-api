@@ -82,7 +82,7 @@ export class AuthService {
         {
           relation: 'permissionGroups', scope: {
             include: [{
-              relation: 'permissions', scope: {
+              relation: 'modulePermissions', scope: {
                 include: ['module', 'permissionActions']
               }
             }]
@@ -254,7 +254,7 @@ export class AuthService {
       .permissionGroups(userId)
       .find({
         include: [{
-          relation: 'permissions', scope: {
+          relation: 'modulePermissions', scope: {
             include: [
               {relation: 'permissionActions', scope: {where: {name: action}}},
               {relation: 'module', scope: {where: {collection}}}
