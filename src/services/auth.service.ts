@@ -267,7 +267,7 @@ export class AuthService {
     if (action) {
       if (permissionGroup) {//} && permissionGroup.name !== 'Kunlatek - Admin') {
         let userHasPermission = false;
-        permissionGroup.permissions?.forEach(permission => {
+        permissionGroup.modulePermissions?.forEach(permission => {
           if (permission.module && permission.permissionActions.length) {
             userHasPermission = true
             ownerId = permissionGroup._createdBy

@@ -63,7 +63,7 @@ export class AutentikigoStrategy implements AuthenticationStrategy {
       if (action) {
         if (permissionGroup) {
           let userHasPermission = false;
-          permissionGroup.permissions?.forEach(permission => {
+          permissionGroup.modulePermissions?.forEach(permission => {
             if (permission.module && permission.permissionActions.length) {
               userHasPermission = true
               ownerId = permissionGroup._createdBy
