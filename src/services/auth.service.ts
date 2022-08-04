@@ -148,6 +148,12 @@ export class AuthService {
 
   private async getDefaultPermissionGroupId(email: string): Promise<string | undefined> {
 
+    const user = await this.userRepository.findOne({where: {email}})
+
+    if (user?.permissionGroups?.length) {
+      return user.permissionGroups[0]._id
+    }
+
     if (process.env.ADMIN_USERS) {
       const adminUsers = process.env.ADMIN_USERS.split(',')
       if (!adminUsers.includes(email)) throw new Error(serverMessages['auth']['userIsNotAdmin'][LocaleEnum['pt-BR']])
