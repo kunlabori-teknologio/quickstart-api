@@ -32,7 +32,7 @@ export class __PermissionGroupController {
     relation: 'modulePermissions',
     scope: {
       include: [
-        {relation: 'permissionActions'},
+        // {relation: 'permissionActions'},
         {relation: 'module'}
       ],
     }
