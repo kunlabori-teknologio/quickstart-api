@@ -29,7 +29,7 @@ export class __AuthController {
     description: 'Redirect to google login page',
   })
   async googleSignin(
-    @param.query.string('invitation-id') invitationId: string,
+    @param.query.string('invitationId') invitationId: string,
     @param.query.string('locale') locale?: LocaleEnum,
   ): Promise<IHttpResponse | void> {
     try {
@@ -55,7 +55,7 @@ export class __AuthController {
   async mobileGoogleSignin(
     @param.query.string('email') email: string,
     @param.query.string('google-id') googleId: string,
-    @param.query.string('invitation-id') invitationId: string,
+    @param.query.string('invitationId') invitationId: string,
     @param.query.string('locale') locale?: LocaleEnum,
   ): Promise<IHttpResponse | void> {
     try {
@@ -95,7 +95,7 @@ export class __AuthController {
     description: 'Redirect to apple login page',
   })
   async appleSignin(
-    @param.query.string('invitation-id') invitationId: string,
+    @param.query.string('invitationId') invitationId: string,
     @param.query.string('locale') locale?: LocaleEnum,
   ): Promise<IHttpResponse | void> {
     try {
@@ -121,7 +121,7 @@ export class __AuthController {
   async mobileAppleSignin(
     @param.query.string('email') email: string,
     @param.query.string('apple-id') appleId: string,
-    @param.query.string('invitation-id') invitationId: string,
+    @param.query.string('invitationId') invitationId: string,
     @param.query.string('locale') locale?: LocaleEnum,
   ): Promise<IHttpResponse | void> {
     try {

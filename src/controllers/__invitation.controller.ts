@@ -48,8 +48,7 @@ export class __InvitationController {
 
       const invitation = await this.invitationRepository.create({...data, _createdBy: createdBy, _ownerId: ownerId})
 
-      const emailSent = this.sendMail.sendInvitationMail(invitation._id as string, invitation.email)
-      if (!emailSent) throw new Error(emailSent!)
+      this.sendMail.sendInvitationMail(invitation._id as string, invitation.email)
 
       return HttpResponseToClient.createHttpResponse({
         data: invitation,
