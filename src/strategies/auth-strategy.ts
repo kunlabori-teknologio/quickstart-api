@@ -73,7 +73,7 @@ export class AutentikigoStrategy implements AuthenticationStrategy {
         } else throw serverMessages['httpResponse']['unauthorizedError'][LocaleEnum['pt-BR']]
       }
 
-      const userProfile = this.convertIdToUserProfile(userId, ownerId)
+      const userProfile = this.convertIdToUserProfile(userId, ownerId || userId)
       return userProfile
 
     } catch (err) {
