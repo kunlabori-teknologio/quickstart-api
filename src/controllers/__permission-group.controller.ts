@@ -104,7 +104,14 @@ export class __PermissionGroupController {
 
       const filters = HttpDocumentation.createFilterRequestParams(this.httpRequest.url)
 
-      const result = await this.permissionGroupRepository.find({...filters, include: [this.getPermissionGroupRelatedPermissions]})
+      let result: any[] = await this.permissionGroupRepository.find({...filters, include: [this.getPermissionGroupRelatedPermissions]})
+      result = result.map(permissionGroup => {
+        permissionGroup.modulePermissions = permissionGroup.modulePermissions.map((permissions: any) => {
+          permissions.permissionActions = permissions.permissionActions.map((action: any) => action._id);
+          return permissions;
+        })
+        return permissionGroup;
+      })
 
       const total = await this.permissionGroupRepository.count(filters['where'])
 
@@ -139,11 +146,18 @@ export class __PermissionGroupController {
   ): Promise<IHttpResponse> {
     try {
 
-      const data = await this.permissionGroupRepository.findOne({
+      let data: any = await this.permissionGroupRepository.findOne({
         where: {and: [{_id: id}, {_deletedAt: {eq: null}}]},
         include: [this.getPermissionGroupRelatedPermissions]
       })
+
       if (!data) throw new Error(serverMessages['httpResponse']['notFoundError'][locale ?? LocaleEnum['pt-BR']])
+      else {
+        data.modulePermissions = data.modulePermissions.map((permissions: any) => {
+          permissions.permissionActions = permissions.permissionActions.map((action: any) => action._id);
+          return permissions;
+        })
+      }
 
       return HttpResponseToClient.okHttpResponse({
         data,
