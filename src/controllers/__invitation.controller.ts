@@ -121,7 +121,15 @@ export class __InvitationController {
   ): Promise<IHttpResponse> {
     try {
 
-      const data = await this.invitationRepository.findOne({where: {and: [{_id: id}, {_deletedAt: {eq: null}}]}})
+      const data = await this.invitationRepository.findOne({
+        where: {
+          and: [
+            {_id: id},
+            {_deletedAt: {eq: null}}
+          ]
+        },
+        include: ['permissionGroup']
+      })
       if (!data) throw new Error(serverMessages['httpResponse']['notFoundError'][locale ?? LocaleEnum['pt-BR']])
 
       return HttpResponseToClient.okHttpResponse({
