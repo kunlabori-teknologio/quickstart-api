@@ -148,10 +148,11 @@ export class AuthService {
 
   private async getDefaultPermissionGroupId(email: string): Promise<string | undefined> {
 
-    const user = await this.userRepository.findOne({where: {email}})
+    let user = await this.userRepository.findOne({where: {email}, include: ["permissionGroups"]})
 
     if (user?.permissionGroups?.length) {
-      return user.permissionGroups[0]._id
+      user.permissionGroups = await this.getOwnerNamesOfPermissionGroups(user!)
+      return user.permissionGroups![0]._id
     }
 
     if (process.env.ADMIN_USERS) {
