@@ -102,7 +102,10 @@ export class __PermissionGroupController {
   ): Promise<IHttpResponse> {
     try {
 
-      const filters = HttpDocumentation.createFilterRequestParams(this.httpRequest.url)
+      let filters = HttpDocumentation.createFilterRequestParams(
+        this.httpRequest.url,
+        [{_ownerId: this.currentUser?.[securityId] as string}]
+      )
 
       let result: any[] = await this.permissionGroupRepository.find({...filters, include: [this.getPermissionGroupRelatedPermissions]})
       result = result.map(permissionGroup => {
