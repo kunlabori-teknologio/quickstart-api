@@ -1,33 +1,41 @@
 import {authenticate} from '@loopback/authentication';
-import {inject} from '@loopback/core';
+import {inject, service} from '@loopback/core';
 import {
   repository
 } from '@loopback/repository';
 import {
-  get, param, Request, response, Response, RestBindings
+  get, param, put, Request, requestBody, response, Response, RestBindings
 } from '@loopback/rest';
+import {SecurityBindings, securityId, UserProfile} from '@loopback/security';
 import {LocaleEnum} from '../enums/locale.enum';
 import {HttpDocumentation, HttpResponseToClient} from '../implementations';
 import {IHttpResponse} from '../interfaces/http.interface';
 import {__User} from '../models';
 import {__UserRepository} from '../repositories';
+import {serverMessages} from '../utils/server-messages';
+import {__UserHasPermissionGroupsRepository} from './../repositories/__user-has-permission-groups.repository';
+import {RelatedUsersService} from './../services/related-users.service';
 
 export class __RelatedUsersController {
   constructor(
     @repository(__UserRepository) public userRepository: __UserRepository,
+    @repository(__UserHasPermissionGroupsRepository) public userHasPermissionGroupsRepository: __UserHasPermissionGroupsRepository,
 
     @inject(RestBindings.Http.REQUEST) private httpRequest: Request,
     @inject(RestBindings.Http.RESPONSE) private httpResponse: Response,
+
+    @service(RelatedUsersService) private relatedUsersService: RelatedUsersService,
+
+    @inject(SecurityBindings.USER, {optional: true}) private currentUser?: UserProfile,
   ) { }
 
-  @authenticate({strategy: 'autentikigo', options: {collection: '__User', action: 'read'}})
+  @authenticate({strategy: 'autentikigo', options: {collection: '__RelatedUsers', action: 'read'}})
   @get('/__related-users')
   @response(200, {
     description: 'Array of related Users',
     properties: HttpDocumentation.createDocResponseSchemaForFindManyResults(__User)
   })
   async find(
-    @param.query.string('user') userId: string,
     @param.query.number('limit') limit?: number,
     @param.query.number('page') page?: number,
     @param.query.string('order_by') orderBy?: string,
@@ -35,22 +43,7 @@ export class __RelatedUsersController {
   ): Promise<IHttpResponse> {
     try {
 
-      let totalResult: any[] = userId ? await this.userRepository.find({
-        include: [
-          {relation: 'person'},
-          {relation: 'company'},
-          {
-            relation: 'permissionGroups',
-            scope: {
-              where: {
-                _ownerId: userId
-              }
-            }
-          }
-        ],
-        fields: ['email', '_id']
-      }) : []
-      totalResult = totalResult.filter(el => el.permissionGroups && el.permissionGroups.length)
+      let totalResult: any[] = await this.relatedUsersService.getRelatedUsersWithPermissions(this.currentUser?.[securityId]!)
 
       const result = [...totalResult].splice(
         ((page || 0) * (limit || 10)),
@@ -76,75 +69,84 @@ export class __RelatedUsersController {
     }
   }
 
-  // @patch('/related-users')
-  // @response(200, {
-  //   description: 'User PATCH success count',
-  //   content: {'application/json': {schema: CountSchema}},
-  // })
-  // async updateAll(
-  //   @requestBody({
-  //     content: {
-  //       'application/json': {
-  //         schema: getModelSchemaRef(__User, {partial: true}),
-  //       },
-  //     },
-  //   })
-  //   user: __User,
-  //   @param.where(__User) where?: Where<__User>,
-  // ): Promise<Count> {
-  //   return this.userRepository.updateAll(user, where);
-  // }
+  @authenticate({strategy: 'autentikigo', options: {collection: '__RelatedUsers', action: 'readOne'}})
+  @get('/__related-users/{id}')
+  @response(200, {
+    description: 'Related User model instance',
+    properties: HttpDocumentation.createDocResponseSchemaForFindOneResult(__User)
+  })
+  async findById(
+    @param.path.string('id') id: string,
+    @param.query.string('locale') locale?: LocaleEnum,
+  ): Promise<IHttpResponse> {
+    try {
 
-  // @get('/related-users/{id}')
-  // @response(200, {
-  //   description: 'User model instance',
-  //   content: {
-  //     'application/json': {
-  //       schema: getModelSchemaRef(__User, {includeRelations: true}),
-  //     },
-  //   },
-  // })
-  // async findById(
-  //   @param.path.string('id') id: string,
-  //   @param.filter(__User, {exclude: 'where'}) filter?: FilterExcludingWhere<__User>
-  // ): Promise<__User> {
-  //   return this.userRepository.findById(id, filter);
-  // }
+      const data = await this.userRepository.findOne({
+        where: {_id: id},
+        include: ['person', 'company', 'permissionGroups'],
+        fields: ['email', '_id']
+      });
+      if (!data) throw new Error(serverMessages['httpResponse']['notFoundError'][locale ?? LocaleEnum['pt-BR']]);
 
-  // @patch('/related-users/{id}')
-  // @response(204, {
-  //   description: 'User PATCH success',
-  // })
-  // async updateById(
-  //   @param.path.string('id') id: string,
-  //   @requestBody({
-  //     content: {
-  //       'application/json': {
-  //         schema: getModelSchemaRef(__User, {partial: true}),
-  //       },
-  //     },
-  //   })
-  //   user: __User,
-  // ): Promise<void> {
-  //   await this.userRepository.updateById(id, user);
-  // }
+      return HttpResponseToClient.okHttpResponse({
+        data,
+        locale,
+        request: this.httpRequest,
+        response: this.httpResponse,
+      })
 
-  // @put('/related-users/{id}')
-  // @response(204, {
-  //   description: 'User PUT success',
-  // })
-  // async replaceById(
-  //   @param.path.string('id') id: string,
-  //   @requestBody() user: __User,
-  // ): Promise<void> {
-  //   await this.userRepository.replaceById(id, user);
-  // }
+    } catch (err: any) {
 
-  // @del('/related-users/{id}')
-  // @response(204, {
-  //   description: 'User DELETE success',
-  // })
-  // async deleteById(@param.path.string('id') id: string): Promise<void> {
-  //   await this.userRepository.deleteById(id);
-  // }
+      return HttpResponseToClient.badRequestErrorHttpResponse({
+        logMessage: err.message,
+        locale,
+        request: this.httpRequest,
+        response: this.httpResponse,
+      })
+
+    }
+  }
+
+  @authenticate({strategy: 'autentikigo', options: {collection: '__RelatedUsers', action: 'updateOne'}})
+  @put('/__related-users/{id}')
+  @response(200, {description: 'Related User PUT success'})
+  async updateById(
+    @param.path.string('id') id: string,
+    @requestBody() data: any,
+    @param.query.string('locale') locale?: LocaleEnum,
+  ): Promise<IHttpResponse> {
+    try {
+
+      const permissionGroupsIdsToDelete: any[] = await this.relatedUsersService.getPermissionIdsOfARelatedUser(
+        this.currentUser?.[securityId]!, id
+      )
+
+      await this.userHasPermissionGroupsRepository.deleteAll({
+        or: permissionGroupsIdsToDelete.map(permissionGroupId => {
+          return {permissionGroupId, userId: id}
+        })
+      })
+
+      await this.userHasPermissionGroupsRepository.create({
+        permissionGroupId: data.permissionGroupId,
+        userId: id
+      })
+
+      return HttpResponseToClient.noContentHttpResponse({
+        locale,
+        request: this.httpRequest,
+        response: this.httpResponse,
+      })
+
+    } catch (err: any) {
+
+      return HttpResponseToClient.badRequestErrorHttpResponse({
+        logMessage: err.message,
+        locale,
+        request: this.httpRequest,
+        response: this.httpResponse,
+      })
+
+    }
+  }
 }
