@@ -61,7 +61,7 @@ export class SeedService {
         !file.startsWith('__') ||
         (process.env.ADMIN_USERS && file.startsWith('__permission-group')) ||
         (process.env.ADMIN_USERS && file.startsWith('__invitation')) ||
-        (process.env.ADMIN_USERS && file.startsWith('__related-users'))
+        (process.env.ADMIN_USERS && file.startsWith('__related-user'))
       ) {
         if (file.includes('.repository.ts')) {
 
