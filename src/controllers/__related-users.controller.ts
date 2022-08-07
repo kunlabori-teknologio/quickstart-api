@@ -81,18 +81,21 @@ export class __RelatedUsersController {
   ): Promise<IHttpResponse> {
     try {
 
-      let data: any = await this.userRepository.findOne({
+      const data: any = await this.userRepository.findOne({
         where: {_id: id},
         include: ['person', 'company', 'permissionGroups'],
         fields: ['email', '_id']
       });
       if (!data) throw new Error(serverMessages['httpResponse']['notFoundError'][locale ?? LocaleEnum['pt-BR']]);
 
-      data.permissionGroupId = data.permissionGroups && data.permissionGroups.length && data.permissionGroups[0]._id
-      data.permissionGroup = data.permissionGroups && data.permissionGroups.length && data.permissionGroups[0]
+      const dataToReturn = {
+        ...data,
+        permissionGroupId: data.permissionGroups && data.permissionGroups.length && data.permissionGroups[0]._id,
+        permissionGroup: data.permissionGroups && data.permissionGroups.length && data.permissionGroups[0],
+      }
 
       return HttpResponseToClient.okHttpResponse({
-        data,
+        data: dataToReturn,
         locale,
         request: this.httpRequest,
         response: this.httpResponse,
