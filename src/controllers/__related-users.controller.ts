@@ -29,7 +29,7 @@ export class __RelatedUsersController {
     @inject(SecurityBindings.USER, {optional: true}) private currentUser?: UserProfile,
   ) { }
 
-  @authenticate({strategy: 'autentikigo', options: {collection: '__RelatedUsers', action: 'read'}})
+  @authenticate({strategy: 'autentikigo', options: {collection: '__PermissionGroup', action: 'createOne'}})
   @get('/__related-users')
   @response(200, {
     description: 'Array of related Users',
@@ -69,7 +69,7 @@ export class __RelatedUsersController {
     }
   }
 
-  @authenticate({strategy: 'autentikigo', options: {collection: '__RelatedUsers', action: 'readOne'}})
+  @authenticate({strategy: 'autentikigo', options: {collection: '__PermissionGroup', action: 'createOne'}})
   @get('/__related-users/{id}')
   @response(200, {
     description: 'Related User model instance',
@@ -107,7 +107,7 @@ export class __RelatedUsersController {
     }
   }
 
-  @authenticate({strategy: 'autentikigo', options: {collection: '__RelatedUsers', action: 'updateOne'}})
+  @authenticate({strategy: 'autentikigo', options: {collection: '__PermissionGroup', action: 'createOne'}})
   @put('/__related-users/{id}')
   @response(200, {description: 'Related User PUT success'})
   async updateById(
