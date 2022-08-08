@@ -46,6 +46,16 @@ export class __InvitationController {
       const createdBy = this.currentUser?.[securityId] as string
       const ownerId = this.currentUser?.ownerId as string
 
+      const invitationAlreadyCreated = await this.invitationRepository.findOne({
+        where: {
+          and: [
+            {permissionGroupId: data.permissionGroupId},
+            {email: data.email}
+          ]
+        }
+      })
+      if (invitationAlreadyCreated) throw new Error(serverMessages['invitation']['invitationHasAlreadyBeenCreated'][LocaleEnum['pt-BR']])
+
       const invitation = await this.invitationRepository.create({...data, _createdBy: createdBy, _ownerId: ownerId})
 
       this.sendMail.sendInvitationMail(invitation._id as string, invitation.email)

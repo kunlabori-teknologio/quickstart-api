@@ -46,7 +46,9 @@ export interface IFilters {
 }
 
 export interface IWhereFilterCondition {
-  [x: string]: (string | null | Boolean) | {like: RegExp;} | {[x: string]: string | null | Boolean}
+  [x: string]: (string | null | Boolean | IWhereFilterCondition[]) |
+  {like: RegExp;} |
+  {[x: string]: string | null | Boolean | IWhereFilterCondition}
 }
 
 export interface IHttpDocumentation {

@@ -41,26 +41,57 @@ export class AuthService {
 
     const {email, googleId, appleId, invitationId} = userLoginInfo
 
-    const permissionGroupId = invitationId ?
-      await this.getPermissionGroupIdFromInvitation(invitationId, email!) :
-      await this.getDefaultPermissionGroupId(email!)
-
     let user = await this.findUserWithPermissions(email!, googleId, appleId)
     if (!user) return null
 
-    const userHasPermissionGroup = user.permissionGroups?.find(permissionGroup => permissionGroup._id === permissionGroupId)
-    if (!userHasPermissionGroup) {
+    if (invitationId) {
 
-      await this.giveTheUserPermission(permissionGroupId!, user._id!)
-      user = await this.findUserWithPermissions(email!, googleId, appleId)
+      const invitationPermissionGroupId = await this.getPermissionGroupIdFromInvitation(invitationId, email!)
 
-      if (invitationId) {
-        await this.invitationRepository.updateById(invitationId, {
-          email, permissionGroupId: permissionGroupId!, _deletedAt: new Date()
-        })
+      const userAlreadyHasPermissionGroupFromInvitation = user.permissionGroups?.find(permissionGroup => permissionGroup._id === invitationPermissionGroupId)
+      if (!userAlreadyHasPermissionGroupFromInvitation) {
+        await this.giveTheUserPermission(invitationPermissionGroupId!, user._id!)
+
+        // await this.invitationRepository.updateById(invitationId, {
+        //   email, permissionGroupId: invitationPermissionGroupId!, _deletedAt: new Date()
+        // })
       }
 
+    } else if (!user.permissionGroups?.length) {
+
+      if (
+        !process.env.ADMIN_USERS ||
+        (
+          process.env.ADMIN_USERS &&
+          process.env.ADMIN_USERS.split(',').includes(email!)
+        )
+      ) {
+
+        const defaultPermissionGroupId = await this.getDefaultPermissionGroupId()
+        await this.giveTheUserPermission(defaultPermissionGroupId!, user._id!)
+        user = await this.findUserWithPermissions(email!, googleId, appleId)
+
+      } else throw new Error(serverMessages['auth']['userIsNotAdmin'][LocaleEnum['pt-BR']])
+
     }
+
+    // const permissionGroupId = invitationId ?
+    //   await this.getPermissionGroupIdFromInvitation(invitationId, email!) :
+    //   await this.getDefaultPermissionGroupId(/*email!*/)
+
+    // const userHasPermissionGroup = user?.permissionGroups?.find(permissionGroup => permissionGroup._id === permissionGroupId)
+    // if (!userHasPermissionGroup) {
+
+    //   await this.giveTheUserPermission(permissionGroupId!, user._id!)
+    //   user = await this.findUserWithPermissions(email!, googleId, appleId)
+
+    //   if (invitationId) {
+    //     await this.invitationRepository.updateById(invitationId, {
+    //       email, permissionGroupId: permissionGroupId!, _deletedAt: new Date()
+    //     })
+    //   }
+
+    // }
 
     const authToken = await Autentikigo.generateToken({id: user?._id}, '5min')
     const authRefreshToken = await Autentikigo.generateToken({id: user?._id}, '10min')
@@ -90,11 +121,7 @@ export class AuthService {
         }
       ]
     })
-    // user?.permissionGroups?.forEach(permissionGroup => {
-    //   permissionGroup.permissions.forEach(permission => {
-    //     console.log(permission)
-    //   })
-    // })
+
     if (user)
       user!.permissionGroups = await this.getOwnerNamesOfPermissionGroups(user!)
 
@@ -146,19 +173,19 @@ export class AuthService {
 
   }
 
-  private async getDefaultPermissionGroupId(email: string): Promise<string | undefined> {
+  private async getDefaultPermissionGroupId(/*email: string*/): Promise<string | undefined> {
 
-    let user = await this.userRepository.findOne({where: {email}, include: ["permissionGroups"]})
+    // let user = await this.userRepository.findOne({where: {email}, include: ["permissionGroups"]})
 
-    if (user?.permissionGroups?.length) {
-      user.permissionGroups = await this.getOwnerNamesOfPermissionGroups(user!)
-      return user.permissionGroups![0]._id
-    }
+    // if (user?.permissionGroups?.length) {
+    //   user.permissionGroups = await this.getOwnerNamesOfPermissionGroups(user!)
+    //   return user.permissionGroups![0]._id
+    // }
 
-    if (process.env.ADMIN_USERS) {
-      const adminUsers = process.env.ADMIN_USERS.split(',')
-      if (!adminUsers.includes(email)) throw new Error(serverMessages['auth']['userIsNotAdmin'][LocaleEnum['pt-BR']])
-    }
+    // if (process.env.ADMIN_USERS) {
+    //   const adminUsers = process.env.ADMIN_USERS.split(',')
+    //   if (!adminUsers.includes(email)) throw new Error(serverMessages['auth']['userIsNotAdmin'][LocaleEnum['pt-BR']])
+    // }
 
     const defaultPermissionGroup: __PermissionGroup | null = await this.permissionGroupRepository.findOne({
       where: {

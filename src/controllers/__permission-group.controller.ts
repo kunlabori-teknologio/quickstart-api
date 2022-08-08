@@ -104,13 +104,18 @@ export class __PermissionGroupController {
 
       let filters = HttpDocumentation.createFilterRequestParams(
         this.httpRequest.url,
-        [{_ownerId: this.currentUser?.[securityId] as string}]
+        [{
+          'or': [
+            {_ownerId: this.currentUser?.[securityId]!},
+            {_ownerId: this.currentUser?.ownerId!},
+          ]
+        }]
       )
 
       let result: any[] = await this.permissionGroupRepository.find({...filters, include: [this.getPermissionGroupRelatedPermissions]})
-      result = result.map(permissionGroup => {
-        permissionGroup.modulePermissions = permissionGroup.modulePermissions.map((permissions: any) => {
-          permissions.permissionActions = permissions.permissionActions.map((action: any) => action._id);
+      result = result?.map(permissionGroup => {
+        permissionGroup.modulePermissions = permissionGroup?.modulePermissions?.map((permissions: any) => {
+          permissions.permissionActions = permissions?.permissionActions?.map((action: any) => action._id);
           return permissions;
         })
         return permissionGroup;
@@ -156,8 +161,8 @@ export class __PermissionGroupController {
 
       if (!data) throw new Error(serverMessages['httpResponse']['notFoundError'][locale ?? LocaleEnum['pt-BR']])
       else {
-        data.modulePermissions = data.modulePermissions.map((permissions: any) => {
-          permissions.permissionActions = permissions.permissionActions.map((action: any) => action._id);
+        data.modulePermissions = data.modulePermissions?.map((permissions: any) => {
+          permissions.permissionActions = permissions.permissionActions?.map((action: any) => action._id);
           return permissions;
         })
       }
