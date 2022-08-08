@@ -14,7 +14,7 @@ export class User implements UserProfile {
   [securityId]: string;
 
   id: number;
-  onwerId: string;
+  ownerId: string;
 
   constructor(data?: Partial<User>) {
     Object.assign(this, data);
