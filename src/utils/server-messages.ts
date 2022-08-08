@@ -159,6 +159,10 @@ export const serverMessages = {
     }
   },
   'invitation': {
+    'invitationHasAlreadyBeenCreated': {
+      [LocaleEnum['pt-BR']]: 'Convite já foi criado',
+      [LocaleEnum['en-US']]: 'Invitation has already been created',
+    },
     'invitationSent': {
       [LocaleEnum['pt-BR']]: 'Convite enviado com sucesso',
       [LocaleEnum['en-US']]: 'Invitation sent successfuly',
