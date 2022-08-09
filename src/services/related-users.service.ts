@@ -13,7 +13,13 @@ export class RelatedUsersService {
 
   ) { }
 
-  public async getRelatedUsersWithPermissions(userId: string): Promise<__User[]> {
+  public async getRelatedUsersWithPermissions(userId: string, ownerId?: string): Promise<__User[]> {
+    let where = {
+      or: [
+        {_ownerId: userId}
+      ]
+    }
+    if (ownerId) where.or.push({_ownerId: ownerId})
 
     const result = await this.userRepository.find({
       include: [
@@ -22,9 +28,7 @@ export class RelatedUsersService {
         {
           relation: 'permissionGroups',
           scope: {
-            where: {
-              _ownerId: userId
-            }
+            where
           }
         }
       ],

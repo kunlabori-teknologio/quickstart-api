@@ -43,7 +43,10 @@ export class __RelatedUsersController {
   ): Promise<IHttpResponse> {
     try {
 
-      let totalResult: any[] = await this.relatedUsersService.getRelatedUsersWithPermissions(this.currentUser?.[securityId]!)
+      let totalResult: any[] = await this.relatedUsersService.getRelatedUsersWithPermissions(
+        this.currentUser?.[securityId]!,
+        this.currentUser?.ownerId!,
+      )
 
       const result = [...totalResult].splice(
         ((page || 0) * (limit || 10)),
