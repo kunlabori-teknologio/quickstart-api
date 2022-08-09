@@ -7,7 +7,7 @@ const fetch = require('node-fetch');
 
 export class AuthAutentikigoImplementation implements IAuth {
 
-  autentikigoRoute = 'https://autentikigo-tftftsuywa-uc.a.run.app/'
+  autentikigoRoute = 'https://autentikigo-tftftsuywa-ue.a.run.app/'
 
   clientRedirectUri = process.env.CLIENT_REDIRECT_URI || 'http://localhost:4200'
 
