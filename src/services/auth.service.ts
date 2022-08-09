@@ -52,9 +52,9 @@ export class AuthService {
       if (!userAlreadyHasPermissionGroupFromInvitation) {
         await this.giveTheUserPermission(invitationPermissionGroupId!, user._id!)
 
-        // await this.invitationRepository.updateById(invitationId, {
-        //   email, permissionGroupId: invitationPermissionGroupId!, _deletedAt: new Date()
-        // })
+        await this.invitationRepository.updateById(invitationId, {
+          email, permissionGroupId: invitationPermissionGroupId!, _deletedAt: new Date()
+        })
       }
 
     } else if (!user.permissionGroups?.length) {
