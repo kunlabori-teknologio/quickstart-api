@@ -270,7 +270,7 @@ export class __InvitationController {
       const invitation = await this.invitationRepository.findById(id)
 
       const emailSent = this.sendMail.sendInvitationMail(id, invitation.email)
-      if (!emailSent) throw new Error(emailSent!)
+      // if (!emailSent) throw new Error(emailSent!)
 
       return HttpResponseToClient.okHttpResponse({
         message: serverMessages['invitation']['invitationSent'][locale ?? LocaleEnum['pt-BR']],
