@@ -75,24 +75,6 @@ export class AuthService {
 
     }
 
-    // const permissionGroupId = invitationId ?
-    //   await this.getPermissionGroupIdFromInvitation(invitationId, email!) :
-    //   await this.getDefaultPermissionGroupId(/*email!*/)
-
-    // const userHasPermissionGroup = user?.permissionGroups?.find(permissionGroup => permissionGroup._id === permissionGroupId)
-    // if (!userHasPermissionGroup) {
-
-    //   await this.giveTheUserPermission(permissionGroupId!, user._id!)
-    //   user = await this.findUserWithPermissions(email!, googleId, appleId)
-
-    //   if (invitationId) {
-    //     await this.invitationRepository.updateById(invitationId, {
-    //       email, permissionGroupId: permissionGroupId!, _deletedAt: new Date()
-    //     })
-    //   }
-
-    // }
-
     const authToken = await Autentikigo.generateToken({id: user?._id}, '5min')
     const authRefreshToken = await Autentikigo.generateToken({id: user?._id}, '10min')
 
@@ -173,19 +155,7 @@ export class AuthService {
 
   }
 
-  private async getDefaultPermissionGroupId(/*email: string*/): Promise<string | undefined> {
-
-    // let user = await this.userRepository.findOne({where: {email}, include: ["permissionGroups"]})
-
-    // if (user?.permissionGroups?.length) {
-    //   user.permissionGroups = await this.getOwnerNamesOfPermissionGroups(user!)
-    //   return user.permissionGroups![0]._id
-    // }
-
-    // if (process.env.ADMIN_USERS) {
-    //   const adminUsers = process.env.ADMIN_USERS.split(',')
-    //   if (!adminUsers.includes(email)) throw new Error(serverMessages['auth']['userIsNotAdmin'][LocaleEnum['pt-BR']])
-    // }
+  private async getDefaultPermissionGroupId(): Promise<string | undefined> {
 
     const defaultPermissionGroup: __PermissionGroup | null = await this.permissionGroupRepository.findOne({
       where: {
@@ -237,6 +207,10 @@ export class AuthService {
     if (userInfo?.invitationId) {
       const permissionGroupId = await this.getPermissionGroupIdFromInvitation(userInfo?.invitationId, userInfo?.email!, locale)
       await this.giveTheUserPermission(permissionGroupId, newUser._id!)
+
+      await this.invitationRepository.updateById(userInfo?.invitationId, {
+        email: userInfo?.email, permissionGroupId: permissionGroupId!, _deletedAt: new Date()
+      })
     }
 
     return await this.userRepository.findById(newUser?._id, {include: ['person', 'company']})
@@ -250,7 +224,6 @@ export class AuthService {
   ): Promise<__Person | __Company> {
     try {
 
-      // const profileDTO = await getProfile.getFullProfileInfo(uniqueId, userType, additionalInfo)
       let profileDTO = await Autentikigo.getProfile(userType, uniqueId)
       if (!profileDTO) throw new Error(serverMessages['auth']['uniqueIdNotFound'][locale ?? LocaleEnum['pt-BR']])
 
@@ -299,7 +272,7 @@ export class AuthService {
     const permissionGroup = permissionGroups[0]
 
     if (action) {
-      if (permissionGroup) {//} && permissionGroup.name !== 'Kunlatek - Admin') {
+      if (permissionGroup) {
         let userHasPermission = false;
         permissionGroup.modulePermissions?.forEach(permission => {
           if (permission.module && permission.permissionActions.length) {
