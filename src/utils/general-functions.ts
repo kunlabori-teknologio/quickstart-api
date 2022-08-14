@@ -36,7 +36,7 @@ export function getUserType(primaryUserInfo: IPrimaryUserInformation, locale?: L
   return type
 }
 
-function getOnlyUniqueIdNumber(uniqueId: string): string {
+export function getOnlyUniqueIdNumber(uniqueId: string): string {
   return uniqueId.replace(/[^a-zA-Z0-9]/g, '')
 }
 
