@@ -54,6 +54,14 @@ export class __Module extends __Default {
   })
   collection?: string;
 
+  @property({
+    name: 'project',
+    description: "The Project that this module is in",
+    type: 'string',
+    required: true,
+  })
+  project: string;
+
   // @property({
   //   type: 'string',
   // })

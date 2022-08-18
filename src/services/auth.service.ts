@@ -96,7 +96,10 @@ export class AuthService {
           relation: 'permissionGroups', scope: {
             include: [{
               relation: 'modulePermissions', scope: {
-                include: ['module', 'permissionActions']
+                include: [
+                  {relation: 'module', scope: {where: {'project': process.env.DB}}},
+                  'permissionActions'
+                ]
               }
             }]
           }
@@ -140,6 +143,7 @@ export class AuthService {
         _id: owner?._id,
         name: owner?.person?.name ?? owner?.company?.tradeName,
       }
+      permissionGroup.modulePermissions = permissionGroup.modulePermissions.filter(modulePermission => modulePermission.module)
       return permissionGroup
     })
 

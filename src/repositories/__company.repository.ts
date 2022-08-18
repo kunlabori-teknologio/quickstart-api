@@ -1,6 +1,6 @@
 import {inject} from '@loopback/core';
 import {DefaultCrudRepository} from '@loopback/repository';
-import {MongodbDataSource} from '../datasources';
+import {AuthMongodbDataSource} from '../datasources';
 import {__Company, __CompanyRelations} from '../models';
 
 export class __CompanyRepository extends DefaultCrudRepository<
@@ -9,7 +9,7 @@ export class __CompanyRepository extends DefaultCrudRepository<
   __CompanyRelations
 > {
   constructor(
-    @inject('datasources.mongodb') dataSource: MongodbDataSource,
+    @inject('datasources.auth_mongodb') dataSource: AuthMongodbDataSource,
   ) {
     super(__Company, dataSource);
   }
