@@ -42,7 +42,7 @@ export class __UserRepository extends DefaultCrudRepository<
   >;
 
   constructor(
-    @inject('datasources.mongodb') dataSource: AuthMongodbDataSource,
+    @inject('datasources.auth_mongodb') dataSource: AuthMongodbDataSource,
     @repository.getter('__PersonRepository')
     protected personRepositoryGetter: Getter<__PersonRepository>,
     @repository.getter('__CompanyRepository')

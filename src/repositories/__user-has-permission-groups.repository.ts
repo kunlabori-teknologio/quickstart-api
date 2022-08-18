@@ -11,7 +11,7 @@ export class __UserHasPermissionGroupsRepository extends DefaultCrudRepository<
   typeof __UserHasPermissionGroups.prototype._id,
   __UserHasPermissionGroupsRelations
 > {
-  constructor(@inject('datasources.mongodb') dataSource: AuthMongodbDataSource) {
+  constructor(@inject('datasources.auth_mongodb') dataSource: AuthMongodbDataSource) {
     super(__UserHasPermissionGroups, dataSource);
   }
 }

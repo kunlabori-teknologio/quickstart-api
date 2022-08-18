@@ -9,7 +9,7 @@ export class __CompanyRepository extends DefaultCrudRepository<
   __CompanyRelations
 > {
   constructor(
-    @inject('datasources.mongodb') dataSource: AuthMongodbDataSource,
+    @inject('datasources.auth_mongodb') dataSource: AuthMongodbDataSource,
   ) {
     super(__Company, dataSource);
   }

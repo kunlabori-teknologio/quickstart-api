@@ -9,7 +9,7 @@ export class __ModuleRepository extends DefaultCrudRepository<
   __ModuleRelations
 > {
   constructor(
-    @inject('datasources.mongodb') dataSource: AuthMongodbDataSource,
+    @inject('datasources.auth_mongodb') dataSource: AuthMongodbDataSource,
   ) {
     super(__Module, dataSource);
   }

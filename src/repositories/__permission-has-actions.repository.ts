@@ -11,7 +11,7 @@ export class __PermissionHasActionsRepository extends DefaultCrudRepository<
   typeof __PermissionHasActions.prototype._id,
   __PermissionHasActionsRelations
 > {
-  constructor(@inject('datasources.mongodb') dataSource: AuthMongodbDataSource) {
+  constructor(@inject('datasources.auth_mongodb') dataSource: AuthMongodbDataSource) {
     super(__PermissionHasActions, dataSource);
   }
 }

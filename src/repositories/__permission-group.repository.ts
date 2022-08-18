@@ -23,7 +23,7 @@ export class __PermissionGroupRepository extends DefaultCrudRepository<
   >;
 
   constructor(
-    @inject('datasources.mongodb') dataSource: AuthMongodbDataSource,
+    @inject('datasources.auth_mongodb') dataSource: AuthMongodbDataSource,
     @repository.getter('__PermissionRepository')
     protected permissionRepositoryGetter: Getter<__PermissionRepository>,
   ) {

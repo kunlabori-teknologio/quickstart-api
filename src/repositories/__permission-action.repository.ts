@@ -9,7 +9,7 @@ export class __PermissionActionRepository extends DefaultCrudRepository<
   __PermissionActionRelations
 > {
   constructor(
-    @inject('datasources.mongodb') dataSource: AuthMongodbDataSource,
+    @inject('datasources.auth_mongodb') dataSource: AuthMongodbDataSource,
   ) {
     super(__PermissionAction, dataSource);
   }

@@ -8,7 +8,7 @@ export class __PersonRepository extends DefaultCrudRepository<
   typeof __Person.prototype._id,
   __PersonRelations
 > {
-  constructor(@inject('datasources.mongodb') dataSource: AuthMongodbDataSource) {
+  constructor(@inject('datasources.auth_mongodb') dataSource: AuthMongodbDataSource) {
     super(__Person, dataSource);
   }
 }
