@@ -14,16 +14,19 @@ export class SeedService {
 
     await client.connect()
 
-    await this.createPermissionActions(client)
+    await this.createPermissionActions(client, process.env.AUTH_DB ?? process.env.DB!)
 
     client.close()
   }
 
-  private async createPermissionActions(client: mongoDB.MongoClient): Promise<void | null> {
+  private async createPermissionActions(
+    client: mongoDB.MongoClient,
+    db: string,
+  ): Promise<void | null> {
     console.log('Checking and creating modules...')
 
     const permissionsActionsInDatabase = await client
-      .db(process.env.DB)
+      .db(db)
       .collection('__PermissionAction')
       .find().toArray()
 
@@ -34,7 +37,7 @@ export class SeedService {
       ]
 
       await client
-        .db(process.env.DB)
+        .db(db)
         .collection('__PermissionAction')
         .insertMany(
           permissionActions.map(permissionAction => {
@@ -46,12 +49,15 @@ export class SeedService {
         )
     }
 
-    await this.createModules(client)
+    await this.createModules(client, db)
 
     console.log('modules created!')
   }
 
-  private async createModules(client: mongoDB.MongoClient): Promise<void> {
+  private async createModules(
+    client: mongoDB.MongoClient,
+    db: string,
+  ): Promise<void> {
 
     const dir = path.join(__dirname, '../../src/repositories')
     const files = fs.readdirSync(dir)
@@ -69,14 +75,20 @@ export class SeedService {
           const fileContent = fs.readFileSync(fileDir, {encoding: 'utf8', flag: 'r'})
           const moduleName = fileContent?.split('/* moduleName->')[1]?.replace('<- */', '').trim()
 
-          const moduleHasAlreadyBeenInserted = await this.moduleHasAlreadyBeenInserted(client, moduleName)
+          const isReservedModule = file.startsWith('__')
+
+          const moduleHasAlreadyBeenInserted = await this.moduleHasAlreadyBeenInserted(
+            client,
+            moduleName,
+            db,
+            (isReservedModule ? db : process.env.DB)!,
+          )
 
           if (!moduleHasAlreadyBeenInserted) {
-            const isReservedModule = file.startsWith('__')
 
             const kebabName = file.split('.')[0]
             const module = await client
-              .db(process.env.DB)
+              .db(db)
               .collection('__Module')
               .insertOne({
                 _id: new mongoDB.ObjectId(),
@@ -84,29 +96,47 @@ export class SeedService {
                 description: moduleName,
                 route: `/${kebabName}`,
                 collection: `${isReservedModule ? '__' : ''}${kebabCaseToPascalCase(kebabName.replace('__', ''))}`,
+                project: isReservedModule ? db : process.env.DB,
                 _deletedAt: null,
               })
 
-            await this.createDefaultPermission(module?.insertedId!.toString(), client)
+            await this.createDefaultPermission(
+              module?.insertedId!.toString(),
+              client,
+              db,
+            )
           }
         }
       }
     }
   }
 
-  private async moduleHasAlreadyBeenInserted(client: mongoDB.MongoClient, moduleName: string): Promise<Boolean> {
+  private async moduleHasAlreadyBeenInserted(
+    client: mongoDB.MongoClient,
+    moduleName: string,
+    db: string,
+    project: string,
+  ): Promise<Boolean> {
+
     const moduleFound = await client
-      .db(process.env.DB)
+      .db(db)
       .collection('__Module')
-      .findOne({name: moduleName})
+      .findOne({
+        name: moduleName,
+        project: project,
+      })
 
     return moduleFound ? true : false
+
   }
 
-  private async createDefaultPermissionGroup(client: mongoDB.MongoClient): Promise<any> {
+  private async createDefaultPermissionGroup(
+    client: mongoDB.MongoClient,
+    db: string,
+  ): Promise<any> {
 
     const permissionGroupInDatabase = await client
-      .db(process.env.DB)
+      .db(db)
       .collection('__PermissionGroup')
       .find().toArray()
 
@@ -114,7 +144,7 @@ export class SeedService {
       return permissionGroupInDatabase[0]
 
     const defaultPermissionGroup = await client
-      .db(process.env.DB)
+      .db(db)
       .collection('__PermissionGroup')
       .insertOne({
         _id: new mongoDB.ObjectId(),
@@ -126,10 +156,15 @@ export class SeedService {
     return defaultPermissionGroup
   }
 
-  private async createModuleDefaultPermission(moduleId: string, permissionGroupId: string, client: mongoDB.MongoClient): Promise<any> {
+  private async createModuleDefaultPermission(
+    moduleId: string,
+    permissionGroupId: string,
+    client: mongoDB.MongoClient,
+    db: string,
+  ): Promise<any> {
 
     const defaultPermission = await client
-      .db(process.env.DB)
+      .db(db)
       .collection('__Permission')
       .insertOne({
         _id: new mongoDB.ObjectId(),
@@ -140,14 +175,19 @@ export class SeedService {
     return defaultPermission
   }
 
-  private async giveAllActionsToDefaultPermission(permissionId: string, client: mongoDB.MongoClient): Promise<void> {
+  private async giveAllActionsToDefaultPermission(
+    permissionId: string,
+    client: mongoDB.MongoClient,
+    db: string,
+  ): Promise<void> {
+
     const permissionActions = await client
-      .db(process.env.DB)
+      .db(db)
       .collection('__PermissionAction')
       .find().toArray()
 
     await client
-      .db(process.env.DB)
+      .db(db)
       .collection('__PermissionHasActions')
       .insertMany(
         permissionActions.map(permissionAction => {
@@ -159,11 +199,15 @@ export class SeedService {
       )
   }
 
-  public async createDefaultPermission(moduleId: string, client: mongoDB.MongoClient): Promise<void> {
+  public async createDefaultPermission(
+    moduleId: string,
+    client: mongoDB.MongoClient,
+    db: string,
+  ): Promise<void> {
 
     try {
 
-      const defaultPermissionGroup = await this.createDefaultPermissionGroup(client)
+      const defaultPermissionGroup = await this.createDefaultPermissionGroup(client, db)
 
       const permissionGroupId = defaultPermissionGroup?.insertedId ?? defaultPermissionGroup?._id
 
@@ -171,11 +215,13 @@ export class SeedService {
         moduleId,
         permissionGroupId!.toString(),
         client,
+        db,
       )
 
       await this.giveAllActionsToDefaultPermission(
         defaultPermission?.insertedId!.toString(),
-        client
+        client,
+        db,
       )
 
     } catch (err) {
