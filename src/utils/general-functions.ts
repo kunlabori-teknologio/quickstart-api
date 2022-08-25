@@ -1,3 +1,6 @@
+import * as mongoDB from "mongodb";
+import {ObjectId} from 'mongodb';
+
 import {LocaleEnum} from '../enums/locale.enum';
 import {serverMessages} from './server-messages';
 
@@ -47,3 +50,21 @@ export const getAclActionsFromHttpMethod: Map<String, string[]> = new Map([
   ['PATCH', ['update', 'updateOne']],
   ['DELETE', ['delete', 'deleteOne']],
 ])
+
+export async function getRelatedElements(collection: string, ids: string[]): Promise<any[]> {
+  const client: mongoDB.MongoClient = new mongoDB.MongoClient(process.env.MONGO_URL!);
+
+  await client.connect()
+
+  const relatedData = await client
+    .db(process.env.DB)
+    .collection(collection)
+    .find({
+      _id: {"$in": ids.map(id => new ObjectId(id))}
+    })
+    .toArray()
+
+  await client.close()
+
+  return relatedData
+}
