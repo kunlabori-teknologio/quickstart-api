@@ -24,6 +24,7 @@ export interface IHttpResponseData {
   message?: string,
   logMessage?: string,
   data?: {},
+  tokens?: {},
   request: Request,
   response: Response,
   locale?: LocaleEnum,
@@ -34,6 +35,7 @@ export interface IHttpResponse {
   message?: string,
   logMessage?: string,
   data?: {},
+  tokens?: {},
 }
 
 export interface IFilters {

@@ -61,6 +61,7 @@ export class HttpLb4ResponseImplementation implements IHttpResponseToClient {
     return {
       statusCode: httpResponseData?.statusCode ?? 200,
       data: httpResponseData?.data,
+      tokens: httpResponseData?.tokens,
       message: httpResponseData?.message ?? this.getMessage(HttpResponseTypeEnum.ok, httpResponseData?.locale ?? LocaleEnum['pt-BR']),
     }
 
@@ -77,6 +78,7 @@ export class HttpLb4ResponseImplementation implements IHttpResponseToClient {
     return {
       statusCode: httpResponseData?.statusCode ?? 201,
       data: httpResponseData?.data,
+      tokens: httpResponseData?.tokens,
       message: httpResponseData?.message ?? this.getMessage(HttpResponseTypeEnum.created, httpResponseData?.locale ?? LocaleEnum['pt-BR']),
     }
 
@@ -93,6 +95,7 @@ export class HttpLb4ResponseImplementation implements IHttpResponseToClient {
     return {
       statusCode: httpResponseData?.statusCode ?? 204,
       data: httpResponseData?.data,
+      tokens: httpResponseData?.tokens,
       message: httpResponseData?.message ?? this.getMessage(HttpResponseTypeEnum.noContent, httpResponseData?.locale ?? LocaleEnum['pt-BR']),
     }
 
