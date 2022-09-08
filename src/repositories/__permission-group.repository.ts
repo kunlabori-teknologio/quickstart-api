@@ -40,3 +40,4 @@ export class __PermissionGroupRepository extends DefaultCrudRepository<
 }
 
 /* moduleName->Grupo de permissões<- */
+/* moduleIndex->-3<- */

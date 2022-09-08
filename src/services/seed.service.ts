@@ -62,6 +62,8 @@ export class SeedService {
     const dir = path.join(__dirname, '../../src/repositories')
     const files = fs.readdirSync(dir)
 
+    let modules = []
+
     for (const file of files) {
       if (
         !file.startsWith('__') ||
@@ -73,10 +75,15 @@ export class SeedService {
 
           const fileDir = path.join(__dirname, `../../src/repositories/${file}`)
           const fileContent = fs.readFileSync(fileDir, {encoding: 'utf8', flag: 'r'})
-          const moduleName = fileContent?.split('/* moduleName->')[1]?.replace('<- */', '').trim()
+          let moduleName = fileContent?.split('/* moduleName->')[1]?.replace('<- */', '').trim()
+
+          let moduleIndex = 0;
+          if (fileContent.includes('/* moduleIndex->')) {
+            moduleIndex = parseInt(fileContent?.split('/* moduleIndex->')[1]?.replace('<- */', ''))
+            moduleName = moduleName.slice(0, - (moduleIndex.toString().length + 21)).trim()
+          }
 
           const isReservedModule = file.startsWith('__')
-
           const moduleHasAlreadyBeenInserted = await this.moduleHasAlreadyBeenInserted(
             client,
             moduleName,
@@ -87,27 +94,40 @@ export class SeedService {
           if (!moduleHasAlreadyBeenInserted) {
 
             const kebabName = file.split('.')[0]
-            const module = await client
-              .db(db)
-              .collection('__Module')
-              .insertOne({
-                _id: new mongoDB.ObjectId(),
-                name: moduleName,
-                description: moduleName,
-                route: `/${kebabName}`,
-                collection: `${isReservedModule ? '__' : ''}${kebabCaseToPascalCase(kebabName.replace('__', ''))}`,
-                project: isReservedModule ? db : process.env.DB,
-                _deletedAt: null,
-              })
-
-            await this.createDefaultPermission(
-              module?.insertedId!.toString(),
-              client,
-              db,
-            )
+            modules.push({
+              moduleName,
+              moduleIndex,
+              route: `/${kebabName}`,
+              collection: `${isReservedModule ? '__' : ''}${kebabCaseToPascalCase(kebabName.replace('__', ''))}`,
+              project: isReservedModule ? db : process.env.DB,
+            })
           }
         }
       }
+    }
+
+    modules.sort((a, b) => (a.moduleIndex > b.moduleIndex) ? 1 : ((b.moduleIndex > a.moduleIndex) ? -1 : 0))
+    for (let moduleIndex = 0; moduleIndex < modules.length; moduleIndex++) {
+      const module = modules[moduleIndex]
+
+      const moduleCreated = await client
+        .db(db)
+        .collection('__Module')
+        .insertOne({
+          _id: new mongoDB.ObjectId(),
+          name: module.moduleName,
+          description: module.moduleName,
+          route: module.route,
+          collection: module.collection,
+          project: module.project,
+          _deletedAt: null,
+        })
+
+      await this.createDefaultPermission(
+        moduleCreated?.insertedId!.toString(),
+        client,
+        db,
+      )
     }
   }
 

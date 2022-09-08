@@ -40,3 +40,4 @@ export class __InvitationRepository extends DefaultCrudRepository<
 }
 
 /* moduleName->Convites<- */
+/* moduleIndex->-2<- */
