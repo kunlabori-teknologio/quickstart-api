@@ -97,7 +97,17 @@ export class AuthService {
             include: [{
               relation: 'modulePermissions', scope: {
                 include: [
-                  {relation: 'module', scope: {where: {'project': process.env.DB}}},
+                  {
+                    relation: 'module',
+                    scope: {
+                      where: {
+                        'or': [
+                          {'project': process.env.DB},
+                          {'project': process.env.AUTH_DB || null},
+                        ]
+                      }
+                    }
+                  },
                   'permissionActions'
                 ]
               }
