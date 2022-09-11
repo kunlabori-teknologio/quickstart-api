@@ -75,8 +75,8 @@ export class AuthService {
 
     }
 
-    const authToken = await Autentikigo.generateToken({id: user?._id}, '30min')
-    const authRefreshToken = await Autentikigo.generateToken({id: user?._id}, '45min')
+    const authToken = await Autentikigo.generateToken({id: user?._id}, '24h')
+    const authRefreshToken = await Autentikigo.generateToken({id: user?._id}, '7d')
 
     return {
       authToken,
@@ -257,8 +257,8 @@ export class AuthService {
 
   public async refreshToken(id: string): Promise<IRefreshTokenResponse> {
 
-    const authToken = await Autentikigo.generateToken({id}, '30min')
-    const authRefreshToken = await Autentikigo.generateToken({id}, '45min')
+    const authToken = await Autentikigo.generateToken({id}, '24h')
+    const authRefreshToken = await Autentikigo.generateToken({id}, '7d')
 
     return {
       authToken,
