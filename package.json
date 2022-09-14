@@ -50,6 +50,7 @@
     "!*/__tests__"
   ],
   "dependencies": {
+    "@google-cloud/storage": "^6.4.2",
     "@loopback/authentication": "^8.0.1",
     "@loopback/boot": "^4.0.1",
     "@loopback/core": "^3.0.1",

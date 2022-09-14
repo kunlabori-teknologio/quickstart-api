@@ -1,0 +1,12 @@
+{
+  "type": "service_account",
+  "project_id": "test-dev-333200",
+  "private_key_id": "a6d60e7a13982e6f728d2b9b5a0fd252b6b46e13",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQDqcxlJ3x5noeU0\nFqNcWwIk7O+ROErILAU91PJufMbPQ2jd6/AA5ZdrLAoZ+c5RvfCtChfByeBD1tWR\ng1RXjDnFen8Q7zp1GZrEYT0LUXc0CtGxi+XOeH7+0JaeHFCQhy4tEWCmHL6sXbZM\nwa4bGlVpR6DlPl4j02Q+QkT4OcJSxBJaqtMVcFnFSwHowdsMM4AL3cw24YXJotUa\nBYw3Awb00Z2VzIzJGq/+W8xAqPUv7mhYhwL2+xNKE6AY3jixtyZTXPdoG9XraPUs\nbLKpvcffwtvebu76zyw86POphAOwPFtMhj5v8PQ8WiGUSQ5xiWLld1HnY35aRrA+\nbvYrt3rXAgMBAAECggEAGNkuGvg83rr38fdcRROYPJWoJnoS4vhXbeA9+Zvb7me0\nm6DABThQPhmi0HH7fgplkdF6Bx4AWPBSHmQO8mB4VwfOo9rXFUYrcxjjQWnW+nsT\nEoBDUQjQXO16qTNTDp5lNH2dAr4VL2uXQLdeXp0B5HClCub7T0y+WSLo8G4evGq7\noBtt3McLwQLIaQptJ0hX0rWSQjKbagrIUtCWKrQYraaWzULnVE/LTV5MhZLn9IyY\nuUweSnXl8DIY67MfDsQimBbPhdWurAAm+K5kCGxKT69Em4uW22zbQsPiup9Wpai2\n7khdVqwUg9+xKZ9VUUi5ur12rJTKLLJR7W9QfbgsEQKBgQD3lCfXbph8HVVdRsCg\nt6LBErqfKmIcNd+xdDNPWFl2AGF07/hpSHZL5v9I18YBVfygThrztT1UPxMgDZOb\nG/StIMeUn3lSP56B/s/zJizlq4z4eRA70mjdczkWoiA1JbyDEQ1r3CXynF0pypQm\nX/t/SH3xGgU2WWEfJ4upaxSxlQKBgQDybJ5UwuTRyVTAk3PqcBQPIewT6/WDNHIw\nyIF8zcXSDSiReJSmvOWQ8E8aFKfHkiEOqQSoVZAHyvIC9pO1nnzEFIf8FHCE75M0\nRYSxHDXlhZp+YZp3C6mnn8bOak7mUCS3LD1Z8nXAihaU0ZNVSUdPU0rZ1beqWoL9\n0qizsHf3uwKBgEeIz1o34mc6MogZAV9ur+AJgVKr9F0iU9f6Mzkh1fd6dK5NCAGj\npkqYG/r4HYYVSkEnUDJKk8Xb07LXOWb/1NqRNhmDWpKhPzNgZMVkqmRSBRFmKYKf\ncR1LRZt8jMHOfYGBU9dubKiE9YY1uki8QvasA3e+hPMHMEDINFpnTjthAoGBAMj4\nFsH516u6lhIXq068n0R0QLu7LwsYHVonvoDyLX6W/fyq08Duc/mV3l2mpfiiQdlf\ncMcEN6TeL4cZVxaHTrNWuezWHPl3ircYsooI8v1VpuAClgT+nCSkJjHUm5f+9JEN\nkcbRY6C8WUACBXv8hatTR4gSznHhGxrE2qosLyglAoGBAMNn85b9bmT9unOhq2Qe\nrsJbUwToVxjYuvGhDfFYNuTYisCFNVPO52589UsfMMVJcmzW8JeR7EfWUzfaWIix\nQkDHQJH5nWN2+VZVZMEz8qQrqoczQhm+jsoEc6JKeJCkQR8Kphdh348HLbPMNtrL\nb2Yr9xSqZV/nHh6mI7Ve/32n\n-----END PRIVATE KEY-----\n",
+  "client_email": "kunlatek-fundamento-storage@test-dev-333200.iam.gserviceaccount.com",
+  "client_id": "111205939199254359208",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/kunlatek-fundamento-storage%40test-dev-333200.iam.gserviceaccount.com"
+}
