@@ -1,5 +1,6 @@
 import {Storage} from '@google-cloud/storage';
 import { /* inject, */ BindingScope, generateUniqueId, injectable} from '@loopback/core';
+import * as fs from 'fs';
 
 @injectable({scope: BindingScope.TRANSIENT})
 export class StorageService {
@@ -12,22 +13,24 @@ export class StorageService {
   /*
    * Add service methods here
    */
-  public async uploadFiles(module: string, files: any[]): Promise<void> {
+  public async uploadFiles(module: string, file: any): Promise<string> {
     const storage = new Storage({keyFilename: "storage-key.json"})
     try {
       const bucket = storage.bucket(this.bucketName)
+      const fileName = file.fileName
 
-      // eslint-disable-next-line @typescript-eslint/prefer-for-of
-      for (let fileIndex = 0; fileIndex < files.length; fileIndex++) {
-        const file = files[fileIndex];
+      const uniqueFileName = generateUniqueId()
 
-        const uniqueFileName = generateUniqueId()
-        const fileToUpdate = Buffer.from(file, 'base64')
-        await bucket.file(`${process.env.PROJECT}/${module}/${uniqueFileName}`).save(fileToUpdate)
-        console.log("File created: " + uniqueFileName)
-      }
+      const base64Image = file.base64.split(';base64,').pop();
+      fs.writeFile(`${uniqueFileName}_${fileName}`, base64Image, {encoding: 'base64'}, () => { })
+
+      const uploadedFile = await bucket.upload(`${uniqueFileName}_${fileName}`, {destination: `${process.env.PROJECT}/${module}/${uniqueFileName}_${fileName}`})
+
+      fs.unlink(`${uniqueFileName}_${fileName}`, () => { })
+
+      return uploadedFile[0].publicUrl()
     } catch (error) {
-      console.log(error.message)
+      throw new Error('Upload file error')
     }
   }
 }
