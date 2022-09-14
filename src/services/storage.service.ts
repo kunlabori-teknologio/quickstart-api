@@ -22,11 +22,11 @@ export class StorageService {
       const uniqueFileName = generateUniqueId()
 
       const base64Image = file.base64.split(';base64,').pop();
-      fs.writeFile(`${uniqueFileName}_${fileName}`, base64Image, {encoding: 'base64'}, () => { })
+      await fs.writeFile(`${uniqueFileName}_${fileName}`, base64Image, {encoding: 'base64'}, () => { })
 
       const uploadedFile = await bucket.upload(`${uniqueFileName}_${fileName}`, {destination: `${process.env.PROJECT}/${module}/${uniqueFileName}_${fileName}`})
 
-      fs.unlink(`${uniqueFileName}_${fileName}`, () => { })
+      await fs.unlink(`${uniqueFileName}_${fileName}`, () => { })
 
       return uploadedFile[0].publicUrl()
     } catch (error) {
