@@ -60,7 +60,7 @@ export async function getRelatedElements(collection: string, ids: any[]): Promis
     .db(process.env.DB)
     .collection(collection)
     .find({
-      _id: {"$in": ids.map(id => new ObjectId(id))}
+      _id: {"$in": (ids || []).flat().map(id => new ObjectId(id))}
     })
     .toArray()
 
