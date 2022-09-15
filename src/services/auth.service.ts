@@ -130,7 +130,7 @@ export class AuthService {
       return permissionGroup._ownerId
     })
 
-    let whereCondition = permissionGroupsOwnerIds ?
+    const whereCondition = permissionGroupsOwnerIds ?
       {
         where: {},
         include: ['person', 'company']
@@ -189,13 +189,13 @@ export class AuthService {
 
   }
 
-  public async signup(data: Signup, userInfo: ILoginUserInfo, getProfile: IGetProfile, locale?: LocaleEnum): Promise<__User> {
+  public async signup(data: Signup, userInfo: ILoginUserInfo, getProfile: IGetProfile, token: string, locale?: LocaleEnum): Promise<__User> {
 
     const userType = getUserType(data, locale)
 
     const profile =
       await this[`${userType}Repository`].findOne({where: {uniqueId: data.uniqueId}}) ??
-      await this.createProfile({userType, ...data}, getProfile, locale);
+      await this.createProfile({userType, ...data}, getProfile, token, locale);
 
     if (!theDatesMatch(profile.birthday, data.birthday))
       throw new Error(serverMessages['auth']['birthdayIncorrect'][locale ?? LocaleEnum['pt-BR']])
@@ -227,18 +227,19 @@ export class AuthService {
       })
     }
 
-    return await this.userRepository.findById(newUser?._id, {include: ['person', 'company']})
+    return this.userRepository.findById(newUser?._id, {include: ['person', 'company']})
   }
 
   public async createProfile(
     {userType, uniqueId, additionalInfo}:
       {userType: UserTypesEnum, uniqueId: string, additionalInfo?: AdditionalInfoModel},
     getProfile: IGetProfile,
+    token: string,
     locale?: LocaleEnum
   ): Promise<__Person | __Company> {
     try {
 
-      let profileDTO = await Autentikigo.getProfile(userType, uniqueId)
+      const profileDTO = await Autentikigo.getProfile(userType, uniqueId, token)
       if (!profileDTO) throw new Error(serverMessages['auth']['uniqueIdNotFound'][locale ?? LocaleEnum['pt-BR']])
 
       delete profileDTO['data']['userId']

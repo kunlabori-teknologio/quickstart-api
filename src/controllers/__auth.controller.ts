@@ -229,7 +229,7 @@ export class __AuthController {
 
       const loginUserInfo = JwtToken.getLoginUserInfoFromToken(this.httpRequest.headers.authorization!)
 
-      await this.authService.signup(data, loginUserInfo, this.getProfile)
+      await this.authService.signup(data, loginUserInfo, this.getProfile, this.httpRequest.headers.authorization!)
 
       return HttpResponseToClient.createHttpResponse({
         locale,
