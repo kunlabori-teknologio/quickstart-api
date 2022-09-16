@@ -51,7 +51,7 @@ export const getAclActionsFromHttpMethod: Map<String, string[]> = new Map([
   ['DELETE', ['delete', 'deleteOne']],
 ])
 
-export async function getRelatedElements(collection: string, ids: any[]): Promise<any[]> {
+export async function getRelatedElements(collection: string, ids?: any[]): Promise<any[]> {
   const client: mongoDB.MongoClient = new mongoDB.MongoClient(process.env.MONGO_URL!);
 
   await client.connect()
@@ -69,7 +69,7 @@ export async function getRelatedElements(collection: string, ids: any[]): Promis
   return relatedData
 }
 
-export async function getRelatedElement(collection: string, id: string): Promise<any> {
+export async function getRelatedElement(collection: string, id?: String): Promise<any> {
   if (!id) return null;
 
   const client: mongoDB.MongoClient = new mongoDB.MongoClient(process.env.MONGO_URL!);
