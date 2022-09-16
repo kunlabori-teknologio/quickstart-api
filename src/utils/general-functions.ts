@@ -68,3 +68,18 @@ export async function getRelatedElements(collection: string, ids: any[]): Promis
 
   return relatedData
 }
+
+export async function getRelatedElement(collection: string, id: string): Promise<any> {
+  const client: mongoDB.MongoClient = new mongoDB.MongoClient(process.env.MONGO_URL!);
+
+  await client.connect()
+
+  const relatedData = await client
+    .db(process.env.DB)
+    .collection(collection)
+    .findOne({_id: id})
+
+  await client.close()
+
+  return relatedData
+}
