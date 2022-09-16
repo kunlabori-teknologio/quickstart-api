@@ -70,6 +70,8 @@ export async function getRelatedElements(collection: string, ids: any[]): Promis
 }
 
 export async function getRelatedElement(collection: string, id: string): Promise<any> {
+  if (!id) return null;
+
   const client: mongoDB.MongoClient = new mongoDB.MongoClient(process.env.MONGO_URL!);
 
   await client.connect()
