@@ -5,8 +5,6 @@ export function convertBirthdayStringToDate(birthday: string): Date {
   return date;
 }
 
-export function theDatesMatch(date1: Date, date2: Date): boolean {
-  const date1WithoutTime = new Date(date1).setHours(0, 0, 0, 0);
-  const date2WithoutTime = new Date(date2).setHours(0, 0, 0, 0);
-  return date1WithoutTime === date2WithoutTime;
+export function theDatesMatch(date1: Date, date2: string): boolean {
+  return date1.toISOString().substring(0, 10) === date2.substring(0, 10);
 }

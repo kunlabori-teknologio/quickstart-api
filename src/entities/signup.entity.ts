@@ -42,7 +42,7 @@ export class Signup extends Model {
   @property({
     required: true,
   })
-  birthday: Date;
+  birthday: string;
 
   @property({
     required: true,
