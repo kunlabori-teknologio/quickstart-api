@@ -48,9 +48,9 @@ export class __Company extends Entity {
 
   @property({
     type: 'any',
-    required: true,
+    required: false,
   })
-  businessActivityCode: IBusinessActivityCode[];
+  businessActivityCode?: IBusinessActivityCode[];
 
   @property({
     type: 'string',
