@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import {ApplicationConfig, QuickstartApiApplication} from './application';
 import {SeedService} from './services';
 
@@ -38,8 +39,16 @@ if (require.main === module) {
       },
     },
   };
+
   main(config).catch(err => {
     console.error('Cannot start the application.', err);
     process.exit(1);
   });
+
+  mongoose.connect(process.env.MONGO_URL!, {
+    dbName: process.env.DB!,
+    // useNewUrlParser: true,
+    // useUnifiedTopology: true,
+    // useFindAndModify: false,
+  }).then(() => console.log('Mongoose: Connected to db!!'))
 }

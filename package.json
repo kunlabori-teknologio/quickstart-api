@@ -68,6 +68,7 @@
     "loopback-boot": "^3.3.1",
     "loopback-connector-mongodb": "^6.1.0",
     "mongodb": "^4.5.0",
+    "mongoose": "^6.6.1",
     "node-fetch": "^2.6.6",
     "nodemailer": "^6.7.2",
     "pluralize": "^8.0.0",
