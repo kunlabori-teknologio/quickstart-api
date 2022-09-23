@@ -62,18 +62,21 @@ export class SeedService {
     const dir = path.join(__dirname, '../../src/repositories')
     const files = fs.readdirSync(dir)
 
+    const mongooseSchemaDir = path.join(__dirname, '../../src/mongoose-schemas')
+    const mongooseSchemaFiles = fs.readdirSync(mongooseSchemaDir)
+
     let modules = []
 
-    for (const file of files) {
+    for (const file of [...files, ...mongooseSchemaFiles]) {
       if (
         !file.startsWith('__') ||
         (process.env.ADMIN_USERS && file.startsWith('__permission-group')) ||
         (process.env.ADMIN_USERS && file.startsWith('__invitation')) ||
         (process.env.ADMIN_USERS && file.startsWith('__related-user'))
       ) {
-        if (file.includes('.repository.ts')) {
+        if (file.includes('.repository.ts') || file.includes('.schema.ts')) {
 
-          const fileDir = path.join(__dirname, `../../src/repositories/${file}`)
+          const fileDir = path.join(__dirname, `../../src/${file.includes('.repository.ts') ? 'repositories' : 'mongoose-schemas'}/${file}`)
           const fileContent = fs.readFileSync(fileDir, {encoding: 'utf8', flag: 'r'})
           let moduleName = fileContent?.split('/* moduleName->')[1]?.replace('<- */', '').trim()
 
