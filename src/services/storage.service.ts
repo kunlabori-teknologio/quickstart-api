@@ -1,6 +1,8 @@
 import {Storage} from '@google-cloud/storage';
 import { /* inject, */ BindingScope, generateUniqueId, injectable} from '@loopback/core';
+import {Request, Response} from '@loopback/rest';
 import * as fs from 'fs';
+import multer from 'multer';
 
 @injectable({scope: BindingScope.TRANSIENT})
 export class StorageService {
@@ -32,5 +34,48 @@ export class StorageService {
     } catch (error) {
       throw new Error('Upload file error')
     }
+  }
+
+  public async uploadBufferFiles(module: string, file: any): Promise<string> {
+    const storage = new Storage({keyFilename: "storage-key.json"})
+    try {
+      const bucket = storage.bucket(this.bucketName)
+      const fileName = file.originalname
+
+      const uniqueFileName = generateUniqueId()
+
+      await bucket
+        .file(`${process.env.PROJECT}/${module}/${uniqueFileName}_${fileName}`,)
+        .save(file.buffer)
+
+      const publicUrl = bucket
+        .file(`${process.env.PROJECT}/${module}/${uniqueFileName}_${fileName}`)
+        .publicUrl()
+
+      return publicUrl;
+    } catch (error) {
+      throw new Error('Upload file error')
+    }
+  }
+
+  public async getBodyAndFiles(request: Request, response: Response): Promise<object | null> {
+    const storage = multer.memoryStorage();
+    const upload = multer({storage});
+
+    return new Promise((resolve, reject) => {
+      return upload.any()(request, response, async (err: unknown) => {
+        if (err) reject(err)
+        else {
+          resolve({
+            body: request.body,
+            files: request.files
+          })
+        }
+      });
+    })
+  }
+
+  public async getFilesByFieldname(files: any[], fieldname: string): Promise<any[] | null> {
+    return files.filter(file => file.fieldname === fieldname)
   }
 }

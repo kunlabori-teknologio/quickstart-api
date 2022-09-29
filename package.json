@@ -50,7 +50,7 @@
     "!*/__tests__"
   ],
   "dependencies": {
-    "@google-cloud/storage": "^6.4.2",
+    "@google-cloud/storage": "^6.5.2",
     "@loopback/authentication": "^8.0.1",
     "@loopback/boot": "^4.0.1",
     "@loopback/core": "^3.0.1",
@@ -60,6 +60,7 @@
     "@loopback/security": "^0.7",
     "@loopback/service-proxy": "^4.0.1",
     "@types/jsonwebtoken": "^8.5.6",
+    "@types/multer": "^1.4.7",
     "@types/node-fetch": "^3.0.3",
     "axios": "^0.24.0",
     "dotenv": "^10.0.0",
@@ -69,6 +70,7 @@
     "loopback-connector-mongodb": "^6.1.0",
     "mongodb": "^4.5.0",
     "mongoose": "^6.6.1",
+    "multer": "^1.4.5-lts.1",
     "node-fetch": "^2.6.6",
     "nodemailer": "^6.7.2",
     "pluralize": "^8.0.0",
