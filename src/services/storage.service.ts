@@ -76,6 +76,12 @@ export class StorageService {
   }
 
   public async getFilesByFieldname(files: any[], fieldname: string): Promise<any[] | null> {
-    return files.filter(file => file.fieldname === fieldname)
+
+    return files.filter(file => {
+      const fieldnameToFilterArray = file.fieldname.split(']').filter((el: any) => el)
+      const fieldnameToFilter = fieldnameToFilterArray[fieldnameToFilterArray.length - 1].replace('[', '')
+      return fieldnameToFilter === fieldname
+    })
+
   }
 }
