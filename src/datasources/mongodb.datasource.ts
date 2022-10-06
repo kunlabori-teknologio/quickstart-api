@@ -6,7 +6,7 @@ require('dotenv').config();
 const config = {
   name: 'mongodb',
   connector: 'mongodb',
-  url: process.env.MONGO_URL,
+  url: process.env.MONGO_URL!.replace('__DB_NAME__', process.env.DB!),
   host: 'localhost',
   port: 27017,
   user: '',
