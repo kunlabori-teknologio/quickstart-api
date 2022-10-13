@@ -62,10 +62,13 @@ export class __Module extends __Default {
   })
   project: string;
 
-  // @property({
-  //   type: 'string',
-  // })
-  // projectId?: string;
+  @property({
+    name: 'icon',
+    description: "The Module's icon",
+    type: 'string',
+    required: false,
+  })
+  icon?: string;
 
   constructor(data?: Partial<__Module>) {
     super(data);

@@ -1,8 +1,6 @@
 import {BindingScope, injectable} from '@loopback/core';
-import * as fs from 'fs';
 import * as mongoDB from "mongodb";
-import path from 'path';
-import {kebabCaseToPascalCase} from '../utils/text.transformation';
+import {defaultModulesList, modulesList} from '../utils/modules-list';
 
 @injectable({scope: BindingScope.TRANSIENT})
 export class SeedService {
@@ -58,79 +56,43 @@ export class SeedService {
     client: mongoDB.MongoClient,
     db: string,
   ): Promise<void> {
+    const modules = [
+      ...(process.env.ADMIN_USERS ? defaultModulesList(db) : []),
+      ...modulesList(process.env.DB!),
+    ]
 
-    const dir = path.join(__dirname, '../../src/repositories')
-    const files = fs.readdirSync(dir)
-
-    const mongooseSchemaDir = path.join(__dirname, '../../src/mongoose-schemas')
-    const mongooseSchemaFiles = fs.readdirSync(mongooseSchemaDir)
-
-    let modules = []
-
-    for (const file of [...files, ...mongooseSchemaFiles]) {
-      if (
-        !file.startsWith('__') ||
-        (process.env.ADMIN_USERS && file.startsWith('__permission-group')) ||
-        (process.env.ADMIN_USERS && file.startsWith('__invitation')) ||
-        (process.env.ADMIN_USERS && file.startsWith('__related-user'))
-      ) {
-        if (file.includes('.repository.ts') || file.includes('.schema.ts')) {
-
-          const fileDir = path.join(__dirname, `../../src/${file.includes('.repository.ts') ? 'repositories' : 'mongoose-schemas'}/${file}`)
-          const fileContent = fs.readFileSync(fileDir, {encoding: 'utf8', flag: 'r'})
-          let moduleName = fileContent?.split('/* moduleName->')[1]?.replace('<- */', '').trim()
-
-          let moduleIndex = 0;
-          if (fileContent.includes('/* moduleIndex->')) {
-            moduleIndex = parseInt(fileContent?.split('/* moduleIndex->')[1]?.replace('<- */', ''))
-            moduleName = moduleName.slice(0, - (moduleIndex.toString().length + 21)).trim()
-          }
-
-          const isReservedModule = file.startsWith('__')
-          const moduleHasAlreadyBeenInserted = await this.moduleHasAlreadyBeenInserted(
-            client,
-            moduleName,
-            db,
-            (isReservedModule ? db : process.env.DB)!,
-          )
-
-          if (!moduleHasAlreadyBeenInserted) {
-
-            const kebabName = file.split('.')[0]
-            modules.push({
-              moduleName,
-              moduleIndex,
-              route: `/${kebabName}`,
-              collection: `${isReservedModule ? '__' : ''}${kebabCaseToPascalCase(kebabName.replace('__', ''))}`,
-              project: isReservedModule ? db : process.env.DB,
-            })
-          }
-        }
-      }
-    }
-
-    modules.sort((a, b) => (a.moduleIndex > b.moduleIndex) ? 1 : ((b.moduleIndex > a.moduleIndex) ? -1 : 0))
     for (let moduleIndex = 0; moduleIndex < modules.length; moduleIndex++) {
       const module = modules[moduleIndex]
 
-      const moduleCreated = await client
-        .db(db)
-        .collection('__Module')
-        .insertOne({
-          _id: new mongoDB.ObjectId(),
-          name: module.moduleName,
-          description: module.moduleName,
-          route: module.route,
-          collection: module.collection,
-          project: module.project,
-          _deletedAt: null,
-        })
-
-      await this.createDefaultPermission(
-        moduleCreated?.insertedId!.toString(),
+      const moduleHasAlreadyBeenInserted = await this.moduleHasAlreadyBeenInserted(
         client,
+        module.name,
         db,
-      )
+        module.project,
+      );
+
+      if (!moduleHasAlreadyBeenInserted) {
+        const moduleCreated = await client
+          .db(db)
+          .collection('__Module')
+          .insertOne({
+            _id: new mongoDB.ObjectId(),
+            name: module.name,
+            description: module.name,
+            route: module.route,
+            collection: module.collection,
+            project: module.project,
+            icon: module.icon,
+            _deletedAt: null,
+          })
+
+        await this.createDefaultPermission(
+          moduleCreated?.insertedId!.toString(),
+          client,
+          db,
+        )
+      }
+
     }
   }
 
