@@ -64,14 +64,14 @@ export class SeedService {
     for (let moduleIndex = 0; moduleIndex < modules.length; moduleIndex++) {
       const module = modules[moduleIndex]
 
-      const moduleHasAlreadyBeenInserted = await this.moduleHasAlreadyBeenInserted(
+      const moduleAlreadyBeenInserted = await this.moduleAlreadyBeenInserted(
         client,
-        module.name,
+        module.collection,
         db,
         module.project,
       );
 
-      if (!moduleHasAlreadyBeenInserted) {
+      if (!moduleAlreadyBeenInserted) {
         const moduleCreated = await client
           .db(db)
           .collection('__Module')
@@ -91,27 +91,52 @@ export class SeedService {
           client,
           db,
         )
+      } else if (
+        moduleAlreadyBeenInserted.name !== module.name ||
+        moduleAlreadyBeenInserted.route !== module.route ||
+        moduleAlreadyBeenInserted.collection !== module.collection ||
+        moduleAlreadyBeenInserted.project !== module.project ||
+        moduleAlreadyBeenInserted.icon !== module.icon
+      ) {
+        await client
+          .db(db)
+          .collection('__Module')
+          .updateOne(
+            {_id: moduleAlreadyBeenInserted._id},
+            {
+              $set: {
+                ...moduleAlreadyBeenInserted,
+                name: module.name,
+                description: module.name,
+                route: module.route,
+                collection: module.collection,
+                project: module.project,
+                icon: module.icon,
+              }
+            },
+            {upsert: true}
+          )
       }
 
     }
   }
 
-  private async moduleHasAlreadyBeenInserted(
+  private async moduleAlreadyBeenInserted(
     client: mongoDB.MongoClient,
-    moduleName: string,
+    collection: string,
     db: string,
     project: string,
-  ): Promise<Boolean> {
+  ): Promise<any> {
 
     const moduleFound = await client
       .db(db)
       .collection('__Module')
       .findOne({
-        name: moduleName,
+        collection: collection,
         project: project,
       })
 
-    return moduleFound ? true : false
+    return moduleFound
 
   }
 
