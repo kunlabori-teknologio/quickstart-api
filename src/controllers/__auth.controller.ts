@@ -214,6 +214,7 @@ export class __AuthController {
     @requestBody({
       content: HttpDocumentation.createDocRequestSchema(Signup)
     }) data: Signup,
+    @param.query.string('country') countryId?: string,
     @param.query.string('locale') locale?: LocaleEnum,
   ): Promise<IHttpResponse> {
     try {
@@ -229,7 +230,13 @@ export class __AuthController {
 
       const loginUserInfo = JwtToken.getLoginUserInfoFromToken(this.httpRequest.headers.authorization!)
 
-      await this.authService.signup(data, loginUserInfo, this.getProfile, this.httpRequest.headers.authorization!)
+      await this.authService.signup(
+        data,
+        loginUserInfo,
+        this.getProfile,
+        this.httpRequest.headers.authorization!,
+        countryId,
+      )
 
       return HttpResponseToClient.createHttpResponse({
         locale,

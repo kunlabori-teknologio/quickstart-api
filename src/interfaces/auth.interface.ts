@@ -37,7 +37,7 @@ export interface IAuth {
 
   login(token: string): Promise<ILoginResponse>;
   signup(signupBodyRequest: Signup, token: string): Promise<any>;
-  getProfile(userType: UserTypesEnum, uniqueId: string, token: string): Promise<any>;
+  getProfile(userType: UserTypesEnum, uniqueId: string, token: string, countryId?: string): Promise<any>;
 
   generateToken(payload: any, expiresIn: string): Promise<string>;
   refreshToken(token: string): Promise<ILoginResponse>;

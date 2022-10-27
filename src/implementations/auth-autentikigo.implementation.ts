@@ -132,9 +132,9 @@ export class AuthAutentikigoImplementation implements IAuth {
 
   }
 
-  async getProfile(userType: UserTypesEnum, uniqueId: string, token: string): Promise<any> {
+  async getProfile(userType: UserTypesEnum, uniqueId: string, token: string, countryId?: string): Promise<any> {
 
-    const response = await fetch(`${this.autentikigoRoute}/get-profile?userType=${userType}&uniqueId=${uniqueId}`, {
+    const response = await fetch(`${this.autentikigoRoute}/get-profile?userType=${userType}&uniqueId=${uniqueId}&country=${countryId ?? ''}`, {
       method: 'GET',
       headers: {
         'Content-type': 'application/json',

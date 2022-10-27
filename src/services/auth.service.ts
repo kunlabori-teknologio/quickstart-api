@@ -189,13 +189,20 @@ export class AuthService {
 
   }
 
-  public async signup(data: Signup, userInfo: ILoginUserInfo, getProfile: IGetProfile, token: string, locale?: LocaleEnum): Promise<__User> {
+  public async signup(
+    data: Signup,
+    userInfo: ILoginUserInfo,
+    getProfile: IGetProfile,
+    token: string,
+    countryId?: string,
+    locale?: LocaleEnum,
+  ): Promise<__User> {
 
     const userType = getUserType(data, locale)
 
     const profile =
       await this[`${userType}Repository`].findOne({where: {uniqueId: data.uniqueId}}) ??
-      await this.createProfile({userType, ...data}, getProfile, token, locale);
+      await this.createProfile({userType, ...data}, getProfile, token, locale, countryId);
 
     if (!theDatesMatch(profile.birthday, data.birthday))
       throw new Error(serverMessages['auth']['birthdayIncorrect'][locale ?? LocaleEnum['pt-BR']])
@@ -235,11 +242,12 @@ export class AuthService {
       {userType: UserTypesEnum, uniqueId: string, additionalInfo?: AdditionalInfoModel},
     getProfile: IGetProfile,
     token: string,
-    locale?: LocaleEnum
+    locale?: LocaleEnum,
+    countryId?: string,
   ): Promise<__Person | __Company> {
     try {
 
-      const profileDTO = await Autentikigo.getProfile(userType, uniqueId, token)
+      const profileDTO = await Autentikigo.getProfile(userType, uniqueId, token, countryId)
       if (!profileDTO) throw new Error(serverMessages['auth']['uniqueIdNotFound'][locale ?? LocaleEnum['pt-BR']])
 
       delete profileDTO['data']['userId']
