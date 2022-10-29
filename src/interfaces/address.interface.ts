@@ -9,5 +9,5 @@ export interface IAddress {
 }
 
 export interface IGetAddress {
-  getAddressByZipcode(zipcode: string, country: string): Promise<IAddress | undefined>,
+  getAddressByZipcode(zipcode: string, country?: string): Promise<IAddress | undefined>,
 }

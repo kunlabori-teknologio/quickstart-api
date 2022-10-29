@@ -44,7 +44,7 @@ export class __ExternalApiController {
   ): Promise<IHttpResponse> {
     try {
 
-      const data = await this.address.getAddressByZipcode(zipcode, country || 'br')
+      const data = await this.address.getAddressByZipcode(zipcode, country)
 
       if (!data) throw new Error(serverMessages['crudError']['read'][locale ?? LocaleEnum['pt-BR']])
 
