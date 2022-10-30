@@ -19,7 +19,7 @@ export class __ExternalApiController {
 
   }
 
-  @get('/__external-api/address/{zipcode}')
+  @get('/__external-api/address')
   @response(200, {
     description: 'Address info',
     content: {
@@ -38,7 +38,7 @@ export class __ExternalApiController {
     }
   })
   async findAddress(
-    @param.path.string('zipcode') zipcode: string,
+    @param.query.string('zipcode') zipcode: string,
     @param.query.string('country') country?: string,
     @param.query.string('locale') locale?: LocaleEnum,
   ): Promise<IHttpResponse> {
