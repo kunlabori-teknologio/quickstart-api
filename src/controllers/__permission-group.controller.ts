@@ -58,7 +58,7 @@ export class __PermissionGroupController {
 
       // Create permissionGroup
       const permissionGroup = await this.permissionGroupRepository.create({
-        ...{name: data.name, description: data.description},
+        ...{name: data.name, description: data.description, project: process.env.DB},
         _createdBy: createdBy,
         _ownerId: ownerId
       })
@@ -104,12 +104,14 @@ export class __PermissionGroupController {
 
       let filters = HttpDocumentation.createFilterRequestParams(
         this.httpRequest.url,
-        [{
-          'or': [
-            {_ownerId: this.currentUser?.[securityId]!},
-            {_ownerId: this.currentUser?.ownerId!},
-          ]
-        }]
+        [
+          {'and': [{project: process.env.DB!}]},
+          {
+            'or': [
+              {_ownerId: this.currentUser?.[securityId]!},
+              {_ownerId: this.currentUser?.ownerId!},
+            ]
+          }]
       )
 
       let result: any[] = await this.permissionGroupRepository.find({...filters, include: [this.getPermissionGroupRelatedPermissions]})

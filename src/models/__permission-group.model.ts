@@ -42,10 +42,10 @@ export class __PermissionGroup extends __Default {
   })
   description: string;
 
-  // @property({
-  //   type: 'string',
-  // })
-  // projectId?: string;
+  @property({
+    type: 'string',
+  })
+  project?: string;
 
   @property({
     name: 'isAdminPermission',

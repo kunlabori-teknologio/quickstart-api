@@ -78,7 +78,7 @@ export class __ModuleController {
   ): Promise<IHttpResponse> {
     try {
 
-      const url = `${this.httpRequest.url}&project=${process.env.AUTH_DB}&project=${process.env.DB}`
+      const url = `${this.httpRequest.url}?filter={"or":[{"project":"${process.env.AUTH_DB}"},{"project":"${process.env.DB}"}]}`
       const filters = HttpDocumentation.createFilterRequestParams(url)
 
       const result = await this.moduleRepository.find(filters)
