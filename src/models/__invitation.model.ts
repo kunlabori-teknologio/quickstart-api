@@ -17,6 +17,11 @@ export class __Invitation extends __Default {
   })
   email: string;
 
+  @property({
+    type: 'string',
+  })
+  project?: string;
+
   @belongsTo(() => __PermissionGroup)
   permissionGroupId: string;
 

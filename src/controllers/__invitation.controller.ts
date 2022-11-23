@@ -56,7 +56,7 @@ export class __InvitationController {
       })
       if (invitationAlreadyCreated) throw new Error(serverMessages['invitation']['invitationHasAlreadyBeenCreated'][LocaleEnum['pt-BR']])
 
-      const invitation = await this.invitationRepository.create({...data, _createdBy: createdBy, _ownerId: ownerId})
+      const invitation = await this.invitationRepository.create({...data, project: process.env.DB, _createdBy: createdBy, _ownerId: ownerId})
 
       this.sendMail.sendInvitationMail(invitation._id as string, invitation.email)
 
@@ -92,11 +92,18 @@ export class __InvitationController {
     @param.query.string('locale') locale?: LocaleEnum,
   ): Promise<IHttpResponse> {
     try {
-      const createdBy = this.currentUser?.[securityId] as string
-      const ownerId = this.currentUser?.ownerId as string
-
-      const url = `${this.httpRequest.url}&_createdBy=${createdBy}&_ownerId=${ownerId}`
-      const filters = HttpDocumentation.createFilterRequestParams(url)
+      const filters = HttpDocumentation.createFilterRequestParams(
+        this.httpRequest.url,
+        [
+          {'and': [{project: process.env.DB!}]},
+          {
+            'or': [
+              {_createdBy: this.currentUser?.[securityId]!},
+              {_ownerId: this.currentUser?.ownerId!},
+            ]
+          },
+        ]
+      )
 
       const result = await this.invitationRepository.find({...filters, include: ['permissionGroup']})
 

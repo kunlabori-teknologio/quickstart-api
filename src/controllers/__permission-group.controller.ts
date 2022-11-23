@@ -108,7 +108,7 @@ export class __PermissionGroupController {
           {'and': [{project: process.env.DB!}]},
           {
             'or': [
-              {_ownerId: this.currentUser?.[securityId]!},
+              {_createdBy: this.currentUser?.[securityId]!},
               {_ownerId: this.currentUser?.ownerId!},
             ]
           }]
