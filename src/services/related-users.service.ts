@@ -17,6 +17,9 @@ export class RelatedUsersService {
     let where = {
       or: [
         {_ownerId: userId}
+      ],
+      and: [
+        {project: process.env.DB}
       ]
     }
     if (ownerId) where.or.push({_ownerId: ownerId})
