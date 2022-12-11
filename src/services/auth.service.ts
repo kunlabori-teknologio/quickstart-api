@@ -42,7 +42,12 @@ export class AuthService {
     const {email, googleId, appleId, invitationId} = userLoginInfo
 
     let user = await this.findUserWithPermissions(email!, googleId, appleId)
-    if (!user) return null
+    if (!user) {
+      if (process.env.ADMIN_USERS && !invitationId) throw new Error(serverMessages['auth']['userIsNotAdmin'][LocaleEnum['pt-BR']])
+      return null
+    }
+
+    user.permissionGroups = user.permissionGroups?.filter(permissionGroup => permissionGroup.project === process.env.DB)
 
     if (invitationId) {
 
