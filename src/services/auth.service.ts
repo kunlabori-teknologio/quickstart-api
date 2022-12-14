@@ -43,7 +43,16 @@ export class AuthService {
 
     let user = await this.findUserWithPermissions(email!, googleId, appleId)
     if (!user) {
-      if (process.env.ADMIN_USERS && !invitationId) throw new Error(serverMessages['auth']['userIsNotAdmin'][LocaleEnum['pt-BR']])
+
+      if (
+        process.env.ADMIN_USERS
+        && !(
+          process.env.ADMIN_USERS &&
+          process.env.ADMIN_USERS.split(',').includes(email!)
+        )
+        && !invitationId
+      ) throw new Error(serverMessages['auth']['userIsNotAdmin'][LocaleEnum['pt-BR']])
+
       return null
     }
 
