@@ -12,9 +12,9 @@ import {HttpDocumentation, HttpResponseToClient} from '../implementations';
 import {IHttpResponse} from '../interfaces/http.interface';
 import {__User} from '../models';
 import {__UserRepository} from '../repositories';
+import {__UserHasPermissionGroupsRepository} from '../repositories/__user-has-permission-groups.repository';
+import {RelatedUsersService} from '../services/related-users.service';
 import {serverMessages} from '../utils/server-messages';
-import {__UserHasPermissionGroupsRepository} from './../repositories/__user-has-permission-groups.repository';
-import {RelatedUsersService} from './../services/related-users.service';
 
 export class __RelatedUsersController {
   constructor(
@@ -91,10 +91,24 @@ export class __RelatedUsersController {
       });
       if (!data) throw new Error(serverMessages['httpResponse']['notFoundError'][locale ?? LocaleEnum['pt-BR']]);
 
+      const permission = data.permissionGroups && data.permissionGroups.length && data.permissionGroups.find((el: any) => el.project === process.env.PROJECT)
+
+      const userPermissionGroup: any = await this.userHasPermissionGroupsRepository.findOne({
+        where: {
+          and: [
+            {
+              permissionGroupId: permission && permission._id,
+              userId: id
+            }
+          ]
+        }
+      })
+
       const dataToReturn = {
         ...data,
-        permissionGroupId: data.permissionGroups && data.permissionGroups.length && data.permissionGroups[0]._id,
-        permissionGroup: data.permissionGroups && data.permissionGroups.length && data.permissionGroups[0],
+        permissionGroupId: permission && permission._id,
+        permissionGroup: permission,
+        isUserDisabled: userPermissionGroup && userPermissionGroup.isUserDisabled,
       }
 
       return HttpResponseToClient.okHttpResponse({
@@ -136,9 +150,11 @@ export class __RelatedUsersController {
         })
       })
 
+      // if (!data.isUserDisabled)
       await this.userHasPermissionGroupsRepository.create({
         permissionGroupId: data.permissionGroupId,
-        userId: id
+        userId: id,
+        isUserDisabled: data.isUserDisabled,
       })
 
       return HttpResponseToClient.noContentHttpResponse({

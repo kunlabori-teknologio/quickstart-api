@@ -1,18 +1,18 @@
-import {repository} from '@loopback/repository'
-import {AdditionalInfoModel, Signup} from '../entities/signup.entity'
-import {LocaleEnum} from '../enums/locale.enum'
-import {Autentikigo} from '../implementations'
-import {IGetProfile, ILoginResponse, ILoginUserInfo, IOAuthLogin, IRefreshTokenResponse} from '../interfaces/auth.interface'
-import {IOAuthUser} from '../interfaces/user.interface'
-import {__Company} from '../models/__company.model'
-import {__PermissionGroup} from '../models/__permission-group.model'
-import {__Person} from '../models/__person.model'
-import {__User} from '../models/__user.model'
-import {__CompanyRepository, __InvitationRepository, __PermissionGroupRepository, __PersonRepository, __UserHasPermissionGroupsRepository, __UserRepository} from '../repositories'
-import {theDatesMatch} from '../utils/date-manipulation-functions'
-import {getUserType, UserTypesEnum} from '../utils/general-functions'
-import {serverMessages} from '../utils/server-messages'
-import {hideEmailString} from '../utils/string-manipulation-functions'
+import { repository } from '@loopback/repository'
+import { AdditionalInfoModel, Signup } from '../entities/signup.entity'
+import { LocaleEnum } from '../enums/locale.enum'
+import { Autentikigo } from '../implementations'
+import { IGetProfile, ILoginResponse, ILoginUserInfo, IOAuthLogin, IRefreshTokenResponse } from '../interfaces/auth.interface'
+import { IOAuthUser } from '../interfaces/user.interface'
+import { __Company } from '../models/__company.model'
+import { __PermissionGroup } from '../models/__permission-group.model'
+import { __Person } from '../models/__person.model'
+import { __User } from '../models/__user.model'
+import { __CompanyRepository, __InvitationRepository, __PermissionGroupRepository, __PersonRepository, __UserHasPermissionGroupsRepository, __UserRepository } from '../repositories'
+import { theDatesMatch } from '../utils/date-manipulation-functions'
+import { getUserType, UserTypesEnum } from '../utils/general-functions'
+import { serverMessages } from '../utils/server-messages'
+import { hideEmailString } from '../utils/string-manipulation-functions'
 
 export class AuthService {
 
@@ -39,7 +39,7 @@ export class AuthService {
 
   public async login(userLoginInfo: ILoginUserInfo): Promise<ILoginResponse | null> {
 
-    const {email, googleId, appleId, invitationId} = userLoginInfo
+    const { email, googleId, appleId, invitationId } = userLoginInfo
 
     let user = await this.findUserWithPermissions(email!, googleId, appleId)
     if (!user) {
@@ -89,8 +89,8 @@ export class AuthService {
 
     }
 
-    const authToken = await Autentikigo.generateToken({id: user?._id}, '24h')
-    const authRefreshToken = await Autentikigo.generateToken({id: user?._id}, '7d')
+    const authToken = await Autentikigo.generateToken({ id: user?._id }, '24h')
+    const authRefreshToken = await Autentikigo.generateToken({ id: user?._id }, '7d')
 
     return {
       authToken,
@@ -101,10 +101,10 @@ export class AuthService {
   }
 
   private async findUserWithPermissions(email: string, googleId?: string, appleId?: string): Promise<__User | null> {
-    const oAuthWhere = googleId ? {googleId} : {appleId}
+    const oAuthWhere = googleId ? { googleId } : { appleId }
 
     const user = await this.userRepository.findOne({
-      where: {and: [{email}, oAuthWhere]}, include: [
+      where: { and: [{ email }, oAuthWhere] }, include: [
         'person', 'company',
         {
           relation: 'permissionGroups', scope: {
@@ -116,8 +116,8 @@ export class AuthService {
                     scope: {
                       where: {
                         'or': [
-                          {'project': process.env.DB},
-                          {'project': process.env.AUTH_DB || null},
+                          { 'project': process.env.DB },
+                          { 'project': process.env.AUTH_DB || null },
                         ]
                       }
                     }
@@ -131,10 +131,28 @@ export class AuthService {
       ]
     })
 
-    if (user)
+    if (user) {
+      user!.permissionGroups = await this.getEnabledPermissionGroups(user!);
       user!.permissionGroups = await this.getOwnerNamesOfPermissionGroups(user!)
+    }
 
     return user
+  }
+
+  private async getEnabledPermissionGroups(user: __User): Promise<__PermissionGroup[] | undefined> {
+    const permissionsGroupWithDisabledFlag: any = await this.userHasPermissionGroupRepository.find({
+      where: {
+        or: (user!.permissionGroups || []).map(permissionGroup => {
+          return { permissionGroupId: permissionGroup._id, userId: user._id }
+        })
+      }
+    })
+
+    return (user!.permissionGroups || []).filter(permissionGroup => {
+      const permissionWithDisabledFlag = (permissionsGroupWithDisabledFlag || []).find((el: any) => el.permissionGroupId.toString() === permissionGroup._id?.toString())
+      if (!permissionWithDisabledFlag) return true
+      return !permissionWithDisabledFlag.isUserDisabled
+    })
   }
 
   private async getOwnerNamesOfPermissionGroups(user: __User): Promise<__PermissionGroup[] | undefined> {
@@ -152,7 +170,7 @@ export class AuthService {
     if (permissionGroupsOwnerIds?.length)
       whereCondition['where'] = {
         or: permissionGroupsOwnerIds?.map((permissionGroupOwnerId) => {
-          return {_id: permissionGroupOwnerId}
+          return { _id: permissionGroupOwnerId }
         })
       }
 
@@ -175,7 +193,7 @@ export class AuthService {
 
   public async getPermissionGroupIdFromInvitation(invitationId: string, email: string, locale?: LocaleEnum): Promise<string> {
 
-    const invitation = await this.invitationRepository.findById(invitationId, {include: ['permissionGroup']})
+    const invitation = await this.invitationRepository.findById(invitationId, { include: ['permissionGroup'] })
 
     if (invitation.email !== email) throw new Error(serverMessages['auth']['emailInvitationIncorrect'][locale ?? LocaleEnum['pt-BR']])
 
@@ -188,7 +206,7 @@ export class AuthService {
     const defaultPermissionGroup: __PermissionGroup | null = await this.permissionGroupRepository.findOne({
       where: {
         and: [
-          {isAdminPermission: true}
+          { isAdminPermission: true }
         ]
       }
     })
@@ -199,7 +217,7 @@ export class AuthService {
 
   public async giveTheUserPermission(permissionGroupId: string, userId: string) {
 
-    await this.userHasPermissionGroupRepository.create({userId, permissionGroupId})
+    await this.userHasPermissionGroupRepository.create({ userId, permissionGroupId })
 
   }
 
@@ -215,14 +233,14 @@ export class AuthService {
     const userType = getUserType(data, locale)
 
     const profile =
-      await this[`${userType}Repository`].findOne({where: {uniqueId: data.uniqueId}}) ??
-      await this.createProfile({userType, ...data}, getProfile, token, locale, countryId);
+      await this[`${userType}Repository`].findOne({ where: { uniqueId: data.uniqueId } }) ??
+      await this.createProfile({ userType, ...data }, getProfile, token, locale, countryId);
 
     if (!theDatesMatch(profile.birthday, data.birthday))
       throw new Error(serverMessages['auth']['birthdayIncorrect'][locale ?? LocaleEnum['pt-BR']])
 
     if (profile.userId) {
-      const userWithSameProfile = await this.userRepository.findOne({where: {_id: profile.userId}})
+      const userWithSameProfile = await this.userRepository.findOne({ where: { _id: profile.userId } })
       if (userWithSameProfile) throw new Error(`${serverMessages['auth']['uniqueIdInUse'][locale ?? LocaleEnum['pt-BR']]} ${hideEmailString(userWithSameProfile.email as string)}`)
     }
 
@@ -248,12 +266,12 @@ export class AuthService {
       })
     }
 
-    return this.userRepository.findById(newUser?._id, {include: ['person', 'company']})
+    return this.userRepository.findById(newUser?._id, { include: ['person', 'company'] })
   }
 
   public async createProfile(
-    {userType, uniqueId, additionalInfo}:
-      {userType: UserTypesEnum, uniqueId: string, additionalInfo?: AdditionalInfoModel},
+    { userType, uniqueId, additionalInfo }:
+      { userType: UserTypesEnum, uniqueId: string, additionalInfo?: AdditionalInfoModel },
     getProfile: IGetProfile,
     token: string,
     locale?: LocaleEnum,
@@ -267,7 +285,7 @@ export class AuthService {
       delete profileDTO['data']['userId']
       delete profileDTO['data']['_id']
 
-      const profileCreated = await this[`${userType}Repository`].create({...profileDTO['data']})
+      const profileCreated = await this[`${userType}Repository`].create({ ...profileDTO['data'] })
 
       return profileCreated
 
@@ -280,8 +298,8 @@ export class AuthService {
 
   public async refreshToken(id: string): Promise<IRefreshTokenResponse> {
 
-    const authToken = await Autentikigo.generateToken({id}, '24h')
-    const authRefreshToken = await Autentikigo.generateToken({id}, '7d')
+    const authToken = await Autentikigo.generateToken({ id }, '24h')
+    const authRefreshToken = await Autentikigo.generateToken({ id }, '7d')
 
     return {
       authToken,
@@ -300,8 +318,8 @@ export class AuthService {
         include: [{
           relation: 'modulePermissions', scope: {
             include: [
-              {relation: 'permissionActions', scope: {where: {name: action}}},
-              {relation: 'module', scope: {where: {collection}}}
+              { relation: 'permissionActions', scope: { where: { name: action } } },
+              { relation: 'module', scope: { where: { collection } } }
             ]
           }
         }]
@@ -321,7 +339,7 @@ export class AuthService {
       } else throw serverMessages['httpResponse']['unauthorizedError'][LocaleEnum['pt-BR']]
     }
 
-    return {userId, ownerId}
+    return { userId, ownerId }
   }
 }
 

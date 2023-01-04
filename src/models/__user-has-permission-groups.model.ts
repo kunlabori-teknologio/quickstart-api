@@ -1,4 +1,4 @@
-import {Entity, model, property} from '@loopback/repository';
+import { Entity, model, property } from '@loopback/repository';
 
 @model()
 export class __UserHasPermissionGroups extends Entity {
@@ -18,6 +18,13 @@ export class __UserHasPermissionGroups extends Entity {
     type: 'string',
   })
   permissionGroupId?: string;
+
+  @property({
+    type: 'boolean',
+    required: false,
+    default: false,
+  })
+  isUserDisabled?: boolean;
 
   constructor(data?: Partial<__UserHasPermissionGroups>) {
     super(data);
