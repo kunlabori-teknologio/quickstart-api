@@ -56,7 +56,7 @@ export class __InvitationController {
       })
       if (invitationAlreadyCreated) throw new Error(serverMessages['invitation']['invitationHasAlreadyBeenCreated'][LocaleEnum['pt-BR']])
 
-      const invitation = await this.invitationRepository.create({...data, project: process.env.DB, _createdBy: createdBy, _ownerId: ownerId})
+      const invitation = await this.invitationRepository.create({...data, project: data.project || process.env.DB, _createdBy: createdBy, _ownerId: ownerId})
 
       this.sendMail.sendInvitationMail(invitation._id as string, invitation.email)
 
@@ -86,6 +86,7 @@ export class __InvitationController {
     properties: HttpDocumentation.createDocResponseSchemaForFindManyResults(__Invitation)
   })
   async find(
+    @param.query.string('project') project?: string,
     @param.query.number('limit') limit?: number,
     @param.query.number('page') page?: number,
     @param.query.string('order_by') orderBy?: string,
@@ -95,7 +96,7 @@ export class __InvitationController {
       const filters = HttpDocumentation.createFilterRequestParams(
         this.httpRequest.url,
         [
-          {'and': [{project: process.env.DB!}]},
+          {'and': [{project: project || process.env.DB!}]},
           {
             'or': [
               {_createdBy: this.currentUser?.[securityId]!},
