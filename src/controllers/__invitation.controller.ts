@@ -58,7 +58,7 @@ export class __InvitationController {
 
       const invitation = await this.invitationRepository.create({...data, project: data.project || process.env.DB, _createdBy: createdBy, _ownerId: ownerId})
 
-      this.sendMail.sendInvitationMail(invitation._id as string, invitation.email)
+      this.sendMail.sendInvitationMail(invitation._id as string, invitation.email, data.project)
 
       return HttpResponseToClient.createHttpResponse({
         data: invitation,
