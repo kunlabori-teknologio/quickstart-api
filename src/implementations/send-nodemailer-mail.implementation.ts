@@ -2,20 +2,31 @@ import * as nodemailer from 'nodemailer';
 import {ISendMail} from '../interfaces/send-mail.interface';
 
 export class SendNodemailerMailImplementation implements ISendMail {
+  sendInvitationMail(
+    invitationId: string,
+    emailOfInvited: string,
+    project?: string,
+  ): string | null {
+    const apps: any[] = [
+      /*APPS_SPACE*//*APPS_SPACE*/
+    ]
+    const app = apps.find(el => el.project === project);
 
-  sendInvitationMail(invitationId: string, emailOfInvited: string): string | null {
+    const baseUri = (app && app.url) || process.env.SERVER_ROOT_URI
+    const projectName = (app && app.name) || process.env.PROJECT
+
     const mailBody = `
       <p>
-        <a href='${process.env.SERVER_ROOT_URI}/auth/google-signin?invitationId=${invitationId}'>Login com convite</a>
+        <a href='${baseUri}/auth/google-signin?invitationId=${invitationId}'>Login com convite</a>
       </p>
-    `
+    `;
 
     const mailOptions = {
-      from: `${process.env.PROJECT || 'Quickstart'}`,
+      from: `${projectName || 'Quickstart'}`,
       to: emailOfInvited,
-      subject: `Convite - ${process.env.PROJECT || 'Quickstart'}`,
-      html: mailBody
-    }
+      subject: `Convite - ${projectName || 'Quickstart'}`,
+      html: mailBody,
+    };
 
     const transporter = nodemailer.createTransport({
       host: 'smtp.gmail.com',
@@ -25,16 +36,15 @@ export class SendNodemailerMailImplementation implements ISendMail {
         user: process.env.NODEMAILER_USER,
         pass: process.env.NODEMAILER_PASS,
       },
-      tls: {rejectUnauthorized: false}
+      tls: {rejectUnauthorized: false},
     });
 
-    let errorMessage = null
+    let errorMessage = null;
 
-    transporter.sendMail(mailOptions, (error) => {
-      if (error) errorMessage = error.message
-    })
+    transporter.sendMail(mailOptions, error => {
+      if (error) errorMessage = error.message;
+    });
 
-    return errorMessage
+    return errorMessage;
   }
-
 }
