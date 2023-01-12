@@ -146,6 +146,10 @@ export const serverMessages = {
     'userIsNotAdmin': {
       [LocaleEnum['pt-BR']]: 'Login invalido. Usuário não é admin',
       [LocaleEnum['en-US']]: 'Invalid login. User is not admin',
+    },
+    'userIsDisabled': {
+      [LocaleEnum['pt-BR']]: 'Login invalido. Usuário desabilitado',
+      [LocaleEnum['en-US']]: 'Invalid login. User is disabled',
     }
   },
   'user': {

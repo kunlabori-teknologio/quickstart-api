@@ -1,18 +1,18 @@
-import { repository } from '@loopback/repository'
-import { AdditionalInfoModel, Signup } from '../entities/signup.entity'
-import { LocaleEnum } from '../enums/locale.enum'
-import { Autentikigo } from '../implementations'
-import { IGetProfile, ILoginResponse, ILoginUserInfo, IOAuthLogin, IRefreshTokenResponse } from '../interfaces/auth.interface'
-import { IOAuthUser } from '../interfaces/user.interface'
-import { __Company } from '../models/__company.model'
-import { __PermissionGroup } from '../models/__permission-group.model'
-import { __Person } from '../models/__person.model'
-import { __User } from '../models/__user.model'
-import { __CompanyRepository, __InvitationRepository, __PermissionGroupRepository, __PersonRepository, __UserHasPermissionGroupsRepository, __UserRepository } from '../repositories'
-import { theDatesMatch } from '../utils/date-manipulation-functions'
-import { getUserType, UserTypesEnum } from '../utils/general-functions'
-import { serverMessages } from '../utils/server-messages'
-import { hideEmailString } from '../utils/string-manipulation-functions'
+import {repository} from '@loopback/repository'
+import {AdditionalInfoModel, Signup} from '../entities/signup.entity'
+import {LocaleEnum} from '../enums/locale.enum'
+import {Autentikigo} from '../implementations'
+import {IGetProfile, ILoginResponse, ILoginUserInfo, IOAuthLogin, IRefreshTokenResponse} from '../interfaces/auth.interface'
+import {IOAuthUser} from '../interfaces/user.interface'
+import {__Company} from '../models/__company.model'
+import {__PermissionGroup} from '../models/__permission-group.model'
+import {__Person} from '../models/__person.model'
+import {__User} from '../models/__user.model'
+import {__CompanyRepository, __InvitationRepository, __PermissionGroupRepository, __PersonRepository, __UserHasPermissionGroupsRepository, __UserRepository} from '../repositories'
+import {theDatesMatch} from '../utils/date-manipulation-functions'
+import {getUserType, UserTypesEnum} from '../utils/general-functions'
+import {serverMessages} from '../utils/server-messages'
+import {hideEmailString} from '../utils/string-manipulation-functions'
 
 export class AuthService {
 
@@ -132,26 +132,26 @@ export class AuthService {
     })
 
     if (user) {
-      user!.permissionGroups = await this.getEnabledPermissionGroups(user!);
+      await this.checkIfUserIsEnabled(user!);
       user!.permissionGroups = await this.getOwnerNamesOfPermissionGroups(user!)
     }
 
     return user
   }
 
-  private async getEnabledPermissionGroups(user: __User): Promise<__PermissionGroup[] | undefined> {
+  private async checkIfUserIsEnabled(user: __User): Promise<void> {
     const permissionsGroupWithDisabledFlag: any = await this.userHasPermissionGroupRepository.find({
       where: {
         or: (user!.permissionGroups || []).map(permissionGroup => {
           return { permissionGroupId: permissionGroup._id, userId: user._id }
         })
       }
-    })
+    });
 
-    return (user!.permissionGroups || []).filter(permissionGroup => {
+    (user!.permissionGroups || []).forEach((permissionGroup: __PermissionGroup) => {
       const permissionWithDisabledFlag = (permissionsGroupWithDisabledFlag || []).find((el: any) => el.permissionGroupId.toString() === permissionGroup._id?.toString())
-      if (!permissionWithDisabledFlag) return true
-      return !permissionWithDisabledFlag.isUserDisabled
+      if(permissionWithDisabledFlag && permissionWithDisabledFlag.isUserDisabled && permissionGroup.project === process.env.DB)
+        throw new Error(serverMessages['auth']['userIsDisabled'][LocaleEnum['pt-BR']])
     })
   }
 
