@@ -85,3 +85,35 @@ export async function getRelatedElement(collection: string, id?: String): Promis
 
   return relatedData
 }
+
+export function removeObjAttr(object: any, attrArray?: string[]): any {
+  if(!attrArray || !attrArray.length) return object
+
+  const attrs = Object.keys(object);
+
+  for (let attrIndex = 0; attrIndex < attrs.length; attrIndex++) {
+    const attr = attrs[attrIndex];
+
+    if(attrArray.includes(attr)){
+
+      delete object[attr]
+
+    } else if(Array.isArray(object[attr])){
+
+      object[attr] = object[attr].map((obj: any) => {
+        if(typeof obj === 'object') return removeObjAttr(obj, attrArray)
+        return obj
+      }).filter((obj:any) => {
+        if(typeof obj === 'object') return Object.keys(obj).length !== 0
+        return obj
+      })
+
+    } else if(typeof object[attr] === 'object'){
+
+      object[attr] = removeObjAttr(object[attr], attrArray)
+
+    }
+  }
+
+  return object;
+}
