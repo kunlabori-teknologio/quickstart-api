@@ -140,19 +140,21 @@ export class AuthService {
   }
 
   private async checkIfUserIsEnabled(user: __User): Promise<void> {
-    const permissionsGroupWithDisabledFlag: any = await this.userHasPermissionGroupRepository.find({
-      where: {
-        or: (user!.permissionGroups || []).map(permissionGroup => {
-          return { permissionGroupId: permissionGroup._id, userId: user._id }
-        })
-      }
-    });
+    if(user!.permissionGroups?.length){
+      const permissionsGroupWithDisabledFlag: any = await this.userHasPermissionGroupRepository.find({
+        where: {
+          or: (user!.permissionGroups || []).map(permissionGroup => {
+            return { permissionGroupId: permissionGroup._id, userId: user._id }
+          })
+        }
+      });
 
-    (user!.permissionGroups || []).forEach((permissionGroup: __PermissionGroup) => {
-      const permissionWithDisabledFlag = (permissionsGroupWithDisabledFlag || []).find((el: any) => el.permissionGroupId.toString() === permissionGroup._id?.toString())
-      if(permissionWithDisabledFlag && permissionWithDisabledFlag.isUserDisabled && permissionGroup.project === process.env.DB)
-        throw new Error(serverMessages['auth']['userIsDisabled'][LocaleEnum['pt-BR']])
-    })
+      (user!.permissionGroups || []).forEach((permissionGroup: __PermissionGroup) => {
+        const permissionWithDisabledFlag = (permissionsGroupWithDisabledFlag || []).find((el: any) => el.permissionGroupId.toString() === permissionGroup._id?.toString())
+        if(permissionWithDisabledFlag && permissionWithDisabledFlag.isUserDisabled && permissionGroup.project === process.env.DB)
+          throw new Error(serverMessages['auth']['userIsDisabled'][LocaleEnum['pt-BR']])
+      })
+    }
   }
 
   private async getOwnerNamesOfPermissionGroups(user: __User): Promise<__PermissionGroup[] | undefined> {
