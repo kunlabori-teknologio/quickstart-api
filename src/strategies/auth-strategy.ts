@@ -1,25 +1,11 @@
 import {AuthenticationBindings, AuthenticationMetadata, AuthenticationStrategy} from '@loopback/authentication';
 import {Getter, inject} from '@loopback/core';
-import {model, repository} from '@loopback/repository';
+import {repository} from '@loopback/repository';
 import {Request, Response, RestBindings} from '@loopback/rest';
-import {securityId, UserProfile} from '@loopback/security';
-import {LocaleEnum} from '../enums/locale.enum';
-import {Autentikigo, JwtToken} from '../implementations';
-import {__UserRepository} from '../repositories/__user.repository';
+import {UserProfile, securityId} from '@loopback/security';
+import {__UserRepository} from '../repositories/auth/__user.repository';
+import {VerifyAuthToken} from '../usecases/jwt';
 import {serverMessages} from '../utils/server-messages';
-
-@model()
-export class User implements UserProfile {
-
-  [securityId]: string;
-
-  id: number;
-  ownerId: string;
-
-  constructor(data?: Partial<User>) {
-    Object.assign(this, data);
-  }
-}
 
 export class AutentikigoStrategy implements AuthenticationStrategy {
   name = 'autentikigo'
@@ -39,15 +25,14 @@ export class AutentikigoStrategy implements AuthenticationStrategy {
       const collection = metadata['0']['options']['collection']
       const action = metadata['0']['options']['action']
 
-      const tokenVerified = await Autentikigo.verifyJwtAuthorization(request.headers.authorization!)
-      if (!tokenVerified) throw new Error()
-
-      const userId = JwtToken.getUserIdFromToken(request.headers.authorization!)
+      const token = request.headers.authorization;
+      const payload = new VerifyAuthToken().execute(token);
+      const userId = payload.id;
 
       let ownerId = null
 
       const permissionGroups = await this.userRepository
-        .permissionGroups(userId)
+        .permissionGroups(userId!)
         .find({
           include: [{
             relation: 'modulePermissions', scope: {
@@ -69,12 +54,15 @@ export class AutentikigoStrategy implements AuthenticationStrategy {
               ownerId = permissionGroup._createdBy
             }
           })
-          if (!userHasPermission) throw serverMessages['httpResponse']['unauthorizedError'][LocaleEnum['pt-BR']]
-        } else throw serverMessages['httpResponse']['unauthorizedError'][LocaleEnum['pt-BR']]
+          if (!userHasPermission) throw serverMessages.httpResponse.unauthorizedError['pt-BR']
+        } else throw serverMessages.httpResponse.unauthorizedError['pt-BR']
       }
 
-      const userProfile = this.convertIdToUserProfile(userId, ownerId || userId)
-      return userProfile
+      return {
+        id: userId!,
+        ownerId: ownerId || userId,
+        [securityId]: userId!.toString(),
+      }
 
     } catch (err) {
 
@@ -87,13 +75,5 @@ export class AutentikigoStrategy implements AuthenticationStrategy {
 
       return
     }
-  }
-
-  convertIdToUserProfile(id: string, ownerId: string | null): UserProfile {
-    return {
-      id,
-      ownerId,
-      [securityId]: id.toString(),
-    };
   }
 }

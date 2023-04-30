@@ -1,4 +1,5 @@
 import {AuthenticationComponent, registerAuthenticationStrategy} from '@loopback/authentication';
+import {JWTAuthenticationComponent} from '@loopback/authentication-jwt';
 import {BootMixin} from '@loopback/boot';
 import {ApplicationConfig} from '@loopback/core';
 import {RepositoryMixin} from '@loopback/repository';
@@ -43,7 +44,13 @@ export class QuickstartApiApplication extends BootMixin(
       },
     };
 
+    //...
+    // ------ ADD SNIPPET AT THE BOTTOM ---------
+    // Mount authentication system
     this.component(AuthenticationComponent);
+    // Mount jwt component
+    this.component(JWTAuthenticationComponent);
     registerAuthenticationStrategy(this, AutentikigoStrategy);
+    // ------------- END OF SNIPPET -------------
   }
 }

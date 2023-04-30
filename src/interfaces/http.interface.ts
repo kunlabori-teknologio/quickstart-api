@@ -1,5 +1,4 @@
 import {Request, Response} from '@loopback/rest';
-import {LocaleEnum} from '../enums/locale.enum';
 
 export interface IRequestSchema {
   [x: string]: {
@@ -27,7 +26,6 @@ export interface IHttpResponseData {
   tokens?: {},
   request: Request,
   response: Response,
-  locale?: LocaleEnum,
 }
 
 export interface IHttpResponse {

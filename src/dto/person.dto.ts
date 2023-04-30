@@ -1,7 +1,7 @@
 import {AnyObject} from '@loopback/repository';
-import {AdditionalInfoModel} from '../entities/signup.entity';
 import {IPersonFromAPI} from '../interfaces/person.interface';
 import {__Person} from '../models';
+import {IAdditionalInfo} from '../usecases/auth';
 import {convertBirthdayStringToDate} from '../utils/date-manipulation-functions';
 
 export class PersonDTO implements __Person {
@@ -16,7 +16,7 @@ export class PersonDTO implements __Person {
   nickname?: string | undefined;
   genderIdentity?: string | undefined;
 
-  constructor({dataFromApi, additionalInfo}: {dataFromApi: IPersonFromAPI, additionalInfo: AdditionalInfoModel}) {
+  constructor({dataFromApi, additionalInfo}: {dataFromApi: IPersonFromAPI, additionalInfo: IAdditionalInfo}) {
     const birthday = convertBirthdayStringToDate(dataFromApi.nascimento);
     this.name = dataFromApi.nome;
     this.uniqueId = dataFromApi.cpf.replace(/\D/g, "");
