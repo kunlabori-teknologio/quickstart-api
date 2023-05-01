@@ -7,7 +7,10 @@ import {IHttpResponse} from '../../interfaces/http.interface';
 import {__Module} from '../../models';
 import {__ModuleRepository} from '../../repositories';
 import {badRequestErrorHttpResponse, okHttpResponse} from '../../utils/http-response.util';
-import {createDocResponseSchemaForFindManyResults, createDocResponseSchemaForFindOneResult, createFilterRequestParams} from '../../utils/lb4-docs';
+import {
+  createDocResponseSchemaForFindManyResults,
+  createDocResponseSchemaForFindOneResult
+} from '../../utils/lb4-docs';
 import {serverMessages} from '../../utils/server-messages';
 
 export class __ModuleController {
@@ -25,24 +28,34 @@ export class __ModuleController {
     properties: createDocResponseSchemaForFindManyResults(__Module)
   })
   async find(
+    @param.query.string('filters') filters?: any,
     @param.query.number('limit') limit?: number,
     @param.query.number('page') page?: number,
     @param.query.string('order_by') orderBy?: string,
   ): Promise<IHttpResponse> {
     try {
 
-      const url = `${this.httpRequest.url}?filter={"or":[{"project":"${process.env.AUTH_DB}"},{"project":"${process.env.DB}"}]}`
-      const filters = createFilterRequestParams(url)
+      const where = {
+        ...(filters || {}),
+        or: [
+          {project: process.env.AUTH_DB},
+          {project: process.env.DB},
+        ]
+      };
 
-      const result = await this.moduleRepository.find(filters)
-
-      const total = await this.moduleRepository.count(filters['where'])
+      const result = await this.moduleRepository.find({
+        where,
+        limit: limit ?? 100,
+        skip: (limit ?? 100) * (page ?? 0),
+        order: [orderBy ?? '_createdAt DESC'],
+      });
+      const total = await this.moduleRepository.count(where);
 
       return okHttpResponse({
         data: {total: total?.count, result},
         request: this.httpRequest,
         response: this.httpResponse,
-      })
+      });
 
     } catch (err) {
 
@@ -50,7 +63,7 @@ export class __ModuleController {
         logMessage: err.message,
         request: this.httpRequest,
         response: this.httpResponse,
-      })
+      });
 
     }
   }
@@ -65,14 +78,16 @@ export class __ModuleController {
   ): Promise<IHttpResponse> {
     try {
 
-      const data = await this.moduleRepository.findOne({where: {and: [{_id: id}, {_deletedAt: {eq: null}}]}});
-      if (!data) throw new Error(serverMessages.httpResponse.notFoundError['pt-BR']);
+      const data = await this.moduleRepository
+        .findOne({where: {and: [{_id: id}, {_deletedAt: {eq: null}}]}});
+      if (!data)
+        throw new Error(serverMessages.httpResponse.notFoundError['pt-BR']);
 
       return okHttpResponse({
         data,
         request: this.httpRequest,
         response: this.httpResponse,
-      })
+      });
 
     } catch (err) {
 
@@ -80,7 +95,7 @@ export class __ModuleController {
         logMessage: err.message,
         request: this.httpRequest,
         response: this.httpResponse,
-      })
+      });
 
     }
   }

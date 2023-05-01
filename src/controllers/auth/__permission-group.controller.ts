@@ -9,8 +9,16 @@ import {IHttpResponse} from '../../interfaces/http.interface';
 import {__PermissionGroup} from '../../models';
 import {__PermissionGroupRepository, __PermissionRepository} from '../../repositories';
 import {CreatePermissions, UpdatePermissions} from '../../usecases/permissions';
-import {badRequestErrorHttpResponse, createHttpResponse, noContentHttpResponse, okHttpResponse} from '../../utils/http-response.util';
-import {createDocResponseSchemaForFindManyResults, createDocResponseSchemaForFindOneResult, createFilterRequestParams} from '../../utils/lb4-docs';
+import {
+  badRequestErrorHttpResponse,
+  createHttpResponse,
+  noContentHttpResponse,
+  okHttpResponse,
+} from '../../utils/http-response.util';
+import {
+  createDocResponseSchemaForFindManyResults,
+  createDocResponseSchemaForFindOneResult
+} from '../../utils/lb4-docs';
 import {serverMessages} from '../../utils/server-messages';
 
 export class __PermissionGroupController {
@@ -28,16 +36,6 @@ export class __PermissionGroupController {
     @inject(SecurityBindings.USER, {optional: true}) private currentUser?: UserProfile,
   ) { }
 
-  private getPermissionGroupRelatedPermissions = {
-    relation: 'modulePermissions',
-    scope: {
-      include: [
-        {relation: 'permissionActions', scope: {fields: ['_id']}},
-        {relation: 'module'}
-      ],
-    }
-  }
-
   @authenticate({strategy: 'autentikigo', options: {collection: '__PermissionGroup', action: 'createOne'}})
   @post('/__permission-groups')
   @response(200, {
@@ -49,26 +47,24 @@ export class __PermissionGroupController {
   ): Promise<IHttpResponse> {
     try {
 
-      const createdBy = this.currentUser?.[securityId] as string
-      const ownerId = this.currentUser?.ownerId as string
+      const createdBy = this.currentUser?.[securityId] as string;
+      const ownerId = this.currentUser?.ownerId as string;
 
-      // Create permissionGroup
       const permissionGroup = await this.permissionGroupRepository.create({
         ...{name: data.name, description: data.description, project: process.env.DB},
         _createdBy: createdBy,
         _ownerId: ownerId
-      })
+      });
 
-      // Create permissions
       await this.createPermissions.execute(
         permissionGroup?._id!,
         data['modulePermissions'],
-      )
+      );
 
       return createHttpResponse({
         request: this.httpRequest,
         response: this.httpResponse,
-      })
+      });
 
     } catch (err) {
 
@@ -76,7 +72,7 @@ export class __PermissionGroupController {
         logMessage: err.message,
         request: this.httpRequest,
         response: this.httpResponse,
-      })
+      });
 
     }
   }
@@ -88,6 +84,7 @@ export class __PermissionGroupController {
     properties: createDocResponseSchemaForFindManyResults(__PermissionGroup)
   })
   async find(
+    @param.query.string('filters') filters?: any,
     @param.query.string('project') project?: string,
     @param.query.number('limit') limit?: number,
     @param.query.number('page') page?: number,
@@ -95,34 +92,39 @@ export class __PermissionGroupController {
   ): Promise<IHttpResponse> {
     try {
 
-      let filters = createFilterRequestParams(
-        this.httpRequest.url,
-        [
-          {'and': [{project: project || process.env.DB!}]},
-          {
-            'or': [
-              {_createdBy: this.currentUser?.[securityId]!},
-              {_ownerId: this.currentUser?.ownerId!},
-            ]
-          }]
-      )
+      const where = {
+        ...(filters || {}),
+        and: [{project: project || process.env.DB!}],
+        or: [
+          {_createdBy: this.currentUser?.[securityId]!},
+          {_ownerId: this.currentUser?.ownerId!},
+        ]
+      };
 
-      let result: any[] = await this.permissionGroupRepository.find({...filters, include: [this.getPermissionGroupRelatedPermissions]})
-      result = result?.map(permissionGroup => {
-        permissionGroup.modulePermissions = permissionGroup?.modulePermissions?.map((permissions: any) => {
-          permissions.permissionActions = permissions?.permissionActions?.map((action: any) => action._id);
-          return permissions;
-        })
-        return permissionGroup;
-      })
-
-      const total = await this.permissionGroupRepository.count(filters['where'])
+      let result: any[] = await this.permissionGroupRepository
+        .find({
+          where,
+          include: [
+            {
+              relation: 'modulePermissions',
+              scope: {
+                include: [
+                  {relation: 'module'}
+                ],
+              }
+            }
+          ],
+          limit: limit ?? 100,
+          skip: (limit ?? 100) * (page ?? 0),
+          order: [orderBy ?? '_createdAt DESC'],
+        });
+      const total = await this.permissionGroupRepository.count(where);
 
       return okHttpResponse({
         data: {total: total?.count, result},
         request: this.httpRequest,
         response: this.httpResponse,
-      })
+      });
 
     } catch (err) {
 
@@ -130,7 +132,7 @@ export class __PermissionGroupController {
         logMessage: err.message,
         request: this.httpRequest,
         response: this.httpResponse,
-      })
+      });
 
     }
   }
@@ -148,22 +150,25 @@ export class __PermissionGroupController {
 
       let data: any = await this.permissionGroupRepository.findOne({
         where: {and: [{_id: id}, {_deletedAt: {eq: null}}]},
-        include: [this.getPermissionGroupRelatedPermissions]
-      })
-
-      if (!data) throw new Error(serverMessages.httpResponse.notFoundError['pt-BR'])
-      else {
-        data.modulePermissions = data.modulePermissions?.map((permissions: any) => {
-          permissions.permissionActions = permissions.permissionActions?.map((action: any) => action._id);
-          return permissions;
-        })
-      }
+        include: [
+          {
+            relation: 'modulePermissions',
+            scope: {
+              include: [
+                {relation: 'module'}
+              ],
+            }
+          }
+        ]
+      });
+      if (!data)
+        throw new Error(serverMessages.httpResponse.notFoundError['pt-BR']);
 
       return okHttpResponse({
         data,
         request: this.httpRequest,
         response: this.httpResponse,
-      })
+      });
 
     } catch (err) {
 
@@ -171,7 +176,7 @@ export class __PermissionGroupController {
         logMessage: err.message,
         request: this.httpRequest,
         response: this.httpResponse,
-      })
+      });
 
     }
   }
@@ -185,22 +190,16 @@ export class __PermissionGroupController {
   ): Promise<IHttpResponse> {
     try {
 
-      // update permissionGroup
-      await this.permissionGroupRepository.updateById(id, {
+      await this.permissionGroupRepository.replaceById(id, {
         name: data.name,
         description: data.description
-      })
-
-      // Delete and Create permissions
-      const permissionsToDeleteActions = await this.permissionRepository.find({
-        where: {permissionGroupId: id}
-      })
-      await this.updatePermissions.execute(id, data['modulePermissions'])
+      });
+      await this.updatePermissions.execute(id, data['modulePermissions']);
 
       return noContentHttpResponse({
         request: this.httpRequest,
         response: this.httpResponse,
-      })
+      });
 
     } catch (err) {
 
@@ -208,7 +207,7 @@ export class __PermissionGroupController {
         logMessage: err.message,
         request: this.httpRequest,
         response: this.httpResponse,
-      })
+      });
 
     }
   }
@@ -222,22 +221,16 @@ export class __PermissionGroupController {
   ): Promise<IHttpResponse> {
     try {
 
-      // update permissionGroup
       await this.permissionGroupRepository.updateById(id, {
         name: data.name,
         description: data.description
-      })
-
-      // Delete and Create permissions
-      const permissionsToDeleteActions = await this.permissionRepository.find({
-        where: {permissionGroupId: id}
-      })
-      await this.updatePermissions.execute(id, data['modulePermissions'])
+      });
+      await this.updatePermissions.execute(id, data['modulePermissions']);
 
       return noContentHttpResponse({
         request: this.httpRequest,
         response: this.httpResponse,
-      })
+      });
 
     } catch (err) {
 
@@ -245,7 +238,7 @@ export class __PermissionGroupController {
         logMessage: err.message,
         request: this.httpRequest,
         response: this.httpResponse,
-      })
+      });
 
     }
   }
@@ -258,21 +251,20 @@ export class __PermissionGroupController {
   ): Promise<IHttpResponse> {
     try {
 
-      const permissionGroupToDelete = await this.permissionGroupRepository.findById(id)
-
-      await this.permissionGroupRepository.updateById(id, {...permissionGroupToDelete, _deletedAt: new Date()})
+      await this.permissionGroupRepository
+        .updateById(id, {_deletedAt: new Date()});
 
       return noContentHttpResponse({
         request: this.httpRequest,
         response: this.httpResponse,
-      })
+      });
 
     } catch (err) {
 
       return badRequestErrorHttpResponse({
         request: this.httpRequest,
         response: this.httpResponse,
-      })
+      });
 
     }
   }

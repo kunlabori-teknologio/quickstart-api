@@ -10,8 +10,17 @@ import {__Invitation} from '../../models'
 import {__InvitationRepository} from '../../repositories'
 import {CreateInvitation} from '../../usecases/invitation/create-invitation.usecase'
 import {SendInvitation} from '../../usecases/invitation/send-invitation.usecase'
-import {badRequestErrorHttpResponse, createHttpResponse, noContentHttpResponse, okHttpResponse} from '../../utils/http-response.util'
-import {createDocRequestSchema, createDocResponseSchemaForFindManyResults, createDocResponseSchemaForFindOneResult, createFilterRequestParams} from '../../utils/lb4-docs'
+import {
+  badRequestErrorHttpResponse,
+  createHttpResponse,
+  noContentHttpResponse,
+  okHttpResponse,
+} from '../../utils/http-response.util'
+import {
+  createDocRequestSchema,
+  createDocResponseSchemaForFindManyResults,
+  createDocResponseSchemaForFindOneResult
+} from '../../utils/lb4-docs'
 import {serverMessages} from '../../utils/server-messages'
 
 export class __InvitationController {
@@ -61,7 +70,7 @@ export class __InvitationController {
         data: invitation,
         request: this.httpRequest,
         response: this.httpResponse,
-      })
+      });
 
     } catch (err) {
 
@@ -69,7 +78,7 @@ export class __InvitationController {
         logMessage: err.message,
         request: this.httpRequest,
         response: this.httpResponse,
-      })
+      });
 
     }
   }
@@ -81,34 +90,36 @@ export class __InvitationController {
     properties: createDocResponseSchemaForFindManyResults(__Invitation)
   })
   async find(
+    @param.query.string('filters') filters?: any,
     @param.query.string('project') project?: string,
     @param.query.number('limit') limit?: number,
     @param.query.number('page') page?: number,
     @param.query.string('order_by') orderBy?: string,
   ): Promise<IHttpResponse> {
     try {
-      const filters = createFilterRequestParams(
-        this.httpRequest.url,
-        [
-          {'and': [{project: project || process.env.DB!}]},
-          {
-            'or': [
-              {_createdBy: this.currentUser?.[securityId]!},
-              {_ownerId: this.currentUser?.ownerId!},
-            ]
-          },
+      const where = {
+        ...(filters || {}),
+        and: [{project: project || process.env.DB!}],
+        or: [
+          {_createdBy: this.currentUser?.[securityId]!},
+          {_ownerId: this.currentUser?.ownerId!},
         ]
-      )
+      };
 
-      const result = await this.invitationRepository.find({...filters, include: ['permissionGroup']})
-
-      const total = await this.invitationRepository.count(filters['where'])
+      const result = await this.invitationRepository.find({
+        where,
+        include: ['permissionGroup'],
+        limit: limit ?? 100,
+        skip: (limit ?? 100) * (page ?? 0),
+        order: [orderBy ?? '_createdAt DESC'],
+      });
+      const total = await this.invitationRepository.count(where);
 
       return okHttpResponse({
         data: {total: total?.count, result},
         request: this.httpRequest,
         response: this.httpResponse,
-      })
+      });
 
     } catch (err) {
 
@@ -116,7 +127,7 @@ export class __InvitationController {
         logMessage: err.message,
         request: this.httpRequest,
         response: this.httpResponse,
-      })
+      });
 
     }
   }
@@ -140,14 +151,15 @@ export class __InvitationController {
           ]
         },
         include: ['permissionGroup']
-      })
-      if (!data) throw new Error(serverMessages.httpResponse.notFoundError['pt-BR'])
+      });
+      if (!data)
+        throw new Error(serverMessages.httpResponse.notFoundError['pt-BR']);
 
       return okHttpResponse({
         data,
         request: this.httpRequest,
         response: this.httpResponse,
-      })
+      });
 
     } catch (err) {
 
@@ -155,7 +167,7 @@ export class __InvitationController {
         logMessage: err.message,
         request: this.httpRequest,
         response: this.httpResponse
-      })
+      });
 
     }
   }
@@ -171,12 +183,12 @@ export class __InvitationController {
   ): Promise<IHttpResponse> {
     try {
 
-      await this.invitationRepository.updateById(id, data)
+      await this.invitationRepository.replaceById(id, data);
 
       return noContentHttpResponse({
         request: this.httpRequest,
         response: this.httpResponse,
-      })
+      });
 
     } catch (err) {
 
@@ -184,7 +196,7 @@ export class __InvitationController {
         logMessage: err.message,
         request: this.httpRequest,
         response: this.httpResponse,
-      })
+      });
 
     }
   }
@@ -196,16 +208,16 @@ export class __InvitationController {
     @param.path.string('invitationId') id: string,
     @requestBody({
       content: createDocRequestSchema(__Invitation)
-    }) data: __Invitation,
+    }) data: Partial<__Invitation>,
   ): Promise<IHttpResponse> {
     try {
 
-      await this.invitationRepository.updateById(id, data)
+      await this.invitationRepository.updateById(id, data);
 
       return noContentHttpResponse({
         request: this.httpRequest,
         response: this.httpResponse,
-      })
+      });
 
     } catch (err) {
 
@@ -213,7 +225,7 @@ export class __InvitationController {
         logMessage: err.message,
         request: this.httpRequest,
         response: this.httpResponse,
-      })
+      });
 
     }
   }
@@ -226,14 +238,12 @@ export class __InvitationController {
   ): Promise<IHttpResponse> {
     try {
 
-      const invitationToDelete = await this.invitationRepository.findById(id)
-
-      await this.invitationRepository.updateById(id, {...invitationToDelete, _deletedAt: new Date()})
+      await this.invitationRepository.updateById(id, {_deletedAt: new Date()});
 
       return noContentHttpResponse({
         request: this.httpRequest,
         response: this.httpResponse,
-      })
+      });
 
     } catch (err) {
 
@@ -241,7 +251,7 @@ export class __InvitationController {
         logMessage: err.message,
         request: this.httpRequest,
         response: this.httpResponse,
-      })
+      });
 
     }
   }
@@ -254,15 +264,14 @@ export class __InvitationController {
   ): Promise<IHttpResponse> {
     try {
 
-      const invitation = await this.invitationRepository.findById(id)
-
+      const invitation = await this.invitationRepository.findById(id);
       await this.sendInvitation.execute(id, invitation.email);
 
       return okHttpResponse({
         message: serverMessages.invitation.invitationSent['pt-BR'],
         request: this.httpRequest,
         response: this.httpResponse,
-      })
+      });
 
     } catch (err) {
 
@@ -271,7 +280,7 @@ export class __InvitationController {
         logMessage: err.message,
         request: this.httpRequest,
         response: this.httpResponse,
-      })
+      });
 
     }
   }

@@ -7,7 +7,10 @@ import {IHttpResponse} from '../../interfaces/http.interface'
 import {__PermissionAction} from '../../models'
 import {__PermissionActionRepository} from '../../repositories'
 import {badRequestErrorHttpResponse, okHttpResponse} from '../../utils/http-response.util'
-import {createDocResponseSchemaForFindManyResults, createDocResponseSchemaForFindOneResult, createFilterRequestParams} from '../../utils/lb4-docs'
+import {
+  createDocResponseSchemaForFindManyResults,
+  createDocResponseSchemaForFindOneResult
+} from '../../utils/lb4-docs'
 import {serverMessages} from '../../utils/server-messages'
 
 export class __PermissionActionController {
@@ -25,23 +28,26 @@ export class __PermissionActionController {
     properties: createDocResponseSchemaForFindManyResults(__PermissionAction)
   })
   async find(
+    @param.query.string('filters') filters?: any,
     @param.query.number('limit') limit?: number,
     @param.query.number('page') page?: number,
     @param.query.string('order_by') orderBy?: string,
   ): Promise<IHttpResponse> {
     try {
 
-      const filters = createFilterRequestParams(this.httpRequest.url)
-
-      const result = await this.permissionActionRepository.find(filters)
-
-      const total = await this.permissionActionRepository.count(filters['where'])
+      const result = await this.permissionActionRepository.find({
+        where: {...(filters || {})},
+        limit: limit ?? 100,
+        skip: (limit ?? 100) * (page ?? 0),
+        order: [orderBy ?? '_createdAt DESC'],
+      });
+      const total = await this.permissionActionRepository.count({...(filters || {})});
 
       return okHttpResponse({
         data: {total: total?.count, result},
         request: this.httpRequest,
         response: this.httpResponse,
-      })
+      });
 
     } catch (err) {
 
@@ -49,7 +55,7 @@ export class __PermissionActionController {
         logMessage: err.message,
         request: this.httpRequest,
         response: this.httpResponse,
-      })
+      });
 
     }
   }
@@ -64,8 +70,10 @@ export class __PermissionActionController {
   ): Promise<IHttpResponse> {
     try {
 
-      const data = await this.permissionActionRepository.findOne({where: {and: [{_id: id}, {_deletedAt: {eq: null}}]}})
-      if (!data) throw new Error(serverMessages.httpResponse.notFoundError['pt-BR'])
+      const data = await this.permissionActionRepository
+        .findOne({where: {and: [{_id: id}, {_deletedAt: {eq: null}}]}});
+      if (!data)
+        throw new Error(serverMessages.httpResponse.notFoundError['pt-BR']);
 
       return okHttpResponse({
         data,

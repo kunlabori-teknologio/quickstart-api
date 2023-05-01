@@ -51,18 +51,18 @@ export class __RelatedUsersController {
       let totalResult: any[] = await this.getRelatedUserWithPermissions.execute(
         this.currentUser?.[securityId]!,
         this.currentUser?.ownerId!,
-      )
+      );
 
       const result = [...totalResult].splice(
         ((page || 0) * (limit || 10)),
         (limit || 10)
-      )
+      );
 
       return okHttpResponse({
         data: {total: totalResult.length, result},
         request: this.httpRequest,
         response: this.httpResponse,
-      })
+      });
 
     } catch (err) {
 
@@ -70,7 +70,7 @@ export class __RelatedUsersController {
         logMessage: err.message,
         request: this.httpRequest,
         response: this.httpResponse,
-      })
+      });
 
     }
   }
@@ -91,20 +91,25 @@ export class __RelatedUsersController {
         include: ['person', 'company', 'permissionGroups'],
         fields: ['email', '_id']
       });
-      if (!data) throw new Error(serverMessages.httpResponse.notFoundError['pt-BR']);
+      if (!data)
+        throw new Error(serverMessages.httpResponse.notFoundError['pt-BR']);
 
-      const permission = data.permissionGroups && data.permissionGroups.length && data.permissionGroups.find((el: any) => el.project === process.env.PROJECT)
+      const permission =
+        data.permissionGroups &&
+        data.permissionGroups.length &&
+        data.permissionGroups.find((el: any) => el.project === process.env.PROJECT);
 
-      const userPermissionGroup: any = await this.userHasPermissionGroupsRepository.findOne({
-        where: {
-          and: [
-            {
-              permissionGroupId: permission && permission._id,
-              userId: id
-            }
-          ]
-        }
-      })
+      const userPermissionGroup: any = await this.userHasPermissionGroupsRepository
+        .findOne({
+          where: {
+            and: [
+              {
+                permissionGroupId: permission && permission._id,
+                userId: id
+              }
+            ]
+          }
+        });
 
       const dataToReturn = {
         ...data,
@@ -117,7 +122,7 @@ export class __RelatedUsersController {
         data: dataToReturn,
         request: this.httpRequest,
         response: this.httpResponse,
-      })
+      });
 
     } catch (err: any) {
 
@@ -125,7 +130,7 @@ export class __RelatedUsersController {
         logMessage: err.message,
         request: this.httpRequest,
         response: this.httpResponse,
-      })
+      });
 
     }
   }
