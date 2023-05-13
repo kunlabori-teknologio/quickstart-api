@@ -1,6 +1,5 @@
 import mongoose from 'mongoose';
 import {ApplicationConfig, QuickstartApiApplication} from './application';
-import {SeedService} from './services';
 
 export * from './application';
 
@@ -11,10 +10,6 @@ export async function main(options: ApplicationConfig = {}) {
 
   const url = app.restServer.url;
   console.log(`Server is running at ${url}`);
-  console.log(`Try ${url}/ping`);
-
-  const seedService = new SeedService()
-  await seedService.seedModulesAndPermissions()
 
   return app;
 }
