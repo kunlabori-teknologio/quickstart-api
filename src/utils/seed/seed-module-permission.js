@@ -1,4 +1,5 @@
-const {MongoClient, ObjectId} = require('mongodb');
+require('dotenv').config({path: '../../../.env'});
+const {MongoClient} = require('mongodb');
 const modules = require('./Module.json');
 const {createDefaultPermission} = require('./permission-functions');
 
@@ -22,7 +23,7 @@ const createModules = async client => {
       },
     );
 
-    await createDefaultPermission(moduleUpdated._id.toString(), client);
+    await createDefaultPermission(moduleUpdated.value._id.toString(), client);
   }
 
   console.info('Modules and default permissions created');
@@ -74,6 +75,5 @@ const createPermissionActions = async client => {
   await createPermissionActions(client);
   await createModules(client);
 
-  db.close();
   console.info('done.');
 })();
