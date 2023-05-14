@@ -40,7 +40,7 @@ if (require.main === module) {
     process.exit(1);
   });
 
-  mongoose.connect(process.env.MONGO_URL!.replace('__DB_NAME__', process.env.DB!), {
+  mongoose.connect(`${process.env.MONGO_URL!}/${process.env.DB!}`), {
     dbName: process.env.DB!,
     // useNewUrlParser: true,
     // useUnifiedTopology: true,
