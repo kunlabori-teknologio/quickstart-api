@@ -35,7 +35,8 @@
     "rebuild": "npm run clean && npm run build",
     "esprimi": "node ./src/utils/esprimi-api-cli/esprimi-api-main.js",
     "test": "mocha --recursive \"dist/__tests__\"",
-    "start:watch": "tsc-watch --target es2017 --outDir ./dist --onSuccess \"node .\""
+    "start:watch": "tsc-watch --target es2017 --outDir ./dist --onSuccess \"node .\"",
+    "seed": "node src/utils/seed/seed-module-permission.js"
   },
   "repository": {
     "type": "git",

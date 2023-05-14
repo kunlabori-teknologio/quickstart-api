@@ -1,4 +1,4 @@
-require('dotenv').config({path: '../../../.env'});
+require('dotenv').config();
 const {MongoClient} = require('mongodb');
 const modules = require('./Module.json');
 const {createDefaultPermission} = require('./permission-functions');
@@ -23,7 +23,12 @@ const createModules = async client => {
       },
     );
 
-    await createDefaultPermission(moduleUpdated.value._id.toString(), client);
+    await createDefaultPermission(
+      (
+        moduleUpdated.value?._id ?? moduleUpdated.lastErrorObject?.upserted
+      ).toString(),
+      client,
+    );
   }
 
   console.info('Modules and default permissions created');
