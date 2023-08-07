@@ -10,7 +10,7 @@ import {__Person} from '../models/__person.model'
 import {__User} from '../models/__user.model'
 import {__CompanyRepository, __InvitationRepository, __PermissionGroupRepository, __PersonRepository, __UserHasPermissionGroupsRepository, __UserRepository} from '../repositories'
 import {theDatesMatch} from '../utils/date-manipulation-functions'
-import {getUserType, UserTypesEnum} from '../utils/general-functions'
+import {UserTypesEnum, getUserType} from '../utils/general-functions'
 import {serverMessages} from '../utils/server-messages'
 import {hideEmailString} from '../utils/string-manipulation-functions'
 
@@ -67,7 +67,7 @@ export class AuthService {
         await this.giveTheUserPermission(invitationPermissionGroupId!, user._id!)
 
         await this.invitationRepository.updateById(invitationId, {
-          email, permissionGroupId: invitationPermissionGroupId!, _deletedAt: new Date()
+          email, permissionGroupId: invitationPermissionGroupId!, accepted: true
         })
       }
 
@@ -264,7 +264,7 @@ export class AuthService {
       await this.giveTheUserPermission(permissionGroupId, newUser._id!)
 
       await this.invitationRepository.updateById(userInfo?.invitationId, {
-        email: userInfo?.email, permissionGroupId: permissionGroupId!, _deletedAt: new Date()
+        email: userInfo?.email, permissionGroupId: permissionGroupId!, accepted: true
       })
     }
 
