@@ -21,7 +21,7 @@ export class __Invitation extends __Default {
     type: 'boolean',
     required: false,
   })
-  accepted: boolean;
+  accepted?: boolean;
 
   @property({
     type: 'string',
