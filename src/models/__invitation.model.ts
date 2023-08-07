@@ -18,6 +18,12 @@ export class __Invitation extends __Default {
   email: string;
 
   @property({
+    type: 'boolean',
+    required: false,
+  })
+  accepted: boolean;
+
+  @property({
     type: 'string',
   })
   project?: string;
